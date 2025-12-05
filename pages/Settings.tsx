@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, Smartphone, Trash2, ChevronLeft } from 'lucide-react';
+import { Moon, Sun, Smartphone, Trash2, Globe, Languages } from 'lucide-react';
 import * as storage from '../services/storage';
 
 interface SettingsProps {
@@ -9,23 +9,37 @@ interface SettingsProps {
 
 const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   const [hapticEnabled, setHapticEnabled] = useState(true);
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [showTransliteration, setShowTransliteration] = useState(false);
 
   useEffect(() => {
     setHapticEnabled(storage.getHapticEnabled());
+    setShowTranslation(storage.getShowTranslation());
+    setShowTransliteration(storage.getShowTransliteration());
   }, []);
 
   const toggleHaptic = () => {
     const newValue = !hapticEnabled;
     setHapticEnabled(newValue);
     storage.saveHapticEnabled(newValue);
-    // Feedback for the toggle
     if (newValue && navigator.vibrate) navigator.vibrate(20);
+  };
+
+  const toggleTranslation = () => {
+    const newValue = !showTranslation;
+    setShowTranslation(newValue);
+    storage.saveShowTranslation(newValue);
+  };
+
+  const toggleTransliteration = () => {
+    const newValue = !showTransliteration;
+    setShowTransliteration(newValue);
+    storage.saveShowTransliteration(newValue);
   };
 
   const clearData = () => {
      if(confirm('هل أنت متأكد من مسح جميع البيانات؟\nسيتم حذف:\n- سجل الإنجازات\n- المفضلة\n- العدادات المحفوظة\n\nلا يمكن التراجع عن هذا الإجراء.')) {
         localStorage.clear();
-        // Restore theme
         localStorage.setItem('nour_theme', darkMode ? 'dark' : 'light');
         window.location.reload();
     }
@@ -58,6 +72,23 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     </div>
   );
 
+  const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+    <button 
+      onClick={onChange}
+      className={`
+        relative w-14 h-8 rounded-full transition-colors duration-300
+        ${checked ? 'bg-primary-500' : 'bg-gray-300'}
+      `}
+    >
+      <div 
+        className={`
+          absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300
+          ${checked ? 'left-1' : 'left-[calc(100%-1.75rem)]'}
+        `} 
+      />
+    </button>
+  );
+
   return (
     <div className="space-y-6 animate-fadeIn max-w-3xl mx-auto">
       <div className="mb-8">
@@ -71,22 +102,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           icon={darkMode ? Moon : Sun}
           label="المظهر"
           description={darkMode ? 'الوضع الليلي مفعل' : 'الوضع النهاري مفعل'}
-          action={
-            <button 
-              onClick={toggleTheme}
-              className={`
-                relative w-14 h-8 rounded-full transition-colors duration-300
-                ${darkMode ? 'bg-primary-500' : 'bg-gray-300'}
-              `}
-            >
-              <div 
-                className={`
-                  absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300
-                  ${darkMode ? 'left-1' : 'left-[calc(100%-1.75rem)]'}
-                `} 
-              />
-            </button>
-          }
+          action={<Toggle checked={darkMode} onChange={toggleTheme} />}
         />
 
         {/* Haptic Feedback Toggle */}
@@ -94,22 +110,23 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           icon={Smartphone}
           label="الاهتزاز"
           description="تشغيل الاهتزاز عند التسبيح"
-          action={
-            <button 
-              onClick={toggleHaptic}
-              className={`
-                relative w-14 h-8 rounded-full transition-colors duration-300
-                ${hapticEnabled ? 'bg-primary-500' : 'bg-gray-300'}
-              `}
-            >
-              <div 
-                className={`
-                  absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300
-                  ${hapticEnabled ? 'left-1' : 'left-[calc(100%-1.75rem)]'}
-                `} 
-              />
-            </button>
-          }
+          action={<Toggle checked={hapticEnabled} onChange={toggleHaptic} />}
+        />
+
+        {/* Translation Toggle */}
+        <SettingsItem 
+          icon={Globe}
+          label="الترجمة"
+          description="عرض الترجمة الإنجليزية (إن وجدت)"
+          action={<Toggle checked={showTranslation} onChange={toggleTranslation} />}
+        />
+
+        {/* Transliteration Toggle */}
+        <SettingsItem 
+          icon={Languages}
+          label="النطق الصوتي"
+          description="عرض النطق بالحروف اللاتينية"
+          action={<Toggle checked={showTransliteration} onChange={toggleTransliteration} />}
         />
 
         <div className="my-8 border-t border-gray-200 dark:border-gray-700"></div>
@@ -133,7 +150,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
 
       <div className="mt-12 text-center">
          <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
-           Nour App v1.0.0
+           Nour App v1.1.0
          </p>
       </div>
     </div>

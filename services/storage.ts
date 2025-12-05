@@ -5,6 +5,8 @@ const PROGRESS_KEY = 'nour_progress_v1';
 const TASBEEH_KEY = 'nour_tasbeeh_count';
 const CUSTOM_TARGETS_KEY = 'nour_custom_targets_v1';
 const HAPTIC_KEY = 'nour_haptic_enabled';
+const SHOW_TRANSLATION_KEY = 'nour_show_translation';
+const SHOW_TRANSLITERATION_KEY = 'nour_show_transliteration';
 
 export const getFavorites = (): number[] => {
   try {
@@ -97,6 +99,30 @@ export const getHapticEnabled = (): boolean => {
 
 export const saveHapticEnabled = (enabled: boolean) => {
   localStorage.setItem(HAPTIC_KEY, String(enabled));
+};
+
+export const getShowTranslation = (): boolean => {
+  try {
+    return localStorage.getItem(SHOW_TRANSLATION_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
+
+export const saveShowTranslation = (enabled: boolean) => {
+  localStorage.setItem(SHOW_TRANSLATION_KEY, String(enabled));
+};
+
+export const getShowTransliteration = (): boolean => {
+  try {
+    return localStorage.getItem(SHOW_TRANSLITERATION_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
+
+export const saveShowTransliteration = (enabled: boolean) => {
+  localStorage.setItem(SHOW_TRANSLITERATION_KEY, String(enabled));
 };
 
 // --- Statistics Helpers ---

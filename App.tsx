@@ -7,6 +7,7 @@ import Tasbeeh from './pages/Tasbeeh';
 import Favorites from './pages/Favorites';
 import Stats from './pages/Stats';
 import Settings from './pages/Settings';
+import PrayerTimes from './pages/PrayerTimes';
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(() => {
@@ -38,6 +39,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/category/:id" element={<CategoryView />} />
+          <Route path="/prayer-times" element={<PrayerTimes />} />
           <Route path="/tasbeeh" element={<Tasbeeh />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/stats" element={<Stats />} />

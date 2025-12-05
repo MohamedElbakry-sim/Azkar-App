@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dhikr } from '../types';
-import { Heart, Repeat, Info, Share2, SkipForward, Settings, Check, X } from 'lucide-react';
+import { Heart, Repeat, Info, Share2, SkipForward, Settings, Check, X, Download, Globe } from 'lucide-react';
 import * as storage from '../services/storage';
 
 interface DhikrCardProps {
@@ -28,15 +28,23 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   const [isExiting, setIsExiting] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   
+  // Settings state
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [showTransliteration, setShowTransliteration] = useState(false);
+
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
   const [targetInput, setTargetInput] = useState<string>("");
+
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Use the prop target count or default to item.count
   const currentTarget = propTargetCount || item.count;
 
   useEffect(() => {
     setCount(initialCount);
+    setShowTranslation(storage.getShowTranslation());
+    setShowTransliteration(storage.getShowTransliteration());
   }, [initialCount]);
 
   const handleTap = () => {
@@ -98,8 +106,52 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
     }, 800);
   };
 
-  const handleShare = (e: React.MouseEvent) => {
+  const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Create a temporary simplified view for the image if needed, or capture the current card
+    // For simplicity, we capture the current card
+    if (!cardRef.current) return;
+    
+    // Check if html2canvas is available (loaded via CDN in index.html)
+    if ((window as any).html2canvas) {
+      try {
+        const canvas = await (window as any).html2canvas(cardRef.current, {
+          backgroundColor: null, // Keep transparency if any
+          scale: 2, // Retinas
+          useCORS: true,
+        });
+        
+        canvas.toBlob((blob: Blob | null) => {
+          if (blob && navigator.share) {
+             const file = new File([blob], 'dhikr.png', { type: 'image/png' });
+             navigator.share({
+               title: 'ذكر',
+               text: item.text,
+               files: [file]
+             }).catch(err => {
+               // Fallback to text sharing if file sharing fails
+               console.warn('File share failed', err);
+               shareText();
+             });
+          } else {
+             // Fallback: download the image
+             const link = document.createElement('a');
+             link.download = `dhikr-${item.id}.png`;
+             link.href = canvas.toDataURL();
+             link.click();
+          }
+        });
+      } catch (err) {
+        console.error("Image generation failed", err);
+        shareText();
+      }
+    } else {
+      shareText();
+    }
+  };
+  
+  const shareText = () => {
     if (navigator.share) {
       navigator.share({
         title: 'ذكر',
@@ -145,6 +197,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
 
   return (
     <div 
+      ref={cardRef}
       onClick={handleTap}
       className={`
         relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 
@@ -180,6 +233,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
              <button 
               onClick={handleShare}
               className="p-2 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+              title="مشاركة"
             >
               <Share2 size={20} />
             </button>
@@ -230,10 +284,24 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             </div>
           </div>
         ) : (
-          /* Text */
-          <p className={`font-serif text-2xl md:text-3xl leading-loose text-center text-gray-800 dark:text-gray-100 mb-6 select-none ${animate ? 'scale-[1.01]' : 'scale-100'} transition-transform`}>
-            {item.text}
-          </p>
+          /* Text Content */
+          <div className={`mb-6 text-center select-none transition-transform ${animate ? 'scale-[1.01]' : 'scale-100'}`}>
+            <p className="font-serif text-2xl md:text-3xl leading-loose text-gray-800 dark:text-gray-100 mb-4">
+              {item.text}
+            </p>
+            
+            {showTransliteration && item.transliteration && (
+              <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 italic mb-2 dir-ltr">
+                {item.transliteration}
+              </p>
+            )}
+            
+            {showTranslation && item.translation && (
+              <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 dir-ltr">
+                {item.translation}
+              </p>
+            )}
+          </div>
         )}
 
         {/* Benefit Toggle */}

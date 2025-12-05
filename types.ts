@@ -6,6 +6,8 @@ export interface Dhikr {
   source?: string; // e.g., Bukhari
   benefit?: string; // Fadilah
   audioUrl?: string;
+  transliteration?: string;
+  translation?: string;
 }
 
 export type CategoryId = 'sabah' | 'masaa' | 'sleep' | 'waking' | 'prayer';
