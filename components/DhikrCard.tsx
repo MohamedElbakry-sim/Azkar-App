@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Dhikr } from '../types';
 import { Heart, Repeat, Info, Share2, SkipForward, Settings, Check, X, Download, Globe } from 'lucide-react';
 import * as storage from '../services/storage';
+import { getHighlightRegex } from '../utils';
 
 interface DhikrCardProps {
   item: Dhikr;
@@ -11,6 +13,7 @@ interface DhikrCardProps {
   onToggleFavorite: (id: number) => void;
   onComplete?: (id: number) => void;
   onTargetChange?: (id: number, newTarget: number) => void;
+  highlightQuery?: string; // New prop for search highlighting
 }
 
 const DhikrCard: React.FC<DhikrCardProps> = ({ 
@@ -20,7 +23,8 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   targetCount: propTargetCount, 
   onToggleFavorite, 
   onComplete,
-  onTargetChange
+  onTargetChange,
+  highlightQuery
 }) => {
   const [count, setCount] = useState(initialCount);
   const [showBenefit, setShowBenefit] = useState(false);
@@ -193,6 +197,25 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
     setIsEditing(false);
   };
 
+  const renderHighlightedText = (text: string, query?: string) => {
+    if (!query) return text;
+    
+    const regex = getHighlightRegex(query);
+    if (!regex) return text;
+
+    const parts = text.split(regex);
+    
+    return parts.map((part, i) => 
+      regex.test(part) ? (
+        <mark key={i} className="bg-yellow-200 dark:bg-yellow-900/50 text-inherit rounded-sm px-0.5 mx-0.5">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  };
+
   const progressPercent = Math.min((count / currentTarget) * 100, 100);
 
   return (
@@ -287,7 +310,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
           /* Text Content */
           <div className={`mb-6 text-center select-none transition-transform ${animate ? 'scale-[1.01]' : 'scale-100'}`}>
             <p className="font-serif text-2xl md:text-3xl leading-loose text-gray-800 dark:text-gray-100 mb-4">
-              {item.text}
+              {renderHighlightedText(item.text, highlightQuery)}
             </p>
             
             {showTransliteration && item.transliteration && (
