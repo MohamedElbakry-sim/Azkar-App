@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { AZKAR_DATA, CATEGORIES } from '../data';
 import DhikrCard from '../components/DhikrCard';
 import * as storage from '../services/storage';
-import { CheckCircle, Sunrise, Sunset, Moon, Sun, BookHeart } from 'lucide-react';
+import { CheckCircle, Sunrise, Sunset, Moon, Sun, BookHeart, Share2, Copy } from 'lucide-react';
 
 const CategoryView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const category = CATEGORIES.find(c => c.id === id);
+  const headerRef = useRef<HTMLDivElement>(null);
   
   const [favorites, setFavorites] = useState<number[]>([]);
   const [progress, setProgress] = useState<{[key: number]: number}>({});
@@ -59,6 +61,61 @@ const CategoryView: React.FC = () => {
     setCustomTargets(prev => ({ ...prev, [dhikrId]: newTarget }));
   };
 
+  const handleCopyAll = () => {
+    const catItems = AZKAR_DATA.filter(item => item.category === id);
+    if (!catItems.length) return;
+
+    const text = catItems.map(item => {
+        const target = customTargets[item.id] || item.count;
+        return `${item.text}\n(التكرار: ${target})`;
+    }).join('\n\n----------------\n\n');
+
+    const fullText = `🌟 ${category?.title} 🌟\n\n${text}\n\n📱 تم النسخ من تطبيق نور`;
+    
+    navigator.clipboard.writeText(fullText)
+      .then(() => alert('تم نسخ جميع الأذكار إلى الحافظة'))
+      .catch(err => console.error('Failed to copy', err));
+  };
+
+  const handleShareProgress = async () => {
+    if (!headerRef.current) return;
+    
+    if ((window as any).html2canvas) {
+        try {
+            const isDark = document.documentElement.classList.contains('dark');
+            // Use specific colors for the header capture to ensure it looks good
+            // The header uses category.color classes, so we want transparency or matching background
+            // We'll force a neutral background to be safe
+            const bgColor = isDark ? '#1f2937' : '#ffffff';
+
+            const canvas = await (window as any).html2canvas(headerRef.current, {
+                backgroundColor: bgColor,
+                scale: 2,
+                logging: false,
+            });
+
+            canvas.toBlob((blob: Blob | null) => {
+                if (blob && navigator.share) {
+                    const file = new File([blob], 'nour-progress.png', { type: 'image/png' });
+                    navigator.share({
+                        title: 'إنجازي - تطبيق نور',
+                        text: `أقوم الآن بقراءة ${category?.title} عبر تطبيق نور.`,
+                        files: [file]
+                    }).catch(console.warn);
+                } else {
+                     const link = document.createElement('a');
+                     link.download = `progress-${id}.png`;
+                     link.href = canvas.toDataURL();
+                     link.click();
+                }
+            });
+        } catch (e) {
+            console.error(e);
+            alert('تعذر إنشاء الصورة');
+        }
+    }
+  };
+
   if (!category) {
     return <Navigate to="/" />;
   }
@@ -92,7 +149,27 @@ const CategoryView: React.FC = () => {
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       {/* Category Header */}
-      <div className={`rounded-3xl p-8 text-center mb-8 shadow-sm ${category.color} animate-fadeIn`}>
+      <div ref={headerRef} className={`rounded-3xl p-8 text-center mb-8 shadow-sm ${category.color} animate-fadeIn relative overflow-hidden`}>
+        {/* Actions Bar */}
+        <div className="absolute top-4 left-4 flex gap-2">
+            <button 
+                onClick={handleCopyAll}
+                className="p-2 bg-white/40 hover:bg-white/60 text-gray-700 rounded-full transition-colors backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                title="نسخ جميع الأذكار نصاً"
+                aria-label="نسخ جميع الأذكار نصاً"
+            >
+                <Copy size={18} />
+            </button>
+            <button 
+                onClick={handleShareProgress}
+                className="p-2 bg-white/40 hover:bg-white/60 text-gray-700 rounded-full transition-colors backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                title="مشاركة صورة الإنجاز"
+                aria-label="مشاركة صورة الإنجاز"
+            >
+                <Share2 size={18} />
+            </button>
+        </div>
+
         <div className="mb-4 inline-flex p-4 bg-white/30 rounded-2xl backdrop-blur-sm">
            {getIcon(category.icon)}
         </div>
@@ -109,7 +186,14 @@ const CategoryView: React.FC = () => {
         </div>
         
         {/* Enhanced Progress Bar */}
-        <div className="mt-6 h-3 bg-white/40 dark:bg-black/20 rounded-full overflow-hidden w-4/5 md:w-2/3 mx-auto backdrop-blur-sm shadow-inner">
+        <div 
+          className="mt-6 h-3 bg-white/40 dark:bg-black/20 rounded-full overflow-hidden w-4/5 md:w-2/3 mx-auto backdrop-blur-sm shadow-inner"
+          role="progressbar"
+          aria-valuenow={percentage}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="نسبة الإنجاز"
+        >
           <div 
             className={`h-full transition-all duration-700 ease-out relative ${getProgressColor(percentage)}`}
             style={{ width: `${percentage}%` }}
@@ -151,7 +235,7 @@ const CategoryView: React.FC = () => {
             <p className="text-gray-500 dark:text-gray-400 text-lg">لقد أنهيت أذكار هذا القسم</p>
             <button 
                 onClick={() => window.history.back()}
-                className="mt-8 px-8 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm border border-gray-200 dark:border-gray-700 font-medium"
+                className="mt-8 px-8 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm border border-gray-200 dark:border-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
                 العودة للرئيسية
             </button>

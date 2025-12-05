@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Moon, Sun, Smartphone, Trash2, Globe, Languages } from 'lucide-react';
 import * as storage from '../services/storage';
@@ -72,11 +73,14 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     </div>
   );
 
-  const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+  const Toggle = ({ checked, onChange, label }: { checked: boolean; onChange: () => void; label?: string }) => (
     <button 
       onClick={onChange}
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
       className={`
-        relative w-14 h-8 rounded-full transition-colors duration-300
+        relative w-14 h-8 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
         ${checked ? 'bg-primary-500' : 'bg-gray-300'}
       `}
     >
@@ -102,7 +106,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           icon={darkMode ? Moon : Sun}
           label="المظهر"
           description={darkMode ? 'الوضع الليلي مفعل' : 'الوضع النهاري مفعل'}
-          action={<Toggle checked={darkMode} onChange={toggleTheme} />}
+          action={<Toggle checked={darkMode} onChange={toggleTheme} label="تبديل المظهر (ليلي/نهاري)" />}
         />
 
         {/* Haptic Feedback Toggle */}
@@ -110,7 +114,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           icon={Smartphone}
           label="الاهتزاز"
           description="تشغيل الاهتزاز عند التسبيح"
-          action={<Toggle checked={hapticEnabled} onChange={toggleHaptic} />}
+          action={<Toggle checked={hapticEnabled} onChange={toggleHaptic} label="تفعيل الاهتزاز" />}
         />
 
         {/* Translation Toggle */}
@@ -118,7 +122,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           icon={Globe}
           label="الترجمة"
           description="عرض الترجمة الإنجليزية (إن وجدت)"
-          action={<Toggle checked={showTranslation} onChange={toggleTranslation} />}
+          action={<Toggle checked={showTranslation} onChange={toggleTranslation} label="تفعيل الترجمة" />}
         />
 
         {/* Transliteration Toggle */}
@@ -126,7 +130,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           icon={Languages}
           label="النطق الصوتي"
           description="عرض النطق بالحروف اللاتينية"
-          action={<Toggle checked={showTransliteration} onChange={toggleTransliteration} />}
+          action={<Toggle checked={showTransliteration} onChange={toggleTransliteration} label="تفعيل النطق الصوتي" />}
         />
 
         <div className="my-8 border-t border-gray-200 dark:border-gray-700"></div>
@@ -140,7 +144,8 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           action={
             <button 
               onClick={clearData}
-              className="px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-900/50"
+              className="px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-400"
+              aria-label="حذف جميع البيانات"
             >
               حذف
             </button>

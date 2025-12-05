@@ -14,8 +14,8 @@ export const normalizeArabic = (text: string): string => {
   // Normalize Alefs
   normalized = normalized.replace(/[أإآ]/g, "ا");
   
-  // Normalize Taa Marbuta to Haa (optional, usually helps in loose search)
-  // normalized = normalized.replace(/ة/g, "ه");
+  // Normalize Taa Marbuta to Haa
+  normalized = normalized.replace(/ة/g, "ه");
   
   // Normalize Yaa to Alif Maqsura (or vice versa depending on preference, usually normalizing both to dotless is standard)
   normalized = normalized.replace(/ى/g, "ي");

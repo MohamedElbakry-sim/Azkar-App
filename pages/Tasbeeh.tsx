@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { RotateCcw, Check } from 'lucide-react';
 import * as storage from '../services/storage';
@@ -64,10 +65,12 @@ const Tasbeeh: React.FC = () => {
           shadow-[0_10px_40px_rgba(16,185,129,0.3)] dark:shadow-[0_10px_40px_rgba(16,185,129,0.15)]
           flex items-center justify-center cursor-pointer 
           border-8 border-white dark:border-gray-800 relative select-none
-          transition-all duration-150 ease-out outline-none
+          transition-all duration-150 ease-out outline-none focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800
           active:scale-95 hover:shadow-[0_20px_60px_rgba(16,185,129,0.4)]
           ${isAnimating ? 'scale-[1.02] shadow-[0_15px_50px_rgba(16,185,129,0.5)]' : 'scale-100'}
         `}
+        aria-label={`تسبحة. العدد الحالي: ${count}`}
+        aria-live="polite"
       >
         {/* Subtle Ripple/Ring Effect */}
         <div className={`absolute inset-0 rounded-full border-4 border-white/20 pointer-events-none transition-all duration-300 ${isAnimating ? 'scale-110 opacity-0' : 'scale-100 opacity-100'}`}></div>
@@ -84,12 +87,13 @@ const Tasbeeh: React.FC = () => {
           onClick={handleReset}
           className={`
             flex flex-col items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl 
-            transition-all duration-300 shadow-sm
+            transition-all duration-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2
             ${resetConfirm 
               ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 scale-105 ring-2 ring-red-400' 
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 focus:ring-gray-400'}
           `}
           title={resetConfirm ? "تأكيد التصفير" : "تصفير"}
+          aria-label={resetConfirm ? "تأكيد تصفير العداد" : "تصفير العداد"}
         >
           {resetConfirm ? <Check size={24} className="md:w-8 md:h-8" /> : <RotateCcw size={24} className="md:w-8 md:h-8" />}
           <span className="text-xs md:text-sm mt-1 font-bold">

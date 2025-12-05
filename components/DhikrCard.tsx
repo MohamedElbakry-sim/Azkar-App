@@ -87,6 +87,15 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (isEditing) return;
+    // Allow 'Enter' or 'Space' to trigger tap if focus is on the card
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleTap();
+    }
+  };
+
   const handleReset = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (resetConfirm) {
@@ -113,29 +122,32 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    // Create a temporary simplified view for the image if needed, or capture the current card
-    // For simplicity, we capture the current card
     if (!cardRef.current) return;
     
     // Check if html2canvas is available (loaded via CDN in index.html)
     if ((window as any).html2canvas) {
       try {
+        // Detect current theme for background color
+        const isDark = document.documentElement.classList.contains('dark');
+        const bgColor = isDark ? '#1f2937' : '#ffffff'; // gray-800 or white
+
         const canvas = await (window as any).html2canvas(cardRef.current, {
-          backgroundColor: null, // Keep transparency if any
-          scale: 2, // Retinas
+          backgroundColor: bgColor, 
+          scale: 2, // Retina resolution
           useCORS: true,
+          logging: false,
         });
         
         canvas.toBlob((blob: Blob | null) => {
           if (blob && navigator.share) {
-             const file = new File([blob], 'dhikr.png', { type: 'image/png' });
+             const file = new File([blob], 'dhikr-share.png', { type: 'image/png' });
              navigator.share({
-               title: 'ذكر',
-               text: item.text,
+               title: 'مشاركة ذكر - تطبيق نور',
+               text: `${item.text}\n\nتمت المشاركة عبر تطبيق نور`,
                files: [file]
              }).catch(err => {
-               // Fallback to text sharing if file sharing fails
-               console.warn('File share failed', err);
+               // Fallback to text sharing if file sharing fails (some browsers restrict files)
+               console.warn('File share failed, falling back to text', err);
                shareText();
              });
           } else {
@@ -159,7 +171,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
     if (navigator.share) {
       navigator.share({
         title: 'ذكر',
-        text: item.text,
+        text: `${item.text}\n\n(تطبيق نور)`,
       }).catch(console.error);
     } else {
         navigator.clipboard.writeText(item.text);
@@ -222,9 +234,13 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
     <div 
       ref={cardRef}
       onClick={handleTap}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label={`${item.text} - ${count} من ${currentTarget}`}
       className={`
         relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 
-        transition-all duration-500 ease-in-out cursor-pointer active:scale-[0.99]
+        transition-all duration-500 ease-in-out cursor-pointer active:scale-[0.99] outline-none focus:ring-2 focus:ring-primary-500
         ${isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}
         ${isEditing ? 'ring-2 ring-primary-400' : ''}
       `}
@@ -233,6 +249,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
       <div 
         className="absolute bottom-0 right-0 h-1.5 bg-primary-500 transition-all duration-300 ease-out"
         style={{ width: `${progressPercent}%` }}
+        aria-hidden="true"
       />
 
       <div className="p-5 md:p-6 relative z-10">
@@ -241,30 +258,35 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
           <div className="flex gap-2">
              <button 
               onClick={(e) => { e.stopPropagation(); onToggleFavorite(item.id); }}
-              className={`p-2 rounded-full transition-colors ${isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+              className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+              aria-label={isFavorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
             >
               <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
             </button>
             {item.benefit && (
               <button 
                 onClick={(e) => { e.stopPropagation(); setShowBenefit(!showBenefit); }}
-                className="p-2 rounded-full text-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                className="p-2 rounded-full text-blue-500 bg-blue-50 dark:bg-blue-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                aria-label="عرض الفضل"
+                aria-expanded={showBenefit}
               >
                 <Info size={20} />
               </button>
             )}
              <button 
               onClick={handleShare}
-              className="p-2 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-              title="مشاركة"
+              className="p-2 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              title="مشاركة كصورة"
+              aria-label="مشاركة الذكر كصورة"
             >
               <Share2 size={20} />
             </button>
             
             <button 
               onClick={startEditing}
-              className="p-2 rounded-full text-gray-400 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-2 rounded-full text-gray-400 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
               title="تعديل العدد"
+              aria-label="تعديل عدد التكرار"
             >
               <Settings size={20} />
             </button>
@@ -279,10 +301,11 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
 
         {/* Edit Mode UI */}
         {isEditing ? (
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl flex flex-col items-center gap-3 animate-fadeIn" onClick={(e) => e.stopPropagation()}>
-            <label className="text-sm font-bold text-gray-600 dark:text-gray-300">عدد التكرار المطلوب:</label>
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl flex flex-col items-center gap-3 animate-fadeIn cursor-default" onClick={(e) => e.stopPropagation()}>
+            <label htmlFor={`target-input-${item.id}`} className="text-sm font-bold text-gray-600 dark:text-gray-300">عدد التكرار المطلوب:</label>
             <div className="flex items-center gap-2 w-full max-w-[200px]">
                <input 
+                  id={`target-input-${item.id}`}
                   type="number" 
                   min="1"
                   value={targetInput}
@@ -314,13 +337,13 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             </p>
             
             {showTransliteration && item.transliteration && (
-              <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 italic mb-2 dir-ltr">
+              <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 italic mb-2 dir-ltr" lang="en">
                 {item.transliteration}
               </p>
             )}
             
             {showTranslation && item.translation && (
-              <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 dir-ltr">
+              <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 dir-ltr" lang="en">
                 {item.translation}
               </p>
             )}
@@ -337,7 +360,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         {/* Footer: Counter */}
         {!isEditing && (
           <div className="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-4 mt-2">
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400" aria-live="polite">
                <Repeat size={16} />
                <span>{count} / {currentTarget}</span>
             </div>
@@ -346,11 +369,12 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                {count > 0 && (
                 <button 
                   onClick={handleReset}
-                  className={`text-xs px-2 py-1 rounded transition-colors ${
+                  className={`text-xs px-2 py-1 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-400 ${
                     resetConfirm 
                     ? 'text-red-600 bg-red-100 font-bold' 
                     : 'text-red-400 hover:text-red-500'
                   }`}
+                  aria-label={resetConfirm ? "تأكيد إعادة العد" : "إعادة العد"}
                 >
                   {resetConfirm ? 'تأكيد؟' : 'إعادة'}
                 </button>
@@ -358,8 +382,9 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
               
               <button
                   onClick={handleSkip}
-                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-2 py-1"
+                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded"
                   title="تخطي"
+                  aria-label="تخطي هذا الذكر"
               >
                   <SkipForward size={14} />
                   تخطي
