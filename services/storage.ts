@@ -1,3 +1,4 @@
+
 import { ProgressState } from '../types';
 
 const FAVORITES_KEY = 'nour_favorites_v1';
@@ -7,6 +8,13 @@ const CUSTOM_TARGETS_KEY = 'nour_custom_targets_v1';
 const HAPTIC_KEY = 'nour_haptic_enabled';
 const SHOW_TRANSLATION_KEY = 'nour_show_translation';
 const SHOW_TRANSLITERATION_KEY = 'nour_show_transliteration';
+const DND_KEY = 'nour_dnd_settings';
+
+// --- Do Not Disturb Types ---
+export interface DNDSettings {
+  enabled: boolean;
+  endTime: number | null; // Timestamp in ms. null means indefinite if enabled.
+}
 
 export const getFavorites = (): number[] => {
   try {
@@ -99,6 +107,40 @@ export const getHapticEnabled = (): boolean => {
 
 export const saveHapticEnabled = (enabled: boolean) => {
   localStorage.setItem(HAPTIC_KEY, String(enabled));
+};
+
+// --- Do Not Disturb Logic ---
+
+export const getDNDSettings = (): DNDSettings => {
+  try {
+    const stored = localStorage.getItem(DND_KEY);
+    if (!stored) return { enabled: false, endTime: null };
+    
+    const settings: DNDSettings = JSON.parse(stored);
+    
+    // Check for expiration
+    if (settings.enabled && settings.endTime && Date.now() > settings.endTime) {
+      const expiredSettings = { enabled: false, endTime: null };
+      saveDNDSettings(expiredSettings);
+      return expiredSettings;
+    }
+    
+    return settings;
+  } catch {
+    return { enabled: false, endTime: null };
+  }
+};
+
+export const saveDNDSettings = (settings: DNDSettings) => {
+  localStorage.setItem(DND_KEY, JSON.stringify(settings));
+};
+
+// Helper to determine if vibration should occur
+// Returns false if DND is active OR if Haptics are disabled globally
+export const shouldTriggerHaptics = (): boolean => {
+  const dnd = getDNDSettings();
+  if (dnd.enabled) return false;
+  return getHapticEnabled();
 };
 
 export const getShowTranslation = (): boolean => {

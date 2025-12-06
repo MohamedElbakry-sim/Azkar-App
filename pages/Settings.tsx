@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, Smartphone, Trash2, Globe, Languages } from 'lucide-react';
+import { Moon, Sun, Smartphone, Trash2, Globe, Languages, BellOff, Clock } from 'lucide-react';
 import * as storage from '../services/storage';
 
 interface SettingsProps {
@@ -12,18 +12,20 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [showTranslation, setShowTranslation] = useState(false);
   const [showTransliteration, setShowTransliteration] = useState(false);
+  const [dndSettings, setDndSettings] = useState<storage.DNDSettings>({ enabled: false, endTime: null });
 
   useEffect(() => {
     setHapticEnabled(storage.getHapticEnabled());
     setShowTranslation(storage.getShowTranslation());
     setShowTransliteration(storage.getShowTransliteration());
+    setDndSettings(storage.getDNDSettings());
   }, []);
 
   const toggleHaptic = () => {
     const newValue = !hapticEnabled;
     setHapticEnabled(newValue);
     storage.saveHapticEnabled(newValue);
-    if (newValue && navigator.vibrate) navigator.vibrate(20);
+    if (newValue && !dndSettings.enabled && navigator.vibrate) navigator.vibrate(20);
   };
 
   const toggleTranslation = () => {
@@ -38,12 +40,39 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     storage.saveShowTransliteration(newValue);
   };
 
+  const toggleDND = () => {
+    const newEnabled = !dndSettings.enabled;
+    const newSettings = { 
+        enabled: newEnabled, 
+        endTime: null // Default to manual/indefinite when toggling
+    };
+    setDndSettings(newSettings);
+    storage.saveDNDSettings(newSettings);
+  };
+
+  const setDNDDuration = (minutes: number | null) => {
+    const newEndTime = minutes === null ? null : Date.now() + minutes * 60 * 1000;
+    const newSettings = { ...dndSettings, enabled: true, endTime: newEndTime };
+    setDndSettings(newSettings);
+    storage.saveDNDSettings(newSettings);
+  };
+
   const clearData = () => {
      if(confirm('هل أنت متأكد من مسح جميع البيانات؟\nسيتم حذف:\n- سجل الإنجازات\n- المفضلة\n- العدادات المحفوظة\n\nلا يمكن التراجع عن هذا الإجراء.')) {
         localStorage.clear();
         localStorage.setItem('nour_theme', darkMode ? 'dark' : 'light');
         window.location.reload();
     }
+  };
+
+  const formatTime = (timestamp: number) => {
+    return new Intl.DateTimeFormat('ar-SA', { hour: 'numeric', minute: 'numeric' }).format(new Date(timestamp));
+  };
+
+  const getDNDStatusString = () => {
+      if (!dndSettings.enabled) return "تعطيل الاهتزاز والتنبيهات مؤقتاً";
+      if (dndSettings.endTime) return `مفعل حتى ${formatTime(dndSettings.endTime)}`;
+      return "مفعل (يدوياً)";
   };
 
   const SettingsItem = ({ 
@@ -93,6 +122,20 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     </button>
   );
 
+  const DurationButton = ({ label, active, onClick }: { label: string, active: boolean, onClick: () => void }) => (
+      <button 
+        onClick={onClick}
+        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400
+            ${active 
+                ? 'bg-primary-500 text-white border-primary-500' 
+                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+            }
+        `}
+      >
+          {label}
+      </button>
+  );
+
   return (
     <div className="space-y-6 animate-fadeIn max-w-3xl mx-auto">
       <div className="mb-8">
@@ -109,11 +152,35 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           action={<Toggle checked={darkMode} onChange={toggleTheme} label="تبديل المظهر (ليلي/نهاري)" />}
         />
 
+        {/* Do Not Disturb Toggle */}
+        <SettingsItem 
+          icon={BellOff}
+          label="عدم الإزعاج"
+          description={getDNDStatusString()}
+          action={<Toggle checked={dndSettings.enabled} onChange={toggleDND} label="تفعيل وضع عدم الإزعاج" />}
+        />
+
+        {/* Duration Options */}
+        {dndSettings.enabled && (
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 mx-2 border border-gray-100 dark:border-gray-700 animate-fadeIn">
+                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-600 dark:text-gray-300">
+                    <Clock size={16} />
+                    <span>إيقاف التشغيل تلقائياً بعد:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <DurationButton label="يدوياً" active={dndSettings.endTime === null} onClick={() => setDNDDuration(null)} />
+                    <DurationButton label="30 دقيقة" active={false} onClick={() => setDNDDuration(30)} />
+                    <DurationButton label="ساعة" active={false} onClick={() => setDNDDuration(60)} />
+                    <DurationButton label="8 ساعات" active={false} onClick={() => setDNDDuration(480)} />
+                </div>
+            </div>
+        )}
+
         {/* Haptic Feedback Toggle */}
         <SettingsItem 
           icon={Smartphone}
           label="الاهتزاز"
-          description="تشغيل الاهتزاز عند التسبيح"
+          description={dndSettings.enabled ? "متوقف مؤقتاً بسبب وضع عدم الإزعاج" : "تشغيل الاهتزاز عند التسبيح"}
           action={<Toggle checked={hapticEnabled} onChange={toggleHaptic} label="تفعيل الاهتزاز" />}
         />
 
@@ -155,7 +222,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
 
       <div className="mt-12 text-center">
          <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
-           Nour App v1.1.0
+           Nour App v1.2.0
          </p>
       </div>
     </div>

@@ -21,8 +21,8 @@ const Tasbeeh: React.FC = () => {
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 150);
     
-    // Haptic feedback
-    if (storage.getHapticEnabled() && navigator.vibrate) {
+    // Haptic feedback (respects DND)
+    if (storage.shouldTriggerHaptics() && navigator.vibrate) {
        // Stronger vibration on milestones
        if (newCount % 33 === 0) {
          navigator.vibrate([50, 50, 50]);
@@ -38,11 +38,11 @@ const Tasbeeh: React.FC = () => {
       storage.saveTasbeehCount(0);
       setResetConfirm(false);
       // Success Haptic
-      if (storage.getHapticEnabled() && navigator.vibrate) navigator.vibrate(50);
+      if (storage.shouldTriggerHaptics() && navigator.vibrate) navigator.vibrate(50);
     } else {
       setResetConfirm(true);
       // Warning Haptic
-      if (storage.getHapticEnabled() && navigator.vibrate) navigator.vibrate(20);
+      if (storage.shouldTriggerHaptics() && navigator.vibrate) navigator.vibrate(20);
       
       // Auto dismiss after 3s
       setTimeout(() => setResetConfirm(false), 3000);

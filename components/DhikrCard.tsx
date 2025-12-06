@@ -59,8 +59,8 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
       setCount(newCount);
       storage.saveProgress(item.id, newCount);
       
-      // Vibration feedback (if enabled)
-      if (storage.getHapticEnabled() && navigator.vibrate) {
+      // Vibration feedback (respects DND and setting)
+      if (storage.shouldTriggerHaptics() && navigator.vibrate) {
          navigator.vibrate(10);
       }
       
@@ -70,7 +70,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
 
       // Completion Logic
       if (newCount >= currentTarget) {
-        if (storage.getHapticEnabled() && navigator.vibrate) {
+        if (storage.shouldTriggerHaptics() && navigator.vibrate) {
           navigator.vibrate([50, 50, 50]);
         }
         
@@ -103,7 +103,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
       storage.saveProgress(item.id, 0);
       setResetConfirm(false);
       // Haptic
-      if (storage.getHapticEnabled() && navigator.vibrate) navigator.vibrate(20);
+      if (storage.shouldTriggerHaptics() && navigator.vibrate) navigator.vibrate(20);
     } else {
       setResetConfirm(true);
       setTimeout(() => setResetConfirm(false), 3000);
