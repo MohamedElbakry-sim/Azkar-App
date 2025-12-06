@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Heart, Activity, Moon, Sun, ArrowRight, BarChart2, Settings, Clock } from 'lucide-react';
+import { Home, Heart, Activity, Moon, Sun, ArrowRight, BarChart2, Settings } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,7 +15,6 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
 
   const navItems = [
     { path: '/', icon: <Home size={22} />, label: 'الرئيسية' },
-    { path: '/prayer-times', icon: <Clock size={22} />, label: 'الصلاة' },
     { path: '/tasbeeh', icon: <Activity size={22} />, label: 'السبحة' },
     { path: '/stats', icon: <BarChart2 size={22} />, label: 'إحصائيات' },
     { path: '/favorites', icon: <Heart size={22} />, label: 'المفضلة' },
