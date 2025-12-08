@@ -122,71 +122,77 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto relative">
       <div className="text-center py-6 md:py-10">
         <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-serif">الأذكار التي تريد قراءتها الآن</h2>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative max-w-xl mx-auto mb-4">
-        <label htmlFor="search-input" className="sr-only">ابحث عن ذكر</label>
-        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400" />
-        </div>
-        <input
-          id="search-input"
-          type="text"
-          className="block w-full p-4 pr-11 text-base rounded-2xl border-none bg-white dark:bg-dark-surface shadow-sm focus:ring-2 focus:ring-primary-400 placeholder-gray-400 dark:text-white transition-shadow"
-          placeholder="ابحث عن ذكر، دعاء، أو كلمة..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onFocus={() => setIsSearchFocused(true)}
-          onBlur={() => {
-            // Delay hide to allow click on filter chips to register
-            setTimeout(() => setIsSearchFocused(false), 200);
-          }}
-        />
-        {searchQuery && (
-          <button 
-            onClick={() => setSearchQuery('')}
-            className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none focus:text-primary-500"
-            aria-label="مسح البحث"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        )}
-      </div>
+      {/* Sticky Search & Filters Section */}
+      <div className="sticky top-0 z-30 pt-2 pb-1 -mx-4 px-4 md:mx-0 md:px-0 bg-gray-50/95 dark:bg-dark-bg/95 backdrop-blur-md transition-all duration-300">
+        <div className="max-w-xl mx-auto">
+          {/* Search Bar */}
+          <div className="relative mb-3">
+            <label htmlFor="search-input" className="sr-only">ابحث عن ذكر</label>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              id="search-input"
+              type="text"
+              className="block w-full p-4 pr-11 text-base rounded-2xl border-none bg-white dark:bg-dark-surface shadow-sm focus:ring-2 focus:ring-primary-400 placeholder-gray-400 dark:text-white transition-shadow"
+              placeholder="ابحث عن ذكر، دعاء، أو كلمة..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => {
+                setTimeout(() => setIsSearchFocused(false), 200);
+              }}
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none focus:text-primary-500"
+                aria-label="مسح البحث"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
+          </div>
 
-      {/* Filter Chips - Only visible when interacting with search */}
-      <div 
-        className={`max-w-xl mx-auto transition-all duration-300 overflow-hidden ease-in-out ${showFilters ? 'max-h-20 opacity-100 mb-8' : 'max-h-0 opacity-0 mb-0'}`}
-      >
-        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar px-1">
-          <button
-            onClick={() => setActiveCategory(null)}
-            className={`
-              px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200
-              ${activeCategory === null 
-                ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20' 
-                : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-dark-border'}
-            `}
+          {/* Filter Chips - Scrollable */}
+          <div 
+            className={`transition-all duration-300 ease-in-out overflow-y-hidden ${showFilters ? 'max-h-20 opacity-100 mb-4' : 'max-h-0 opacity-0 mb-0'}`}
           >
-            الكل
-          </button>
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id === activeCategory ? null : cat.id)}
-              className={`
-                px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200
-                ${activeCategory === cat.id 
-                  ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20' 
-                  : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-dark-border'}
-              `}
-            >
-              {cat.title}
-            </button>
-          ))}
+            <div className="overflow-x-auto no-scrollbar pb-2 touch-pan-x">
+              <div className="flex gap-2 min-w-max px-1">
+                <button
+                  onClick={() => setActiveCategory(null)}
+                  className={`
+                    px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200
+                    ${activeCategory === null 
+                      ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20' 
+                      : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-dark-border'}
+                  `}
+                >
+                  الكل
+                </button>
+                {CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id === activeCategory ? null : cat.id)}
+                    className={`
+                      px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200
+                      ${activeCategory === cat.id 
+                        ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20' 
+                        : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-dark-border'}
+                    `}
+                  >
+                    {cat.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
