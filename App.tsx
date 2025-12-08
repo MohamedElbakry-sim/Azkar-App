@@ -1,15 +1,17 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
-import CategoryView from './pages/CategoryView';
-import Tasbeeh from './pages/Tasbeeh';
-import Favorites from './pages/Favorites';
-import Stats from './pages/Stats';
-import Settings from './pages/Settings';
-import PrayerTimes from './pages/PrayerTimes';
 import NotificationManager from './components/NotificationManager';
+import { Loader2 } from 'lucide-react';
+
+// Lazy load secondary pages to reduce initial bundle size
+const CategoryView = React.lazy(() => import('./pages/CategoryView'));
+const Tasbeeh = React.lazy(() => import('./pages/Tasbeeh'));
+const Favorites = React.lazy(() => import('./pages/Favorites'));
+const Stats = React.lazy(() => import('./pages/Stats'));
+const Settings = React.lazy(() => import('./pages/Settings'));
+const PrayerTimes = React.lazy(() => import('./pages/PrayerTimes'));
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(() => {
@@ -55,19 +57,27 @@ const App: React.FC = () => {
     localStorage.setItem('nour_theme', newMode ? 'dark' : 'light');
   };
 
+  const PageLoader = () => (
+    <div className="h-[80vh] flex flex-col items-center justify-center">
+      <Loader2 size={40} className="animate-spin text-primary-500 mb-4" />
+    </div>
+  );
+
   return (
     <Router>
       <NotificationManager />
       <Layout darkMode={darkMode} toggleTheme={toggleTheme}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/category/:id" element={<CategoryView />} />
-          <Route path="/prayers" element={<PrayerTimes />} />
-          <Route path="/tasbeeh" element={<Tasbeeh />} />
-          <Route path="/favorites" element={<Favorites />} />
-          <Route path="/stats" element={<Stats />} />
-          <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
-        </Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/category/:id" element={<CategoryView />} />
+            <Route path="/prayers" element={<PrayerTimes />} />
+            <Route path="/tasbeeh" element={<Tasbeeh />} />
+            <Route path="/favorites" element={<Favorites />} />
+            <Route path="/stats" element={<Stats />} />
+            <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
+          </Routes>
+        </Suspense>
       </Layout>
     </Router>
   );

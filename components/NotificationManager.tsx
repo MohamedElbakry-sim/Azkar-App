@@ -33,8 +33,10 @@ const NotificationManager: React.FC = () => {
       if (matchingReminders.length > 0 && 'Notification' in window && Notification.permission === 'granted') {
         matchingReminders.forEach(reminder => {
           try {
-            // Try to use Service Worker registration if available (better for mobile)
-            if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+            // FIX: Check for .controller to ensure a SW is actually active before waiting on .ready
+            // navigator.serviceWorker.ready is a Promise and is always truthy, which caused the previous logic to hang
+            // if no SW was registered.
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.ready.then(registration => {
                     registration.showNotification('تذكير من نور', {
                         body: reminder.label,
@@ -45,7 +47,7 @@ const NotificationManager: React.FC = () => {
                     });
                 });
             } else {
-                // Fallback to standard Notification API
+                // Fallback to standard Notification API (Works when app is open)
                 new Notification('تذكير من نور', {
                     body: reminder.label,
                     icon: '/pwa-192x192.png',

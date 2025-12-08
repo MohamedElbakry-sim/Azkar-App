@@ -4,7 +4,7 @@ import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { AZKAR_DATA, CATEGORIES } from '../data';
 import DhikrCard from '../components/DhikrCard';
 import * as storage from '../services/storage';
-import { CheckCircle, Home, BarChart3 } from 'lucide-react';
+import { CheckCircle, Home, BarChart3, Type } from 'lucide-react';
 
 const CategoryView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,12 +19,17 @@ const CategoryView: React.FC = () => {
   const [visibleIds, setVisibleIds] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Font Size Control State
+  const [fontSize, setFontSize] = useState<storage.FontSize>('medium');
+  const [showFontControls, setShowFontControls] = useState(false);
+
   // Get raw items immediately to determine skeleton count
   const items = AZKAR_DATA.filter(item => item.category === id);
 
   useEffect(() => {
     setIsLoading(true);
     setFavorites(storage.getFavorites());
+    setFontSize(storage.getFontSize());
     const allProgress = storage.getProgress();
     const today = storage.getTodayKey();
     const todayProgress = allProgress[today] || {};
@@ -78,6 +83,11 @@ const CategoryView: React.FC = () => {
     setCustomTargets(prev => ({ ...prev, [dhikrId]: newTarget }));
   };
 
+  const handleFontSizeChange = (size: storage.FontSize) => {
+    setFontSize(size);
+    storage.saveFontSize(size);
+  };
+
   if (!category) {
     return <Navigate to="/" />;
   }
@@ -116,7 +126,45 @@ const CategoryView: React.FC = () => {
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       {/* Category Header */}
-      <div className={`rounded-3xl p-8 text-center mb-8 shadow-sm ${themeClasses} animate-fadeIn relative overflow-hidden`}>
+      <div className={`rounded-3xl p-6 md:p-8 text-center mb-8 shadow-sm ${themeClasses} animate-fadeIn relative overflow-visible`}>
+        
+        {/* Font Size Toggle Button */}
+        <div className="absolute top-4 left-4 z-20">
+             <button 
+               onClick={() => setShowFontControls(!showFontControls)}
+               className="p-2 rounded-full bg-white/50 hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40 text-inherit transition-all shadow-sm backdrop-blur-sm"
+               title="تغيير حجم الخط"
+             >
+                <Type size={20} />
+             </button>
+             
+             {/* Dropdown Menu */}
+             {showFontControls && (
+                <div className="absolute top-full left-0 mt-2 bg-white dark:bg-dark-surface p-2 rounded-xl shadow-xl border border-gray-100 dark:border-dark-border min-w-[150px] animate-popIn z-30 flex flex-col gap-1">
+                   {(['small', 'medium', 'large', 'xlarge'] as storage.FontSize[]).map((size) => {
+                        const labels: Record<string, string> = { small: 'صغير', medium: 'متوسط', large: 'كبير', xlarge: 'ضخم' };
+                        return (
+                            <button
+                                key={size}
+                                onClick={() => {
+                                    handleFontSizeChange(size);
+                                    setShowFontControls(false);
+                                }}
+                                className={`
+                                    px-3 py-2 text-sm font-bold rounded-lg text-right transition-colors
+                                    ${fontSize === size 
+                                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' 
+                                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}
+                                `}
+                            >
+                                {labels[size]}
+                            </button>
+                        );
+                   })}
+                </div>
+             )}
+        </div>
+
         <h2 className="text-3xl font-bold mb-2 opacity-90">{category.title}</h2>
         <div className="flex justify-center items-center gap-2 text-base font-medium opacity-80">
            {remainingCount === 0 ? (
@@ -195,6 +243,7 @@ const CategoryView: React.FC = () => {
                     onToggleFavorite={handleToggleFavorite}
                     onComplete={handleComplete}
                     onTargetChange={handleTargetChange}
+                    fontSizeOverride={fontSize} // Pass controlled font size
                 />
                 </div>
             ))}

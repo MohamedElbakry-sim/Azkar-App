@@ -19,7 +19,8 @@ const Stats: React.FC = () => {
     const data: { [date: string]: number } = {};
     Object.keys(progress).forEach(date => {
       const dayData = progress[date];
-      const total = Object.values(dayData).reduce((a, b) => (b > 0 ? a + b : a), 0);
+      const values = Object.values(dayData) as number[];
+      const total = values.reduce((a, b) => (b > 0 ? a + b : a), 0);
       if (total > 0) {
         data[date] = total;
       }
@@ -128,7 +129,8 @@ const ContributionGraph: React.FC<{ data: { [date: string]: number }, progress: 
         const catCounts: { [key: string]: number } = {};
         
         Object.entries(dayData).forEach(([dhikrId, val]) => {
-            if (val <= 0) return; // Skip if 0 or skipped (-1)
+            const value = val as number;
+            if (value <= 0) return; // Skip if 0 or skipped (-1)
             
             const dhikr = AZKAR_DATA.find(d => d.id === parseInt(dhikrId));
             if (dhikr) {
@@ -136,7 +138,7 @@ const ContributionGraph: React.FC<{ data: { [date: string]: number }, progress: 
                 const cat = CATEGORIES.find(c => c.id === dhikr.category);
                 const title = cat ? cat.title : 'أخرى';
                 
-                catCounts[title] = (catCounts[title] || 0) + val;
+                catCounts[title] = (catCounts[title] || 0) + value;
             }
         });
 

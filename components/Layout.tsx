@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
-import { Home, Heart, Activity, Moon, Sun, ArrowRight, BarChart2, Settings, Clock } from 'lucide-react';
+import { Home, Heart, Activity, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, BookHeart } from 'lucide-react';
 import { CATEGORIES } from '../data';
+import Logo from './Logo';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -44,10 +45,10 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
       {!isCategoryView && (
         <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-white dark:bg-dark-surface border-l border-gray-100 dark:border-dark-border z-50 transition-colors shadow-sm">
           <div className="p-6 flex items-center gap-3 border-b border-gray-100 dark:border-dark-border">
-            <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary-600/30">
-              ن
+            <div className="bg-primary-50 dark:bg-primary-900/20 p-1.5 rounded-xl">
+               <Logo size={32} className="text-primary-600 dark:text-primary-500" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white tracking-tight">نور</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white tracking-tight font-serif">نور</h1>
           </div>
           
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -92,7 +93,10 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                 <ArrowRight size={24} />
               </button>
             )}
-            <h1 className="text-xl font-bold text-primary-700 dark:text-primary-400">نور</h1>
+            <div className="flex items-center gap-2">
+                <Logo size={28} className="text-primary-600 dark:text-primary-500" />
+                <h1 className="text-xl font-bold text-gray-800 dark:text-white font-serif mt-1">نور</h1>
+            </div>
           </div>
           
           <button 
@@ -137,14 +141,14 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) => `
-                    flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-[56px] focus:outline-none focus:ring-2 focus:ring-primary-500
+                    flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-[50px] focus:outline-none focus:ring-2 focus:ring-primary-500
                     ${isActive 
                       ? 'text-primary-700 dark:text-primary-400 scale-105 bg-primary-50 dark:bg-primary-900/10' 
                       : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}
                   `}
                 >
                   {item.icon}
-                  <span className="text-[10px] font-medium">{item.label}</span>
+                  <span className="text-[10px] font-medium whitespace-nowrap">{item.label}</span>
                 </NavLink>
               ))}
             </div>

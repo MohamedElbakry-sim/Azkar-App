@@ -27,3 +27,25 @@ export interface ProgressState {
     [dhikrId: number]: number; // current count
   };
 }
+
+// --- Daily Wisdom Types ---
+
+export interface QuranVerse {
+  text: string;
+  surah: string;
+  ayahNumber: number;
+  tafsir?: string; // or translation
+}
+
+export interface Hadith {
+  text: string;
+  source: string; // Book & Number
+  grade: string;
+  explanation?: string;
+}
+
+export interface DailyContent {
+  date: string; // YYYY-MM-DD
+  verse: QuranVerse;
+  hadith: Hadith;
+}

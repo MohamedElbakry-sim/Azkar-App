@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { CATEGORIES, AZKAR_DATA } from '../data';
 import { ChevronLeft, Search, X, AlertCircle } from 'lucide-react';
 import DhikrCard from '../components/DhikrCard';
+import DailyWisdom from '../components/DailyWisdom';
 import * as storage from '../services/storage';
 import { normalizeArabic } from '../utils';
 
@@ -226,6 +227,13 @@ const Home: React.FC = () => {
               </button>
             );
           })}
+        </div>
+      )}
+
+      {/* Daily Wisdom Widget (Only if no search and no specific category selected) */}
+      {!searchQuery && !activeCategory && (
+        <div className="max-w-2xl mx-auto mt-12 mb-8">
+            <DailyWisdom />
         </div>
       )}
     </div>

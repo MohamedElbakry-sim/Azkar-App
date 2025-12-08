@@ -4,6 +4,7 @@ import { Dhikr } from '../types';
 import { Heart, Repeat, Info, SkipForward, Settings, Copy, Share2, Check, Loader2 } from 'lucide-react';
 import * as storage from '../services/storage';
 import { getHighlightRegex } from '../utils';
+import Logo from './Logo';
 
 interface DhikrCardProps {
   item: Dhikr;
@@ -14,7 +15,8 @@ interface DhikrCardProps {
   onComplete?: (id: number) => void;
   onTargetChange?: (id: number, newTarget: number) => void;
   highlightQuery?: string;
-  readonly?: boolean; // New prop to make card static
+  readonly?: boolean;
+  fontSizeOverride?: storage.FontSize; // New prop for direct control
 }
 
 const DhikrCard: React.FC<DhikrCardProps> = ({ 
@@ -26,7 +28,8 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   onComplete,
   onTargetChange,
   highlightQuery,
-  readonly = false
+  readonly = false,
+  fontSizeOverride
 }) => {
   const [count, setCount] = useState(initialCount);
   const [showBenefit, setShowBenefit] = useState(false);
@@ -60,8 +63,16 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
 
   useEffect(() => {
     setCount(initialCount);
-    setFontSize(storage.getFontSize());
   }, [initialCount]);
+
+  // Update font size if override prop changes, otherwise read from storage
+  useEffect(() => {
+    if (fontSizeOverride) {
+      setFontSize(fontSizeOverride);
+    } else {
+      setFontSize(storage.getFontSize());
+    }
+  }, [fontSizeOverride]);
 
   const handleTap = () => {
     if (readonly || isEditing || isExiting) return; 
@@ -175,16 +186,17 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         }
 
         const canvas = await html2canvas(shareRef.current, {
-            scale: 2, // High quality
+            scale: 1.5, // Optimized scale (was 2) to reduce file size while maintaining good quality
             backgroundColor: null, 
             useCORS: true,
             logging: false,
         });
 
+        // Use JPEG with 0.85 quality for significant file size reduction compared to PNG
         canvas.toBlob(async (blob: Blob | null) => {
             if (!blob) return;
             
-            const file = new File([blob], 'dhikr-nour.png', { type: 'image/png' });
+            const file = new File([blob], 'dhikr-nour.jpg', { type: 'image/jpeg' });
             
             if (navigator.share) {
                 try {
@@ -199,12 +211,12 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             } else {
                 // Fallback: Download the image
                 const link = document.createElement('a');
-                link.download = 'dhikr-nour.png';
-                link.href = canvas.toDataURL('image/png');
+                link.download = 'dhikr-nour.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.85);
                 link.click();
             }
             setIsSharing(false);
-        }, 'image/png');
+        }, 'image/jpeg', 0.85);
 
     } catch (err) {
         console.error('Share failed', err);
@@ -301,11 +313,11 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             </div>
 
             {/* Footer Branding */}
-            <div className="mt-12 flex items-center gap-4 text-white/60">
-                <div className="w-12 h-12 rounded-lg bg-white text-[#15803d] flex items-center justify-center font-bold text-2xl">ن</div>
-                <div className="flex flex-col items-start">
-                    <span className="text-2xl font-bold tracking-wide">تطبيق نور</span>
-                    <span className="text-lg opacity-80">أذكار المسلم</span>
+            <div className="mt-12 flex items-center gap-4 text-white/80">
+                <Logo size={64} className="text-white" />
+                <div className="flex flex-col items-start gap-1">
+                    <span className="text-3xl font-bold font-serif tracking-wide">نور</span>
+                    <span className="text-xl opacity-80">أذكار المسلم</span>
                 </div>
             </div>
         </div>
@@ -421,7 +433,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                     {BASMALA}
                 </div>
             )}
-            <p className={`font-serif leading-[4] text-gray-800 dark:text-gray-100 mb-4 transition-all duration-300 ${getFontSizeClass()}`}>
+            <p className={`font-serif leading-[2.3] md:leading-[2.5] text-gray-800 dark:text-gray-100 mb-4 transition-all duration-300 ${getFontSizeClass()}`}>
               {renderHighlightedText(displayText, highlightQuery)}
             </p>
           </div>
