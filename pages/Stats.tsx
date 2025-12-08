@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Flame, CheckCircle, BarChart3 } from 'lucide-react';
 import * as storage from '../services/storage';
@@ -75,6 +76,8 @@ const Stats: React.FC = () => {
 };
 
 const ContributionGraph: React.FC<{ data: { [date: string]: number } }> = ({ data }) => {
+    const [tooltip, setTooltip] = useState<{ x: number; y: number; date: string; count: number } | null>(null);
+
     // Generate last 90 days for mobile friendliness
     const days = [];
     const today = new Date();
@@ -92,19 +95,45 @@ const ContributionGraph: React.FC<{ data: { [date: string]: number } }> = ({ dat
         return 'bg-primary-500 dark:bg-primary-500';
     };
 
+    const handleMouseEnter = (e: React.MouseEvent, date: Date, count: number) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const dateStr = new Intl.DateTimeFormat('ar-SA', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+        
+        setTooltip({
+            x: rect.left + rect.width / 2,
+            y: rect.top,
+            date: dateStr,
+            count
+        });
+    };
+
     return (
-        <div className="flex flex-wrap gap-1 md:gap-2 justify-center dir-ltr">
-            {days.map((date) => {
-                const key = date.toISOString().split('T')[0];
-                const count = data[key] || 0;
-                return (
-                    <div 
-                        key={key}
-                        title={`${key}: ${count}`}
-                        className={`w-3 h-3 md:w-5 md:h-5 rounded-sm ${getColor(count)} transition-colors hover:ring-2 ring-primary-300 cursor-help`}
-                    />
-                );
-            })}
+        <div className="relative w-full">
+            <div className="flex flex-wrap gap-1 md:gap-2 justify-center dir-ltr">
+                {days.map((date) => {
+                    const key = date.toISOString().split('T')[0];
+                    const count = data[key] || 0;
+                    return (
+                        <div 
+                            key={key}
+                            onMouseEnter={(e) => handleMouseEnter(e, date, count)}
+                            onMouseLeave={() => setTooltip(null)}
+                            className={`w-3 h-3 md:w-5 md:h-5 rounded-sm ${getColor(count)} transition-colors hover:ring-2 ring-primary-300 cursor-pointer`}
+                        />
+                    );
+                })}
+            </div>
+            
+            {tooltip && (
+                <div 
+                    className="fixed z-50 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
+                    style={{ left: tooltip.x, top: tooltip.y - 8 }}
+                >
+                     <div className="text-center font-bold mb-0.5">{tooltip.count} ذكر</div>
+                     <div className="text-gray-300 whitespace-nowrap">{tooltip.date}</div>
+                     <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></div>
+                </div>
+            )}
         </div>
     );
 };

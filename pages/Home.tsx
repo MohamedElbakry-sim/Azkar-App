@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CATEGORIES, AZKAR_DATA } from '../data';
-import { ChevronLeft, Sunrise, Sunset, Moon, Sun, BookHeart, Search, X, AlertCircle } from 'lucide-react';
+import { ChevronLeft, Search, X, AlertCircle } from 'lucide-react';
 import DhikrCard from '../components/DhikrCard';
 import * as storage from '../services/storage';
 import { normalizeArabic } from '../utils';
@@ -10,21 +10,31 @@ import { normalizeArabic } from '../utils';
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<number[]>(storage.getFavorites());
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  const getIcon = (name: string) => {
-    switch (name) {
-      case 'sunrise': return <Sunrise size={32} strokeWidth={1.5} />;
-      case 'sunset': return <Sunset size={32} strokeWidth={1.5} />;
-      case 'moon': return <Moon size={32} strokeWidth={1.5} />;
-      case 'sun': return <Sun size={32} strokeWidth={1.5} />;
-      case 'prayer': return <BookHeart size={32} strokeWidth={1.5} />;
-      default: return <Sun size={32} strokeWidth={1.5} />;
+  // Color Theme Mapping - Only for borders now as text is neutral
+  const getThemeClasses = (theme: string) => {
+    switch (theme) {
+      case 'orange':
+        return { border: 'border-orange-100 dark:border-orange-900/20' };
+      case 'indigo':
+        return { border: 'border-indigo-100 dark:border-indigo-900/20' };
+      case 'slate':
+        return { border: 'border-slate-100 dark:border-slate-800' };
+      case 'yellow':
+        return { border: 'border-yellow-100 dark:border-yellow-900/20' };
+      case 'emerald':
+        return { border: 'border-emerald-100 dark:border-emerald-900/20' };
+      default:
+        return { border: 'border-gray-100' };
     }
   };
 
   const filteredAzkar = searchQuery.trim().length > 0 
     ? AZKAR_DATA
+        .filter(item => activeCategory ? item.category === activeCategory : true)
         .map(item => {
            let score = 0;
            const normalizedQuery = normalizeArabic(searchQuery.toLowerCase());
@@ -40,7 +50,6 @@ const Home: React.FC = () => {
            const sourceMatches = queryWords.filter(w => normalizedSource.includes(w)).length;
 
            // STRICT MODE: All words must appear somewhere in the item (AND logic)
-           // This ensures relevance. If you type "Morning Prayer", you don't want everything with just "Morning".
            const isMatch = queryWords.every(w => 
              normalizedText.includes(w) || 
              normalizedBenefit.includes(w) || 
@@ -76,6 +85,13 @@ const Home: React.FC = () => {
     setFavorites(newFavs);
   };
 
+  const displayedCategories = activeCategory 
+    ? CATEGORIES.filter(c => c.id === activeCategory)
+    : CATEGORIES;
+
+  // Logic to show filters: if search is focused, or there is text, or a category is selected
+  const showFilters = isSearchFocused || searchQuery.length > 0 || activeCategory !== null;
+
   return (
     <div className="space-y-6 animate-fadeIn max-w-6xl mx-auto">
       <div className="text-center py-6 md:py-10">
@@ -84,7 +100,7 @@ const Home: React.FC = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="relative max-w-xl mx-auto mb-8">
+      <div className="relative max-w-xl mx-auto mb-4">
         <label htmlFor="search-input" className="sr-only">ابحث عن ذكر</label>
         <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
           <Search className="h-5 w-5 text-gray-400" />
@@ -92,10 +108,15 @@ const Home: React.FC = () => {
         <input
           id="search-input"
           type="text"
-          className="block w-full p-4 pr-11 text-base rounded-2xl border-none bg-white dark:bg-gray-800 shadow-sm focus:ring-2 focus:ring-primary-400 placeholder-gray-400 dark:text-white transition-shadow"
+          className="block w-full p-4 pr-11 text-base rounded-2xl border-none bg-white dark:bg-dark-surface shadow-sm focus:ring-2 focus:ring-primary-400 placeholder-gray-400 dark:text-white transition-shadow"
           placeholder="ابحث عن ذكر، دعاء، أو كلمة..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => setIsSearchFocused(true)}
+          onBlur={() => {
+            // Delay hide to allow click on filter chips to register
+            setTimeout(() => setIsSearchFocused(false), 200);
+          }}
         />
         {searchQuery && (
           <button 
@@ -106,6 +127,39 @@ const Home: React.FC = () => {
             <X className="h-5 w-5" />
           </button>
         )}
+      </div>
+
+      {/* Filter Chips - Only visible when interacting with search */}
+      <div 
+        className={`max-w-xl mx-auto transition-all duration-300 overflow-hidden ease-in-out ${showFilters ? 'max-h-20 opacity-100 mb-8' : 'max-h-0 opacity-0 mb-0'}`}
+      >
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar px-1">
+          <button
+            onClick={() => setActiveCategory(null)}
+            className={`
+              px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200
+              ${activeCategory === null 
+                ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20' 
+                : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-dark-border'}
+            `}
+          >
+            الكل
+          </button>
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id === activeCategory ? null : cat.id)}
+              className={`
+                px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200
+                ${activeCategory === cat.id 
+                  ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20' 
+                  : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-dark-border'}
+              `}
+            >
+              {cat.title}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Search Results or Categories */}
@@ -135,10 +189,11 @@ const Home: React.FC = () => {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center animate-fadeIn">
-              <div className="bg-gray-100 dark:bg-gray-800/50 p-6 rounded-full mb-4">
+              <div className="bg-gray-100 dark:bg-dark-surface p-6 rounded-full mb-4">
                  <AlertCircle size={48} className="text-gray-400" />
               </div>
               <p className="text-lg font-bold text-gray-600 dark:text-gray-300">لا توجد نتائج مطابقة لـ "{searchQuery}"</p>
+              {activeCategory && <p className="text-primary-500 mt-1 text-sm font-medium">في قسم: {CATEGORIES.find(c => c.id === activeCategory)?.title}</p>}
               <p className="text-gray-400 mt-2 text-sm">حاول البحث باستخدام كلمات مختلفة أو تأكد من الكتابة الصحيحة</p>
               <button 
                 onClick={() => setSearchQuery('')}
@@ -151,26 +206,26 @@ const Home: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => navigate(`/category/${cat.id}`)}
-              className={`
-                relative flex items-center p-4 md:p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500
-                ${cat.color} group
-              `}
-              aria-label={`قسم ${cat.title}. ${cat.description}`}
-            >
-              <div className="ml-4 p-3 bg-white/20 rounded-xl transition-transform group-hover:rotate-6">
-                {getIcon(cat.icon)}
-              </div>
-              <div className="flex-1 text-right">
-                <h3 className="text-lg md:text-xl font-bold mb-1">{cat.title}</h3>
-                <p className="text-sm md:text-base opacity-80">{cat.description}</p>
-              </div>
-              <ChevronLeft size={24} className="opacity-50 transition-transform group-hover:-translate-x-1" />
-            </button>
-          ))}
+          {displayedCategories.map((cat) => {
+            const themeClasses = getThemeClasses(cat.theme);
+            return (
+              <button
+                key={cat.id}
+                onClick={() => navigate(`/category/${cat.id}`)}
+                className={`
+                  relative flex items-center p-6 rounded-3xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md 
+                  bg-white dark:bg-dark-surface border ${themeClasses.border} group focus:outline-none focus:ring-2 focus:ring-primary-500
+                `}
+                aria-label={`قسم ${cat.title}`}
+              >
+                <div className="flex-1 text-right">
+                  {/* Updated Text Color to Neutral Black/White */}
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">{cat.title}</h3>
+                </div>
+                <ChevronLeft size={24} className="text-gray-300 dark:text-gray-600 transition-transform group-hover:-translate-x-1" />
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

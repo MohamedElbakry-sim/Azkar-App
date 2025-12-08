@@ -7,6 +7,9 @@ import Tasbeeh from './pages/Tasbeeh';
 import Favorites from './pages/Favorites';
 import Stats from './pages/Stats';
 import Settings from './pages/Settings';
+import PrayerTimes from './pages/PrayerTimes';
+import OnboardingModal from './components/OnboardingModal';
+import NotificationManager from './components/NotificationManager';
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(() => {
@@ -34,16 +37,19 @@ const App: React.FC = () => {
 
   return (
     <Router>
+      <NotificationManager />
       <Layout darkMode={darkMode} toggleTheme={toggleTheme}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/category/:id" element={<CategoryView />} />
+          <Route path="/prayers" element={<PrayerTimes />} />
           <Route path="/tasbeeh" element={<Tasbeeh />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/stats" element={<Stats />} />
           <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
         </Routes>
       </Layout>
+      <OnboardingModal />
     </Router>
   );
 };

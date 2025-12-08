@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { RotateCcw, Check } from 'lucide-react';
 import * as storage from '../services/storage';
@@ -23,10 +22,12 @@ const Tasbeeh: React.FC = () => {
     
     // Haptic feedback (respects DND)
     if (storage.shouldTriggerHaptics() && navigator.vibrate) {
-       // Stronger vibration on milestones
+       // Subtle haptic feedback on multiples of 33
        if (newCount % 33 === 0) {
-         navigator.vibrate([50, 50, 50]);
+         // Distinct but subtle vibration for milestones
+         navigator.vibrate(40);
        } else {
+         // Very light tick for normal counts
          navigator.vibrate(10);
        }
     }
@@ -61,13 +62,13 @@ const Tasbeeh: React.FC = () => {
       <button 
         onClick={increment}
         className={`
-          w-64 h-64 md:w-80 md:h-80 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 
-          shadow-[0_10px_40px_rgba(16,185,129,0.3)] dark:shadow-[0_10px_40px_rgba(16,185,129,0.15)]
+          w-64 h-64 md:w-80 md:h-80 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 
+          shadow-[0_10px_40px_rgba(34,197,94,0.3)] dark:shadow-[0_10px_40px_rgba(21,128,61,0.3)]
           flex items-center justify-center cursor-pointer 
-          border-8 border-white dark:border-gray-800 relative select-none
+          border-8 border-white dark:border-dark-surface relative select-none
           transition-all duration-150 ease-out outline-none focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800
-          active:scale-95 hover:shadow-[0_20px_60px_rgba(16,185,129,0.4)]
-          ${isAnimating ? 'scale-[1.02] shadow-[0_15px_50px_rgba(16,185,129,0.5)]' : 'scale-100'}
+          active:scale-95 hover:shadow-[0_20px_60px_rgba(34,197,94,0.4)]
+          ${isAnimating ? 'scale-[1.02] shadow-[0_15px_50px_rgba(34,197,94,0.5)]' : 'scale-100'}
         `}
         aria-label={`تسبحة. العدد الحالي: ${count}`}
         aria-live="polite"
@@ -90,7 +91,7 @@ const Tasbeeh: React.FC = () => {
             transition-all duration-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2
             ${resetConfirm 
               ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 scale-105 ring-2 ring-red-400' 
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 focus:ring-gray-400'}
+              : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:ring-gray-400'}
           `}
           title={resetConfirm ? "تأكيد التصفير" : "تصفير"}
           aria-label={resetConfirm ? "تأكيد تصفير العداد" : "تصفير العداد"}

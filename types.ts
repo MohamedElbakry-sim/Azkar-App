@@ -1,3 +1,4 @@
+
 export interface Dhikr {
   id: number;
   category: CategoryId;
@@ -17,7 +18,7 @@ export interface Category {
   title: string;
   icon: string;
   description: string;
-  color: string;
+  theme: string; // e.g., 'orange', 'blue'
 }
 
 export interface ProgressState {

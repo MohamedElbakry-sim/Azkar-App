@@ -9,12 +9,26 @@ const HAPTIC_KEY = 'nour_haptic_enabled';
 const SHOW_TRANSLATION_KEY = 'nour_show_translation';
 const SHOW_TRANSLITERATION_KEY = 'nour_show_transliteration';
 const DND_KEY = 'nour_dnd_settings';
+const TUTORIAL_KEY = 'nour_tutorial_seen_v1';
+const REMINDERS_KEY = 'nour_reminders_v1';
+const FONT_SIZE_KEY = 'nour_font_size_v1';
 
 // --- Do Not Disturb Types ---
 export interface DNDSettings {
   enabled: boolean;
   endTime: number | null; // Timestamp in ms. null means indefinite if enabled.
 }
+
+// --- Reminder Types ---
+export interface Reminder {
+  id: string;
+  label: string;
+  time: string; // 24h format "HH:mm"
+  enabled: boolean;
+}
+
+// --- Font Size Types ---
+export type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
 
 export const getFavorites = (): number[] => {
   try {
@@ -167,6 +181,53 @@ export const saveShowTransliteration = (enabled: boolean) => {
   localStorage.setItem(SHOW_TRANSLITERATION_KEY, String(enabled));
 };
 
+// --- Font Size Logic ---
+
+export const getFontSize = (): FontSize => {
+  try {
+    const stored = localStorage.getItem(FONT_SIZE_KEY);
+    return (stored as FontSize) || 'medium';
+  } catch {
+    return 'medium';
+  }
+};
+
+export const saveFontSize = (size: FontSize) => {
+  localStorage.setItem(FONT_SIZE_KEY, size);
+};
+
+// --- Reminders Logic ---
+
+export const getReminders = (): Reminder[] => {
+  try {
+    const stored = localStorage.getItem(REMINDERS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const saveReminders = (reminders: Reminder[]) => {
+  localStorage.setItem(REMINDERS_KEY, JSON.stringify(reminders));
+};
+
+export const addReminder = (reminder: Reminder) => {
+  const current = getReminders();
+  saveReminders([...current, reminder]);
+};
+
+export const updateReminder = (reminder: Reminder) => {
+  const current = getReminders();
+  const updated = current.map(r => r.id === reminder.id ? reminder : r);
+  saveReminders(updated);
+};
+
+export const deleteReminder = (id: string) => {
+  const current = getReminders();
+  const updated = current.filter(r => r.id !== id);
+  saveReminders(updated);
+};
+
 // --- Statistics Helpers ---
 
 export interface StatsData {
@@ -245,4 +306,17 @@ export const getHeatmapData = () => {
   });
   
   return data;
+};
+
+// --- Tutorial ---
+export const hasSeenTutorial = (): boolean => {
+  try {
+    return localStorage.getItem(TUTORIAL_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
+
+export const markTutorialAsSeen = () => {
+  localStorage.setItem(TUTORIAL_KEY, 'true');
 };
