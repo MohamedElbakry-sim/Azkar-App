@@ -41,23 +41,7 @@ const Logo: React.FC<LogoProps> = ({ className = "", size = 40, color = "current
         ريان
       </text>
 
-      {/* English Text: Subtitle style */}
-      {showEnglish && (
-        <text 
-          x="50%" 
-          y="85%" 
-          dominantBaseline="middle" 
-          textAnchor="middle" 
-          fontFamily="Cairo, sans-serif" 
-          fontWeight="600" 
-          fontSize="10" 
-          letterSpacing="0.4em"
-          fill={color}
-          opacity="0.8"
-        >
-          RAYYAN
-        </text>
-      )}
+      
     </svg>
   );
 };

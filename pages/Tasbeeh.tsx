@@ -53,12 +53,26 @@ const Tasbeeh: React.FC = () => {
           flex items-center justify-center cursor-pointer 
           border-8 border-white dark:border-dark-surface relative select-none
           transition-all duration-150 ease-out outline-none focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800
-          active:scale-95 hover:shadow-[0_20px_60px_rgba(26,188,156,0.5)]
+          active:scale-95 hover:shadow-[0_20px_60px_rgba(26,188,156,0.5)] overflow-hidden
           ${isAnimating ? 'scale-[1.02] shadow-[0_15px_50px_rgba(26,188,156,0.6)]' : 'scale-100'}
         `}
         aria-label={`تسبحة. العدد الحالي: ${count}`}
         aria-live="polite"
       >
+        {/* Subtle Islamic Pattern Background */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="islamic-geo" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M20 0 L40 20 L20 40 L0 20 Z" fill="none" stroke="white" strokeWidth="1"/>
+                        <circle cx="20" cy="20" r="3" fill="white" />
+                        <path d="M0 0 L10 10 M30 30 L40 40 M0 40 L10 30 M30 10 L40 0" stroke="white" strokeWidth="1" />
+                    </pattern>
+                </defs>
+                <rect x="0" y="0" width="100%" height="100%" fill="url(#islamic-geo)" />
+            </svg>
+        </div>
+
         {/* Subtle Ripple/Ring Effect */}
         <div className={`absolute inset-0 rounded-full border-4 border-white/20 pointer-events-none transition-all duration-300 ${isAnimating ? 'scale-110 opacity-0' : 'scale-100 opacity-100'}`}></div>
 
