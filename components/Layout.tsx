@@ -88,7 +88,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
         <header className="md:hidden sticky top-0 z-40 bg-white/90 dark:bg-dark-surface/90 backdrop-blur-md border-b border-gray-100 dark:border-dark-border px-4 py-3 flex items-center justify-between transition-colors shadow-sm">
           <div className="flex items-center gap-3">
             {!isHome && (
-              <button onClick={() => navigate(-1)} className="p-2 -mr-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full active:scale-95 transition-transform" aria-label="رجوع">
+              <button onClick={() => navigate('/')} className="p-2 -mr-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full active:scale-95 transition-transform" aria-label="رجوع">
                 <ArrowRight size={24} />
               </button>
             )}
@@ -114,12 +114,12 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
              {/* Back button for desktop sub-pages */}
              {!isHome && (
               <button 
-                onClick={() => navigate(-1)} 
+                onClick={() => navigate('/')} 
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-surface rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-                aria-label="رجوع للصفحة السابقة"
+                aria-label="رجوع للصفحة الرئيسية"
               >
                 <ArrowRight size={18} />
-                <span>رجوع</span>
+                <span>الرئيسية</span>
               </button>
             )}
         </header>

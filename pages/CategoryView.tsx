@@ -45,7 +45,19 @@ const CategoryView: React.FC = () => {
             })
             .map(i => i.id);
         
-        setVisibleIds(incompleteIds);
+        // Auto-Reset Logic: If category is fully completed (no incomplete items), 
+        // reset all progress for this category to 0 so the user can read again.
+        if (incompleteIds.length === 0 && items.length > 0) {
+             const resetProgressObj = { ...todayProgress };
+             items.forEach(item => {
+                 storage.saveProgress(item.id, 0);
+                 resetProgressObj[item.id] = 0;
+             });
+             setProgress(resetProgressObj);
+             setVisibleIds(items.map(i => i.id));
+        } else {
+             setVisibleIds(incompleteIds);
+        }
     }
     // Simulate a slight network/processing delay for smoother skeleton transition
     setTimeout(() => setIsLoading(false), 300);

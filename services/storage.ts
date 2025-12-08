@@ -1,14 +1,15 @@
 
+
 import { ProgressState } from '../types';
 
 const FAVORITES_KEY = 'nour_favorites_v1';
 const PROGRESS_KEY = 'nour_progress_v1';
 const TASBEEH_KEY = 'nour_tasbeeh_count';
 const CUSTOM_TARGETS_KEY = 'nour_custom_targets_v1';
-const TUTORIAL_KEY = 'nour_tutorial_seen_v1';
 const REMINDERS_KEY = 'nour_reminders_v1';
 const FONT_SIZE_KEY = 'nour_font_size_v1';
 const HIJRI_OFFSET_KEY = 'nour_hijri_offset_v1';
+const TUTORIAL_KEY = 'nour_tutorial_seen_v1';
 
 // --- Reminder Types ---
 export interface Reminder {
@@ -131,6 +132,20 @@ export const saveHijriOffset = (offset: number) => {
   localStorage.setItem(HIJRI_OFFSET_KEY, offset.toString());
 };
 
+// --- Tutorial Logic ---
+
+export const hasSeenTutorial = (): boolean => {
+  try {
+    return localStorage.getItem(TUTORIAL_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
+
+export const markTutorialAsSeen = () => {
+  localStorage.setItem(TUTORIAL_KEY, 'true');
+};
+
 // --- Reminders Logic ---
 
 export const getReminders = (): Reminder[] => {
@@ -241,17 +256,4 @@ export const getHeatmapData = () => {
   });
   
   return data;
-};
-
-// --- Tutorial ---
-export const hasSeenTutorial = (): boolean => {
-  try {
-    return localStorage.getItem(TUTORIAL_KEY) === 'true';
-  } catch {
-    return false;
-  }
-};
-
-export const markTutorialAsSeen = () => {
-  localStorage.setItem(TUTORIAL_KEY, 'true');
 };

@@ -1,16 +1,31 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Flame, CheckCircle, BarChart3 } from 'lucide-react';
 import * as storage from '../services/storage';
+import { AZKAR_DATA, CATEGORIES } from '../data';
+import { ProgressState } from '../types';
 
 const Stats: React.FC = () => {
   const [stats, setStats] = useState<storage.StatsData | null>(null);
-  const [heatmapData, setHeatmapData] = useState<{ [date: string]: number }>({});
+  const [progress, setProgress] = useState<ProgressState>({});
 
   useEffect(() => {
     setStats(storage.getStats());
-    setHeatmapData(storage.getHeatmapData());
+    setProgress(storage.getProgress());
   }, []);
+
+  // Derive simple heatmap data (date -> total count) for the graph visuals
+  const heatmapData = useMemo(() => {
+    const data: { [date: string]: number } = {};
+    Object.keys(progress).forEach(date => {
+      const dayData = progress[date];
+      const total = Object.values(dayData).reduce((a, b) => (b > 0 ? a + b : a), 0);
+      if (total > 0) {
+        data[date] = total;
+      }
+    });
+    return data;
+  }, [progress]);
 
   if (!stats) return <div className="p-10 text-center">جاري التحميل...</div>;
 
@@ -58,7 +73,7 @@ const Stats: React.FC = () => {
             <span className="text-xs md:text-sm font-normal text-gray-400">(آخر 3 أشهر)</span>
         </h3>
         
-        <ContributionGraph data={heatmapData} />
+        <ContributionGraph data={heatmapData} progress={progress} />
         
         <div className="flex items-center justify-end gap-2 mt-6 text-xs text-gray-400">
             <span>أقل</span>
@@ -75,8 +90,16 @@ const Stats: React.FC = () => {
   );
 };
 
-const ContributionGraph: React.FC<{ data: { [date: string]: number } }> = ({ data }) => {
-    const [tooltip, setTooltip] = useState<{ x: number; y: number; date: string; count: number } | null>(null);
+interface TooltipData {
+  x: number;
+  y: number;
+  date: string;
+  count: number;
+  categories: { title: string; count: number }[];
+}
+
+const ContributionGraph: React.FC<{ data: { [date: string]: number }, progress: ProgressState }> = ({ data, progress }) => {
+    const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
     // Generate last 90 days for mobile friendliness
     const days = [];
@@ -97,13 +120,36 @@ const ContributionGraph: React.FC<{ data: { [date: string]: number } }> = ({ dat
 
     const handleMouseEnter = (e: React.MouseEvent, date: Date, count: number) => {
         const rect = e.currentTarget.getBoundingClientRect();
+        const dateKey = date.toISOString().split('T')[0];
         const dateStr = new Intl.DateTimeFormat('ar-SA', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
         
+        // Calculate Category Breakdown
+        const dayData = progress[dateKey] || {};
+        const catCounts: { [key: string]: number } = {};
+        
+        Object.entries(dayData).forEach(([dhikrId, val]) => {
+            if (val <= 0) return; // Skip if 0 or skipped (-1)
+            
+            const dhikr = AZKAR_DATA.find(d => d.id === parseInt(dhikrId));
+            if (dhikr) {
+                // Determine category title
+                const cat = CATEGORIES.find(c => c.id === dhikr.category);
+                const title = cat ? cat.title : 'أخرى';
+                
+                catCounts[title] = (catCounts[title] || 0) + val;
+            }
+        });
+
+        const sortedCategories = Object.entries(catCounts)
+            .map(([title, count]) => ({ title, count }))
+            .sort((a, b) => b.count - a.count);
+
         setTooltip({
             x: rect.left + rect.width / 2,
             y: rect.top,
             date: dateStr,
-            count
+            count,
+            categories: sortedCategories
         });
     };
 
@@ -126,12 +172,26 @@ const ContributionGraph: React.FC<{ data: { [date: string]: number } }> = ({ dat
             
             {tooltip && (
                 <div 
-                    className="fixed z-50 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
+                    className="fixed z-50 px-3 py-2 bg-gray-800/95 backdrop-blur-sm text-white text-xs rounded-lg shadow-xl pointer-events-none transform -translate-x-1/2 -translate-y-full border border-gray-700 min-w-[120px]"
                     style={{ left: tooltip.x, top: tooltip.y - 8 }}
                 >
-                     <div className="text-center font-bold mb-0.5">{tooltip.count} ذكر</div>
-                     <div className="text-gray-300 whitespace-nowrap">{tooltip.date}</div>
-                     <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></div>
+                     <div className="text-center font-bold mb-1 text-sm">{tooltip.count} <span className="text-primary-300 text-[10px]">ذكر</span></div>
+                     <div className="text-gray-400 text-center whitespace-nowrap mb-2 border-b border-gray-700 pb-1">{tooltip.date}</div>
+                     
+                     {tooltip.categories.length > 0 ? (
+                        <div className="space-y-1 text-right">
+                            {tooltip.categories.map((cat, i) => (
+                                <div key={i} className="flex justify-between gap-4">
+                                    <span className="text-gray-300">{cat.title}</span>
+                                    <span className="font-mono text-primary-400 font-bold">{cat.count}</span>
+                                </div>
+                            ))}
+                        </div>
+                     ) : (
+                         tooltip.count > 0 && <div className="text-center text-gray-500">تفاصيل غير متوفرة</div>
+                     )}
+
+                     <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-gray-800/95"></div>
                 </div>
             )}
         </div>

@@ -13,7 +13,8 @@ interface DhikrCardProps {
   onToggleFavorite: (id: number) => void;
   onComplete?: (id: number) => void;
   onTargetChange?: (id: number, newTarget: number) => void;
-  highlightQuery?: string; // New prop for search highlighting
+  highlightQuery?: string;
+  readonly?: boolean; // New prop to make card static
 }
 
 const DhikrCard: React.FC<DhikrCardProps> = ({ 
@@ -24,7 +25,8 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   onToggleFavorite, 
   onComplete,
   onTargetChange,
-  highlightQuery
+  highlightQuery,
+  readonly = false
 }) => {
   const [count, setCount] = useState(initialCount);
   const [showBenefit, setShowBenefit] = useState(false);
@@ -46,6 +48,13 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   const cardRef = useRef<HTMLDivElement>(null);
   const shareRef = useRef<HTMLDivElement>(null);
 
+  // Basmala Constant
+  const BASMALA = "بِسْمِ اللهِ الرَّحْمنِ الرَّحِيم";
+  const hasBasmala = item.text.startsWith(BASMALA);
+  
+  // Process text to remove Basmala if present for display
+  const displayText = hasBasmala ? item.text.substring(BASMALA.length).trim() : item.text;
+
   // Use the prop target count or default to item.count
   const currentTarget = propTargetCount || item.count;
 
@@ -55,7 +64,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   }, [initialCount]);
 
   const handleTap = () => {
-    if (isEditing || isExiting) return; 
+    if (readonly || isEditing || isExiting) return; 
 
     if (count < currentTarget) {
       const newCount = count + 1;
@@ -81,7 +90,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (isEditing) return;
+    if (readonly || isEditing) return;
     // Allow 'Enter' or 'Space' to trigger tap if focus is on the card
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -239,14 +248,15 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
       ref={cardRef}
       onClick={handleTap}
       onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
-      aria-label={`${item.text} - ${count} من ${currentTarget}`}
+      role={readonly ? "article" : "button"}
+      tabIndex={readonly ? -1 : 0}
+      aria-label={readonly ? item.text : `${item.text} - ${count} من ${currentTarget}`}
       className={`
         relative overflow-hidden bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border 
-        transition-all duration-500 ease-in-out cursor-pointer active:scale-[0.99] outline-none focus:ring-2 focus:ring-primary-500
+        transition-all duration-500 ease-in-out outline-none focus:ring-2 focus:ring-primary-500
         ${isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}
         ${isEditing ? 'ring-2 ring-primary-400' : ''}
+        ${!readonly ? 'cursor-pointer active:scale-[0.99]' : ''}
       `}
     >
       {/* Hidden Aesthetic Template for Image Generation */}
@@ -271,9 +281,16 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                 )}
                 
                 {/* Main Text */}
-                <p className="text-white font-serif text-5xl leading-relaxed max-w-4xl drop-shadow-md" dir="rtl">
-                    {item.text}
-                </p>
+                <div className="max-w-4xl">
+                   {hasBasmala && (
+                        <div className="text-primary-200 font-serif text-4xl mb-6 opacity-90 drop-shadow-sm">
+                            {BASMALA}
+                        </div>
+                    )}
+                    <p className="text-white font-serif text-5xl leading-[4] drop-shadow-md" dir="rtl">
+                        {displayText}
+                    </p>
+                </div>
 
                 {/* Benefit if short */}
                 {item.benefit && item.benefit.length < 100 && (
@@ -294,12 +311,14 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         </div>
       </div>
 
-      {/* Progress Bar Background */}
-      <div 
-        className="absolute bottom-0 right-0 h-1.5 bg-primary-500 transition-all duration-300 ease-out"
-        style={{ width: `${progressPercent}%` }}
-        aria-hidden="true"
-      />
+      {/* Progress Bar Background (Hidden in Readonly) */}
+      {!readonly && (
+        <div 
+            className="absolute bottom-0 right-0 h-1.5 bg-primary-500 transition-all duration-300 ease-out"
+            style={{ width: `${progressPercent}%` }}
+            aria-hidden="true"
+        />
+      )}
 
       <div className="p-5 md:p-6 relative z-10">
         {/* Header: Icons */}
@@ -345,14 +364,16 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
               </button>
             )}
             
-            <button 
-              onClick={startEditing}
-              className="p-2 rounded-full text-gray-400 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              title="تعديل العدد"
-              aria-label="تعديل عدد التكرار"
-            >
-              <Settings size={20} />
-            </button>
+            {!readonly && (
+                <button 
+                onClick={startEditing}
+                className="p-2 rounded-full text-gray-400 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                title="تعديل العدد"
+                aria-label="تعديل عدد التكرار"
+                >
+                <Settings size={20} />
+                </button>
+            )}
           </div>
           
           <div className="flex items-center gap-2">
@@ -395,8 +416,13 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         ) : (
           /* Text Content */
           <div className={`mb-6 text-center select-none transition-transform ${animate ? 'scale-[1.01]' : 'scale-100'}`}>
-            <p className={`font-serif leading-loose text-gray-800 dark:text-gray-100 mb-4 transition-all duration-300 ${getFontSizeClass()}`}>
-              {renderHighlightedText(item.text, highlightQuery)}
+            {hasBasmala && (
+                <div className={`font-serif text-center text-primary-600 dark:text-primary-400 mb-2 opacity-90 ${getFontSizeClass()}`}>
+                    {BASMALA}
+                </div>
+            )}
+            <p className={`font-serif leading-[4] text-gray-800 dark:text-gray-100 mb-4 transition-all duration-300 ${getFontSizeClass()}`}>
+              {renderHighlightedText(displayText, highlightQuery)}
             </p>
           </div>
         )}
@@ -408,8 +434,8 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
            </div>
         )}
 
-        {/* Footer: Counter */}
-        {!isEditing && (
+        {/* Footer: Counter (Hidden in Readonly) */}
+        {!readonly && !isEditing && (
           <div className="flex justify-between items-center border-t border-gray-100 dark:border-dark-border pt-4 mt-2">
             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400" aria-live="polite">
                <Repeat size={16} />

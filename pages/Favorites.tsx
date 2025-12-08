@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AZKAR_DATA } from '../data';
 import DhikrCard from '../components/DhikrCard';
@@ -40,6 +41,7 @@ const Favorites: React.FC = () => {
               isFavorite={true}
               initialCount={progress[item.id] || 0}
               onToggleFavorite={handleToggleFavorite}
+              readonly={true}
             />
           ))}
         </div>

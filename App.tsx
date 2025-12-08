@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -8,7 +9,6 @@ import Favorites from './pages/Favorites';
 import Stats from './pages/Stats';
 import Settings from './pages/Settings';
 import PrayerTimes from './pages/PrayerTimes';
-import OnboardingModal from './components/OnboardingModal';
 import NotificationManager from './components/NotificationManager';
 
 const App: React.FC = () => {
@@ -69,7 +69,6 @@ const App: React.FC = () => {
           <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
         </Routes>
       </Layout>
-      <OnboardingModal />
     </Router>
   );
 };
