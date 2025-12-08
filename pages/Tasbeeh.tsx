@@ -43,17 +43,18 @@ const Tasbeeh: React.FC = () => {
         <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base">اضغط في أي مكان للعد</p>
       </div>
 
-      {/* Main Counter Display */}
+      {/* Main Counter Display with Primary Gradient */}
       <button 
         onClick={increment}
         className={`
-          w-64 h-64 md:w-80 md:h-80 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 
-          shadow-[0_10px_40px_rgba(34,197,94,0.3)] dark:shadow-[0_10px_40px_rgba(21,128,61,0.3)]
+          w-64 h-64 md:w-80 md:h-80 rounded-full 
+          bg-gradient-to-br from-[#2ECC71] via-[#1ABC9C] to-[#16A085]
+          shadow-[0_10px_40px_rgba(26,188,156,0.4)] dark:shadow-[0_10px_40px_rgba(22,160,133,0.4)]
           flex items-center justify-center cursor-pointer 
           border-8 border-white dark:border-dark-surface relative select-none
           transition-all duration-150 ease-out outline-none focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800
-          active:scale-95 hover:shadow-[0_20px_60px_rgba(34,197,94,0.4)]
-          ${isAnimating ? 'scale-[1.02] shadow-[0_15px_50px_rgba(34,197,94,0.5)]' : 'scale-100'}
+          active:scale-95 hover:shadow-[0_20px_60px_rgba(26,188,156,0.5)]
+          ${isAnimating ? 'scale-[1.02] shadow-[0_15px_50px_rgba(26,188,156,0.6)]' : 'scale-100'}
         `}
         aria-label={`تسبحة. العدد الحالي: ${count}`}
         aria-live="polite"
@@ -62,8 +63,8 @@ const Tasbeeh: React.FC = () => {
         <div className={`absolute inset-0 rounded-full border-4 border-white/20 pointer-events-none transition-all duration-300 ${isAnimating ? 'scale-110 opacity-0' : 'scale-100 opacity-100'}`}></div>
 
         <div className="text-center text-white relative z-10">
-           <span className="block text-7xl md:text-8xl font-bold font-mono tracking-wider">{count}</span>
-           <span className="text-primary-100 text-sm md:text-base mt-2 md:mt-4 block">تسبيحة</span>
+           <span className="block text-7xl md:text-8xl font-bold font-mono tracking-wider drop-shadow-sm">{count}</span>
+           <span className="text-primary-50 text-sm md:text-base mt-2 md:mt-4 block font-medium">تسبيحة</span>
         </div>
       </button>
 
@@ -75,8 +76,8 @@ const Tasbeeh: React.FC = () => {
             flex flex-col items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl 
             transition-all duration-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2
             ${resetConfirm 
-              ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 scale-105 ring-2 ring-red-400' 
-              : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:ring-gray-400'}
+              ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 scale-105 ring-2 ring-red-400 border border-red-200' 
+              : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:ring-gray-400 border border-gray-100 dark:border-dark-border'}
           `}
           title={resetConfirm ? "تأكيد التصفير" : "تصفير"}
           aria-label={resetConfirm ? "تأكيد تصفير العداد" : "تصفير العداد"}

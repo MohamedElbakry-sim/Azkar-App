@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Dhikr } from '../types';
-import { Heart, Repeat, Info, SkipForward, Settings, Copy, Share2, Check, Loader2 } from 'lucide-react';
+import { Heart, Repeat, Info, SkipForward, Copy, Share2, Check, Loader2, Edit3, Trash2 } from 'lucide-react';
 import * as storage from '../services/storage';
 import { getHighlightRegex } from '../utils';
 import Logo from './Logo';
@@ -13,10 +13,11 @@ interface DhikrCardProps {
   targetCount?: number;
   onToggleFavorite: (id: number) => void;
   onComplete?: (id: number) => void;
-  onTargetChange?: (id: number, newTarget: number) => void;
+  onEdit?: (item: Dhikr) => void;
+  onDelete?: (id: number) => void;
   highlightQuery?: string;
   readonly?: boolean;
-  fontSizeOverride?: storage.FontSize; // New prop for direct control
+  fontSizeOverride?: storage.FontSize;
 }
 
 const DhikrCard: React.FC<DhikrCardProps> = ({ 
@@ -26,7 +27,8 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   targetCount: propTargetCount, 
   onToggleFavorite, 
   onComplete,
-  onTargetChange,
+  onEdit,
+  onDelete,
   highlightQuery,
   readonly = false,
   fontSizeOverride
@@ -36,13 +38,10 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   const [animate, setAnimate] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   
   // Settings state
   const [fontSize, setFontSize] = useState<storage.FontSize>('medium');
-
-  // Edit mode state
-  const [isEditing, setIsEditing] = useState(false);
-  const [targetInput, setTargetInput] = useState<string>("");
 
   // Copy/Share State
   const [isCopied, setIsCopied] = useState(false);
@@ -76,7 +75,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
 
 
   const handleTap = () => {
-    if (readonly || isEditing || isExiting) return; 
+    if (readonly || isExiting) return; 
 
     if (count < currentTarget) {
       const newCount = count + 1;
@@ -105,7 +104,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (readonly || isEditing) return;
+    if (readonly) return;
     // Allow 'Enter' or 'Space' to trigger tap if focus is on the card
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -132,36 +131,6 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
     setTimeout(() => {
       if (onComplete) onComplete(item.id);
     }, 800);
-  };
-
-  const startEditing = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setTargetInput(currentTarget.toString());
-    setIsEditing(true);
-  };
-
-  const saveEditing = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const newTarget = parseInt(targetInput, 10);
-    if (!isNaN(newTarget) && newTarget > 0) {
-      if (onTargetChange) {
-        onTargetChange(item.id, newTarget);
-        
-        // If the new target is less than or equal to current count, trigger complete
-        if (count >= newTarget) {
-           setTimeout(() => {
-            setIsExiting(true);
-            if (onComplete) setTimeout(() => onComplete(item.id), 500);
-           }, 300);
-        }
-      }
-    }
-    setIsEditing(false);
-  };
-
-  const cancelEditing = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsEditing(false);
   };
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -200,13 +169,13 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         canvas.toBlob(async (blob: Blob | null) => {
             if (!blob) return;
             
-            const file = new File([blob], 'dhikr-nour.jpg', { type: 'image/jpeg' });
+            const file = new File([blob], 'dhikr-rayyan.jpg', { type: 'image/jpeg' });
             
             if (navigator.share) {
                 try {
                     await navigator.share({
                         files: [file],
-                        title: 'نور - ذكر',
+                        title: 'ريان - ذكر',
                     });
                 } catch (shareError) {
                     // User likely cancelled share, do nothing
@@ -215,7 +184,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             } else {
                 // Fallback: Download the image
                 const link = document.createElement('a');
-                link.download = 'dhikr-nour.jpg';
+                link.download = 'dhikr-rayyan.jpg';
                 link.href = canvas.toDataURL('image/jpeg', 0.95);
                 link.click();
             }
@@ -225,6 +194,30 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
     } catch (err) {
         console.error('Share failed', err);
         setIsSharing(false);
+    }
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onEdit) onEdit(item);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onDelete) return;
+
+    if (deleteConfirm) {
+        // Trigger exit animation first for smooth deletion
+        setIsExiting(true);
+        // Wait for animation to finish then delete
+        setTimeout(() => {
+            onDelete(item.id);
+            setDeleteConfirm(false); // Reset state
+        }, 500);
+    } else {
+        setDeleteConfirm(true);
+        // Auto-dismiss confirmation after 3 seconds
+        setTimeout(() => setDeleteConfirm(false), 3000);
     }
   };
 
@@ -271,7 +264,6 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         relative overflow-hidden bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border 
         transition-all duration-500 ease-in-out outline-none focus:ring-2 focus:ring-primary-500
         ${isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}
-        ${isEditing ? 'ring-2 ring-primary-400' : ''}
         ${!readonly ? 'cursor-pointer active:scale-[0.99]' : ''}
       `}
     >
@@ -319,9 +311,8 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             {/* Footer Branding - Bottom Right */}
             <div className="absolute bottom-12 right-12" dir="rtl">
                 <div className="flex items-center gap-5 bg-black/20 backdrop-blur-xl px-10 py-5 rounded-full border border-white/10 shadow-2xl">
-                    <Logo size={72} className="text-white drop-shadow-md" />
+                    <Logo size={100} className="text-white drop-shadow-md" />
                     <div className="flex flex-col gap-1 text-right">
-                        <span className="text-white text-3xl font-bold font-serif leading-none tracking-wide drop-shadow-md">نور</span>
                         <span className="text-white/90 text-xl font-medium leading-none drop-shadow-sm">رفيقك اليومي في الذكر</span>
                     </div>
                 </div>
@@ -329,10 +320,10 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         </div>
       </div>
 
-      {/* Progress Bar Background (Hidden in Readonly) */}
+      {/* Progress Bar Background with Gradient */}
       {!readonly && (
         <div 
-            className="absolute bottom-0 right-0 h-1.5 bg-primary-500 transition-all duration-300 ease-out"
+            className="absolute bottom-0 right-0 h-1.5 bg-gradient-to-r from-[#2ECC71] to-[#16A085] transition-all duration-300 ease-out"
             style={{ width: `${progressPercent}%` }}
             aria-hidden="true"
         />
@@ -344,7 +335,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
           <div className="flex gap-2">
              <button 
               onClick={(e) => { e.stopPropagation(); onToggleFavorite(item.id); }}
-              className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
+              className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg'} `}
               aria-label={isFavorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
             >
               <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
@@ -382,14 +373,29 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
               </button>
             )}
             
-            {!readonly && (
+            {/* Full Edit / Custom Edit */}
+            {onEdit && (
                 <button 
-                onClick={startEditing}
-                className="p-2 rounded-full text-gray-400 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                title="تعديل العدد"
-                aria-label="تعديل عدد التكرار"
+                onClick={handleEditClick}
+                className="p-2 rounded-full text-gray-400 hover:text-amber-500 hover:bg-gray-100 dark:hover:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+                title="تعديل الذكر"
                 >
-                <Settings size={20} />
+                <Edit3 size={20} />
+                </button>
+            )}
+
+            {/* Delete / Revert with Inline Confirmation */}
+            {onDelete && (
+                <button 
+                onClick={handleDeleteClick}
+                className={`p-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${deleteConfirm ? 'bg-red-50 text-red-600 px-3 w-auto' : 'text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'}`}
+                title="حذف/استعادة"
+                >
+                {deleteConfirm ? (
+                    <span className="text-xs font-bold whitespace-nowrap">تأكيد الحذف؟</span>
+                ) : (
+                    <Trash2 size={20} />
+                )}
                 </button>
             )}
           </div>
@@ -401,49 +407,17 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
           </div>
         </div>
 
-        {/* Edit Mode UI */}
-        {isEditing ? (
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-dark-bg/50 rounded-xl flex flex-col items-center gap-3 animate-fadeIn cursor-default" onClick={(e) => e.stopPropagation()}>
-            <label htmlFor={`target-input-${item.id}`} className="text-sm font-bold text-gray-600 dark:text-gray-300">عدد التكرار المطلوب:</label>
-            <div className="flex items-center gap-2 w-full max-w-[200px]">
-               <input 
-                  id={`target-input-${item.id}`}
-                  type="number" 
-                  min="1"
-                  value={targetInput}
-                  onChange={(e) => setTargetInput(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-dark-border dark:bg-dark-bg text-center text-lg font-bold focus:ring-2 focus:ring-primary-500 outline-none dark:text-white"
-                  autoFocus
-               />
-            </div>
-            <div className="flex gap-2 w-full max-w-[200px]">
-               <button 
-                 onClick={cancelEditing}
-                 className="flex-1 py-2 rounded-lg bg-gray-200 dark:bg-dark-border text-gray-700 dark:text-gray-300 text-sm font-bold hover:bg-gray-300 dark:hover:bg-gray-600"
-               >
-                 إلغاء
-               </button>
-               <button 
-                 onClick={saveEditing}
-                 className="flex-1 py-2 rounded-lg bg-primary-500 text-white text-sm font-bold hover:bg-primary-600"
-               >
-                 حفظ
-               </button>
-            </div>
-          </div>
-        ) : (
-          /* Text Content */
-          <div className={`mb-6 text-center select-none transition-transform ${animate ? 'scale-[1.01]' : 'scale-100'}`}>
+        {/* Text Content */}
+        <div className={`mb-6 text-center select-none transition-transform ${animate ? 'scale-[1.01]' : 'scale-100'}`}>
             {hasBasmala && (
                 <div className={`font-serif text-center text-primary-600 dark:text-primary-400 mb-2 opacity-90 ${getFontSizeClass()}`}>
                     {BASMALA}
                 </div>
             )}
             <p className={`font-serif leading-[2.3] md:leading-[2.5] text-gray-800 dark:text-gray-100 mb-4 transition-all duration-300 ${getFontSizeClass()}`}>
-              {renderHighlightedText(displayText, highlightQuery)}
+                {renderHighlightedText(displayText, highlightQuery)}
             </p>
-          </div>
-        )}
+        </div>
 
         {/* Benefit Toggle */}
         {showBenefit && item.benefit && (
@@ -453,7 +427,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         )}
 
         {/* Footer: Counter (Hidden in Readonly) */}
-        {!readonly && !isEditing && (
+        {!readonly && (
           <div className="flex justify-between items-center border-t border-gray-100 dark:border-dark-border pt-4 mt-2">
             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400" aria-live="polite">
                <Repeat size={16} />

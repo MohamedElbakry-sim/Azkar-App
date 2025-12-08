@@ -5,36 +5,59 @@ interface LogoProps {
   className?: string;
   size?: number;
   color?: string;
+  showEnglish?: boolean;
 }
 
-const Logo: React.FC<LogoProps> = ({ className = "", size = 32, color = "currentColor" }) => {
+const Logo: React.FC<LogoProps> = ({ className = "", size = 40, color = "currentColor", showEnglish = true }) => {
   return (
     <svg 
-      width={size} 
+      width={size * (showEnglish ? 2.5 : 1.5)} 
       height={size} 
-      viewBox="0 0 100 100" 
+      viewBox={showEnglish ? "0 0 160 60" : "0 0 100 60"}
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      aria-label="شعار تطبيق نور"
+      aria-label="شعار ريان"
     >
-      {/* Outer Glow/Sun Shape (Optional based on variant, kept subtle here) */}
-      <circle cx="50" cy="50" r="48" stroke={color} strokeWidth="4" strokeOpacity="0.1" />
+      <defs>
+        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#2ECC71" />
+          <stop offset="100%" stopColor="#16A085" />
+        </linearGradient>
+      </defs>
       
-      {/* The Bowl of the 'Noon' (Crescent-like) */}
-      <path 
-        d="M75 45C75 64.33 59.33 80 40 80C26.1929 80 15 68.8071 15 55C15 45 22 35 28 30" 
-        stroke={color} 
-        strokeWidth="10" 
-        strokeLinecap="round" 
-        strokeLinejoin="round"
-      />
-      
-      {/* The Dot (Nuqta) - Stylized as a star/diamond */}
-      <path 
-        d="M50 35L54 42L62 42L56 48L58 56L50 51L42 56L44 48L38 42L46 42L50 35Z" 
-        fill={color} 
-      />
+      {/* Arabic Text: Main Focus */}
+      <text 
+        x="50%" 
+        y={showEnglish ? "45%" : "55%"} 
+        dominantBaseline="middle" 
+        textAnchor="middle" 
+        fontFamily="Amiri, serif" 
+        fontWeight="700" 
+        fontSize="42" 
+        fill={color === 'currentColor' ? color : "url(#logoGradient)"}
+        style={{ filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.05))' }}
+      >
+        ريان
+      </text>
+
+      {/* English Text: Subtitle style */}
+      {showEnglish && (
+        <text 
+          x="50%" 
+          y="85%" 
+          dominantBaseline="middle" 
+          textAnchor="middle" 
+          fontFamily="Cairo, sans-serif" 
+          fontWeight="600" 
+          fontSize="10" 
+          letterSpacing="0.4em"
+          fill={color}
+          opacity="0.8"
+        >
+          RAYYAN
+        </text>
+      )}
     </svg>
   );
 };

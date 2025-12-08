@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus } from 'lucide-react';
+import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate } from 'lucide-react';
 import * as storage from '../services/storage';
 
 interface SettingsProps {
@@ -18,10 +18,17 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   const [newReminderTime, setNewReminderTime] = useState('');
   const [newReminderLabel, setNewReminderLabel] = useState('');
 
+  // Notification Settings State
+  const [notifSettings, setNotifSettings] = useState<storage.NotificationSettings>({
+    soundEnabled: true,
+    vibrationType: 'default'
+  });
+
   useEffect(() => {
     setFontSize(storage.getFontSize());
     setReminders(storage.getReminders());
     setHijriOffset(storage.getHijriOffset());
+    setNotifSettings(storage.getNotificationSettings());
   }, []);
 
   const changeFontSize = (size: storage.FontSize) => {
@@ -36,6 +43,12 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
       setHijriOffset(newOffset);
       storage.saveHijriOffset(newOffset);
     }
+  };
+
+  const updateNotifSettings = (newSettings: Partial<storage.NotificationSettings>) => {
+    const updated = { ...notifSettings, ...newSettings };
+    setNotifSettings(updated);
+    storage.saveNotificationSettings(updated);
   };
 
   const clearData = () => {
@@ -157,7 +170,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   );
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-6 max-w-3xl mx-auto pb-10">
       <div className="mb-8">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">الإعدادات</h2>
         <p className="text-gray-500 dark:text-gray-400">تخصيص تجربة التطبيق</p>
@@ -185,6 +198,61 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                         إضافة
                     </button>
                 )}
+             </div>
+
+             {/* Reminder Customization (Sound & Vibration) */}
+             <div className="mb-6 p-4 bg-gray-50 dark:bg-dark-bg/50 rounded-xl border border-gray-100 dark:border-dark-border/50">
+                <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">تخصيص التنبيهات</h4>
+                
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <Volume2 size={18} className="text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">صوت التنبيه (النظام)</span>
+                    </div>
+                    <Toggle 
+                        checked={notifSettings.soundEnabled} 
+                        onChange={() => updateNotifSettings({ soundEnabled: !notifSettings.soundEnabled })} 
+                        label="تفعيل الصوت"
+                    />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3 mb-1">
+                        <Vibrate size={18} className="text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">نمط الاهتزاز</span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        {(['default', 'short', 'long', 'pulse', 'none'] as storage.VibrationType[]).map((type) => {
+                            const labels: Record<string, string> = { 
+                                default: 'افتراضي', 
+                                short: 'قصير', 
+                                long: 'طويل', 
+                                pulse: 'نبضات', 
+                                none: 'بدون' 
+                            };
+                            return (
+                                <button
+                                    key={type}
+                                    onClick={() => {
+                                        updateNotifSettings({ vibrationType: type });
+                                        // Preview vibration
+                                        if (navigator.vibrate && type !== 'none') {
+                                            navigator.vibrate(storage.getVibrationPattern(type));
+                                        }
+                                    }}
+                                    className={`
+                                        px-2 py-2 text-xs font-bold rounded-lg transition-colors
+                                        ${notifSettings.vibrationType === type 
+                                            ? 'bg-primary-500 text-white shadow-sm' 
+                                            : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-dark-border hover:bg-gray-100 dark:hover:bg-gray-700'}
+                                    `}
+                                >
+                                    {labels[type]}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
              </div>
 
              {isAddingReminder && (
@@ -359,7 +427,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
 
       <div className="mt-12 text-center">
          <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
-           Nour App v1.4.0
+           Rayyan App v1.4.0
          </p>
       </div>
     </div>

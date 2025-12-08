@@ -1,18 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Sparkles, BookOpen, Activity, BarChart2, ChevronRight, Check } from 'lucide-react';
 import * as storage from '../services/storage';
 
 const OnboardingModal: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  // Initialize directly from storage to ensure immediate visibility if needed
+  // This removes the delay between Splash Screen exit and Onboarding entry
+  const [isOpen, setIsOpen] = useState(() => !storage.hasSeenTutorial());
   const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    if (!storage.hasSeenTutorial()) {
-      // Small delay to ensure smooth entrance after app loads
-      setTimeout(() => setIsOpen(true), 500);
-    }
-  }, []);
 
   const handleClose = () => {
     setIsOpen(false);
@@ -29,7 +24,7 @@ const OnboardingModal: React.FC = () => {
 
   const steps = [
     {
-      title: "مرحباً بك في نور",
+      title: "مرحباً بك في ريان",
       description: "رفيقك اليومي للحفاظ على الأذكار وتتبع إنجازك الروحاني بسهولة وخصوصية تامة.",
       icon: <Sparkles size={48} className="text-primary-500" />,
     },
@@ -53,7 +48,7 @@ const OnboardingModal: React.FC = () => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
       <div className="bg-white dark:bg-dark-surface rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl relative overflow-hidden animate-popIn border border-white/10">
         
         {/* Top Graphics */}

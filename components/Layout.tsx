@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
-import { Home, Heart, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Sparkles, Mail, Menu, X } from 'lucide-react';
+import { Home, Heart, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Sparkles, Mail, Menu, X, ListTodo, BookOpenText } from 'lucide-react';
 import { CATEGORIES } from '../data';
 import Logo from './Logo';
 
@@ -81,7 +80,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   const isCategoryView = location.pathname.startsWith('/category/');
 
   // Determine page title based on route
-  let pageTitle = 'حصن المسلم';
+  let pageTitle = 'ريان';
   const categoryMatch = matchPath('/category/:id', location.pathname);
   if (categoryMatch) {
     const currentCategory = CATEGORIES.find(c => c.id === categoryMatch.params.id);
@@ -100,6 +99,8 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
     { path: '/prayers', icon: <Clock size={22} />, label: 'مواقيت الصلاة' },
     { path: '/tasbeeh', icon: <TasbeehIcon size={22} />, label: 'السبحة' },
     { path: '/names', icon: <AllahIcon size={24} />, label: 'أسماء الله الحسني' },
+    { path: '/duas', icon: <BookOpenText size={22} />, label: 'حصن المسلم' }, // New
+    { path: '/qada', icon: <ListTodo size={22} />, label: 'الصلوات الفائتة' }, // New
     { path: '/stats', icon: <BarChart2 size={22} />, label: 'إحصائيات' },
     { path: '/favorites', icon: <Heart size={22} />, label: 'المفضلة' },
     { path: '/settings', icon: <Settings size={22} />, label: 'إعدادات' },
@@ -113,10 +114,9 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
       {!isCategoryView && (
         <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-white dark:bg-dark-surface border-l border-gray-100 dark:border-dark-border z-50 transition-colors shadow-sm">
           <div className="p-6 flex items-center gap-3 border-b border-gray-100 dark:border-dark-border">
-            <div className="bg-primary-50 dark:bg-primary-900/20 p-1.5 rounded-xl">
-               <Logo size={32} className="text-primary-600 dark:text-primary-500" />
+            <div className="p-1">
+               <Logo size={60} className="text-primary-600 dark:text-primary-500" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white tracking-tight font-serif">نور</h1>
           </div>
           
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -154,8 +154,9 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
       <div className="flex-1 flex flex-col min-h-screen relative max-w-full">
         
         {/* Mobile Header */}
-        <header className="md:hidden sticky top-0 z-40 bg-white/90 dark:bg-dark-surface/90 backdrop-blur-md border-b border-gray-100 dark:border-dark-border px-4 py-3 flex items-center justify-between transition-colors shadow-sm">
-          <div className="flex items-center gap-3">
+        <header className="md:hidden sticky top-0 z-40 bg-white/90 dark:bg-dark-surface/90 backdrop-blur-md border-b border-gray-100 dark:border-dark-border px-4 py-3 flex items-center justify-between transition-colors shadow-sm relative">
+          {/* Left Side: Navigation/Back */}
+          <div className="flex items-center gap-3 z-10">
             {!isHome && !isCategoryView ? (
               <button onClick={() => navigate('/')} className="p-2 -mr-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full active:scale-95 transition-transform" aria-label="رجوع">
                 <ArrowRight size={24} />
@@ -170,16 +171,17 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                  <Menu size={24} />
                </button>
             )}
-            
-            {(isHome || isCategoryView) && (
-                <div className="flex items-center gap-2">
-                    <Logo size={28} className="text-primary-600 dark:text-primary-500" />
-                    <h1 className="text-xl font-bold text-gray-800 dark:text-white font-serif mt-1">نور</h1>
-                </div>
-            )}
           </div>
           
-          <div className="flex items-center gap-1">
+          {/* Center: Logo (Absolute) */}
+          {(isHome || isCategoryView) && (
+              <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                  <Logo size={50} className="text-primary-600 dark:text-primary-500" />
+              </div>
+          )}
+          
+          {/* Right Side: Actions */}
+          <div className="flex items-center gap-1 z-10">
             <button 
               onClick={toggleTheme}
               className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -203,8 +205,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                 <div className="relative w-4/5 max-w-[300px] h-full bg-white dark:bg-dark-surface shadow-2xl flex flex-col animate-slideRight">
                     <div className="p-5 flex items-center justify-between border-b border-gray-100 dark:border-dark-border">
                         <div className="flex items-center gap-3">
-                            <Logo size={32} className="text-primary-600 dark:text-primary-500" />
-                            <h2 className="text-2xl font-bold text-gray-800 dark:text-white font-serif">نور</h2>
+                            <Logo size={60} className="text-primary-600 dark:text-primary-500" />
                         </div>
                         <button 
                             onClick={() => setIsMobileMenuOpen(false)}
@@ -219,6 +220,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                             <NavLink
                                 key={item.path}
                                 to={item.path}
+                                onClick={() => setIsMobileMenuOpen(false)}
                                 className={({ isActive }) => `
                                 flex items-center gap-4 p-4 rounded-xl transition-all duration-200 font-medium text-lg
                                 ${isActive 

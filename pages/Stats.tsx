@@ -1,7 +1,6 @@
 
-
 import React, { useEffect, useState, useMemo } from 'react';
-import { Flame, CheckCircle, BarChart3 } from 'lucide-react';
+import { Flame, CheckCircle, BarChart3, ListTodo } from 'lucide-react';
 import * as storage from '../services/storage';
 import { AZKAR_DATA, CATEGORIES } from '../data';
 import { ProgressState } from '../types';
@@ -9,10 +8,16 @@ import { ProgressState } from '../types';
 const Stats: React.FC = () => {
   const [stats, setStats] = useState<storage.StatsData | null>(null);
   const [history, setHistory] = useState<ProgressState>({});
+  const [totalMissed, setTotalMissed] = useState(0);
 
   useEffect(() => {
     setStats(storage.getStats());
     setHistory(storage.getHistory());
+    
+    // Calculate total missed prayers
+    const missed = storage.getMissedPrayers();
+    const missedSum = Object.values(missed).reduce((a, b) => a + b, 0);
+    setTotalMissed(missedSum);
   }, []);
 
   // Derive simple heatmap data (date -> total count) for the graph visuals using History
@@ -32,14 +37,14 @@ const Stats: React.FC = () => {
   if (!stats) return <div className="p-10 text-center">جاري التحميل...</div>;
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto pb-10">
       <div className="text-center mb-6 md:mb-10">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">إحصائياتك</h2>
         <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base">تابع تقدمك واستمر في الذكر</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {/* Streak */}
         <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-orange-100 dark:border-gray-700 flex flex-col items-center justify-center transition-transform hover:scale-105">
             <div className="bg-orange-100 dark:bg-orange-900/30 p-3 md:p-4 rounded-full text-orange-600 dark:text-orange-400 mb-3">
@@ -65,6 +70,15 @@ const Stats: React.FC = () => {
             </div>
             <span className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">{stats.todayCount}</span>
             <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">ذكر اليوم</span>
+        </div>
+
+        {/* Missed Prayers (Qada) */}
+        <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-red-100 dark:border-gray-700 flex flex-col items-center justify-center transition-transform hover:scale-105">
+             <div className="bg-red-100 dark:bg-red-900/30 p-3 md:p-4 rounded-full text-red-600 dark:text-red-400 mb-3">
+                <ListTodo size={24} className="md:w-8 md:h-8" />
+            </div>
+            <span className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">{totalMissed}</span>
+            <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">صلاة فائتة</span>
         </div>
       </div>
 

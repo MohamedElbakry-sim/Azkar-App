@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { BookOpen, Scroll, Loader2, Share2, Quote, Image as ImageIcon } from 'lucide-react';
 import { getDailyContent } from '../services/dailyContent';
@@ -38,8 +39,8 @@ const DailyWisdom: React.FC = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'نور - آية وحديث اليوم',
-          text: `${text}\n\n${source}\n\nتطبيق نور`,
+          title: 'ريان - آية وحديث اليوم',
+          text: `${text}\n\n${source}\n\nتطبيق ريان`,
         });
       } catch (err) {
         console.log('Share cancelled');
@@ -99,7 +100,7 @@ const DailyWisdom: React.FC = () => {
                      return;
                 }
                 
-                const file = new File([blob], `nour-${type}-of-day.jpg`, { type: 'image/jpeg' });
+                const file = new File([blob], `rayyan-${type}-of-day.jpg`, { type: 'image/jpeg' });
                 
                 if (navigator.share) {
                     try {
@@ -112,7 +113,7 @@ const DailyWisdom: React.FC = () => {
                     }
                 } else {
                     const link = document.createElement('a');
-                    link.download = `nour-${type}-of-day.jpg`;
+                    link.download = `rayyan-${type}-of-day.jpg`;
                     link.href = canvas.toDataURL('image/jpeg', 0.95);
                     link.click();
                 }
@@ -190,9 +191,8 @@ const DailyWisdom: React.FC = () => {
                 {/* Footer Branding - Bottom Right */}
                 <div className="absolute bottom-12 right-12" dir="rtl">
                     <div className="flex items-center gap-5 bg-black/20 backdrop-blur-xl px-10 py-5 rounded-full border border-white/10 shadow-2xl">
-                        <Logo size={72} className="text-white drop-shadow-md" />
+                        <Logo size={100} className="text-white drop-shadow-md" />
                         <div className="flex flex-col gap-1 text-right">
-                            <span className="text-white text-3xl font-bold font-serif leading-none tracking-wide drop-shadow-md">نور</span>
                             <span className="text-white/90 text-xl font-medium leading-none drop-shadow-sm">رفيقك اليومي في الذكر</span>
                         </div>
                     </div>

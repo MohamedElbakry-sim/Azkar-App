@@ -1,5 +1,5 @@
 {
-  "name": "Nour - Modern Azkar & Tasbeeh",
+  "name": "Rayyan - Modern Azkar & Tasbeeh",
   "description": "A comprehensive, privacy-focused Islamic remembrance application featuring morning/evening Azkar, a digital Tasbeeh counter, and progress tracking. Built with offline capabilities.",
   "requestFramePermissions": [
     "geolocation"

@@ -1,6 +1,6 @@
 
 
-import { ProgressState } from '../types';
+import { ProgressState, Dhikr, CategoryId, MissedPrayers } from '../types';
 
 const FAVORITES_KEY = 'nour_favorites_v1';
 const PROGRESS_KEY = 'nour_progress_v1'; // Now acts as SESSION storage
@@ -11,6 +11,11 @@ const REMINDERS_KEY = 'nour_reminders_v1';
 const FONT_SIZE_KEY = 'nour_font_size_v1';
 const HIJRI_OFFSET_KEY = 'nour_hijri_offset_v1';
 const TUTORIAL_KEY = 'nour_tutorial_seen_v1';
+const NOTIFICATION_SETTINGS_KEY = 'nour_notification_settings_v1';
+const CUSTOM_DHIKR_KEY = 'nour_custom_dhikr_v1';
+const OVERRIDE_DHIKR_KEY = 'nour_override_dhikr_v1';
+const DELETED_DEFAULTS_KEY = 'nour_deleted_defaults_v1'; // New key for hidden defaults
+const MISSED_PRAYERS_KEY = 'nour_missed_prayers_v1'; // Key for Qada tracker
 
 // --- Reminder Types ---
 export interface Reminder {
@@ -18,6 +23,14 @@ export interface Reminder {
   label: string;
   time: string; // 24h format "HH:mm"
   enabled: boolean;
+}
+
+// --- Notification Settings Types ---
+export type VibrationType = 'default' | 'short' | 'long' | 'pulse' | 'none';
+
+export interface NotificationSettings {
+  soundEnabled: boolean;
+  vibrationType: VibrationType;
 }
 
 // --- Font Size Types ---
@@ -153,6 +166,118 @@ export const saveCustomTarget = (id: number, target: number) => {
   localStorage.setItem(CUSTOM_TARGETS_KEY, JSON.stringify(targets));
 };
 
+// --- Missed Prayers Logic ---
+
+const defaultMissedPrayers: MissedPrayers = {
+  fajr: 0,
+  dhuhr: 0,
+  asr: 0,
+  maghrib: 0,
+  isha: 0,
+  witr: 0
+};
+
+export const getMissedPrayers = (): MissedPrayers => {
+  try {
+    const stored = localStorage.getItem(MISSED_PRAYERS_KEY);
+    return stored ? JSON.parse(stored) : defaultMissedPrayers;
+  } catch {
+    return defaultMissedPrayers;
+  }
+};
+
+export const saveMissedPrayers = (data: MissedPrayers) => {
+  localStorage.setItem(MISSED_PRAYERS_KEY, JSON.stringify(data));
+};
+
+export const updateMissedPrayerCount = (prayer: keyof MissedPrayers, delta: number) => {
+  const current = getMissedPrayers();
+  // Ensure count doesn't drop below zero
+  const newCount = Math.max(0, (current[prayer] || 0) + delta);
+  
+  const updated = { ...current, [prayer]: newCount };
+  saveMissedPrayers(updated);
+  return updated;
+};
+
+// --- Custom Dhikr Logic (User Added) ---
+
+export const getCustomDhikrs = (): Dhikr[] => {
+  try {
+    const stored = localStorage.getItem(CUSTOM_DHIKR_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const saveCustomDhikr = (dhikr: Dhikr) => {
+  const current = getCustomDhikrs();
+  // Check if update or add
+  const index = current.findIndex(d => d.id === dhikr.id);
+  let updated;
+  if (index >= 0) {
+    updated = current.map(d => d.id === dhikr.id ? dhikr : d);
+  } else {
+    updated = [...current, dhikr];
+  }
+  localStorage.setItem(CUSTOM_DHIKR_KEY, JSON.stringify(updated));
+};
+
+export const deleteCustomDhikr = (id: number) => {
+  const current = getCustomDhikrs();
+  const updated = current.filter(d => d.id !== id);
+  localStorage.setItem(CUSTOM_DHIKR_KEY, JSON.stringify(updated));
+};
+
+// --- Override Dhikr Logic (Edits to Defaults) ---
+
+export const getDhikrOverrides = (): {[id: number]: Dhikr} => {
+  try {
+    const stored = localStorage.getItem(OVERRIDE_DHIKR_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+};
+
+export const saveDhikrOverride = (dhikr: Dhikr) => {
+  const overrides = getDhikrOverrides();
+  overrides[dhikr.id] = dhikr;
+  localStorage.setItem(OVERRIDE_DHIKR_KEY, JSON.stringify(overrides));
+};
+
+export const deleteDhikrOverride = (id: number) => {
+  const overrides = getDhikrOverrides();
+  delete overrides[id];
+  localStorage.setItem(OVERRIDE_DHIKR_KEY, JSON.stringify(overrides));
+};
+
+// --- Deleted Defaults Logic (Hiding Default Items) ---
+
+export const getDeletedDefaults = (): number[] => {
+  try {
+    const stored = localStorage.getItem(DELETED_DEFAULTS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const markDefaultAsDeleted = (id: number) => {
+  const current = getDeletedDefaults();
+  if (!current.includes(id)) {
+    const updated = [...current, id];
+    localStorage.setItem(DELETED_DEFAULTS_KEY, JSON.stringify(updated));
+  }
+};
+
+export const restoreDefault = (id: number) => {
+  const current = getDeletedDefaults();
+  const updated = current.filter(i => i !== id);
+  localStorage.setItem(DELETED_DEFAULTS_KEY, JSON.stringify(updated));
+};
+
 // --- Font Size Logic ---
 
 export const getFontSize = (): FontSize => {
@@ -227,6 +352,31 @@ export const deleteReminder = (id: string) => {
   const current = getReminders();
   const updated = current.filter(r => r.id !== id);
   saveReminders(updated);
+};
+
+// --- Notification Settings Logic ---
+
+export const getNotificationSettings = (): NotificationSettings => {
+  try {
+    const stored = localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+    return stored ? JSON.parse(stored) : { soundEnabled: true, vibrationType: 'default' };
+  } catch {
+    return { soundEnabled: true, vibrationType: 'default' };
+  }
+};
+
+export const saveNotificationSettings = (settings: NotificationSettings) => {
+  localStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
+};
+
+export const getVibrationPattern = (type: VibrationType): number[] => {
+  switch (type) {
+    case 'short': return [100];
+    case 'long': return [500];
+    case 'pulse': return [100, 50, 100, 50, 100];
+    case 'none': return [];
+    default: return [200]; // Default single buzz
+  }
 };
 
 // --- Statistics Helpers ---

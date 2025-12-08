@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CATEGORIES, AZKAR_DATA } from '../data';
-import { Search, X, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Search, X, AlertCircle, ArrowLeft, SunMedium, Moon, CloudMoon, Sunrise, BookHeart } from 'lucide-react';
 import DhikrCard from '../components/DhikrCard';
 import DailyWisdom from '../components/DailyWisdom';
 import RandomNameCard from '../components/RandomNameCard';
@@ -94,6 +94,30 @@ const Home: React.FC = () => {
       case 'yellow': return 'text-yellow-600 dark:text-yellow-400 group-hover:text-yellow-700 dark:group-hover:text-yellow-300';
       case 'emerald': return 'text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-300';
       default: return 'text-gray-800 dark:text-gray-100';
+    }
+  };
+
+  const getThemeBgColor = (theme: string) => {
+    switch (theme) {
+      case 'orange': return 'bg-orange-100 dark:bg-orange-900/20';
+      case 'indigo': return 'bg-indigo-100 dark:bg-indigo-900/20';
+      case 'slate': return 'bg-slate-100 dark:bg-slate-800/50';
+      case 'yellow': return 'bg-yellow-100 dark:bg-yellow-900/20';
+      case 'emerald': return 'bg-emerald-100 dark:bg-emerald-900/20';
+      default: return 'bg-gray-100 dark:bg-gray-800';
+    }
+  };
+
+  const getCategoryIcon = (id: string, theme: string) => {
+    const colorClass = getThemeTextColor(theme);
+    const size = 28;
+    switch (id) {
+      case 'sabah': return <SunMedium size={size} className={colorClass} />;
+      case 'masaa': return <Moon size={size} className={colorClass} />;
+      case 'sleep': return <CloudMoon size={size} className={colorClass} />;
+      case 'waking': return <Sunrise size={size} className={colorClass} />;
+      case 'prayer': return <BookHeart size={size} className={colorClass} />;
+      default: return <SunMedium size={size} className={colorClass} />;
     }
   };
 
@@ -218,20 +242,25 @@ const Home: React.FC = () => {
               <button
                 key={cat.id}
                 onClick={() => navigate(`/category/${cat.id}`)}
-                className="group relative bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md transition-all duration-300 text-right focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-[0.98] flex flex-col justify-center min-h-[130px]"
+                className="group relative bg-white dark:bg-dark-surface p-5 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md transition-all duration-300 text-right focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-[0.98] flex items-center gap-5 min-h-[110px]"
                 aria-label={`قسم ${cat.title}`}
               >
-                <div className="flex items-center justify-between w-full">
-                    <div className="pr-1">
-                        <h3 className={`text-xl md:text-2xl font-bold font-serif mb-2 transition-colors ${getThemeTextColor(cat.theme)}`}>
+                {/* Icon Container */}
+                <div className={`p-4 rounded-2xl ${getThemeBgColor(cat.theme)} transition-colors`}>
+                    {getCategoryIcon(cat.id, cat.theme)}
+                </div>
+
+                <div className="flex-1 flex items-center justify-between">
+                    <div>
+                        <h3 className={`text-xl font-bold font-serif mb-1 transition-colors ${getThemeTextColor(cat.theme)}`}>
                             {cat.title}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
                             {cat.description}
                         </p>
                     </div>
                     
-                    <div className="pl-2 text-gray-300 dark:text-gray-600 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors">
+                    <div className="pl-1 text-gray-300 dark:text-gray-600 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors">
                         <ArrowLeft size={20} className="rtl:rotate-0" />
                     </div>
                 </div>

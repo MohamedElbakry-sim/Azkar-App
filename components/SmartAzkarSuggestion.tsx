@@ -14,27 +14,42 @@ const SmartAzkarSuggestion: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const useFallbackLogic = () => {
+        if (!isMounted) return;
+        const hour = new Date().getHours();
+        
+        if (hour >= 3 && hour < 12) {
+            setSuggestion('sabah');
+        } 
+        else if (hour >= 13 && hour < 23) {
+            setSuggestion('masaa');
+        } else {
+            setSuggestion(null);
+        }
+        setLoading(false);
+    };
+
     const determineTime = () => {
-      // 1. Get Location (or default to Mecca if unknown)
-      // Ideally, we'd use the cached location from PrayerTimes, but for simplicity/privacy
-      // we'll try to get it, or fallback.
       if (!navigator.geolocation) {
-         setLoading(false);
+         useFallbackLogic();
          return;
       }
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
+           if (!isMounted) return;
            calculate(position.coords.latitude, position.coords.longitude);
         },
-        () => {
-           // Fallback: Use simple hour-based logic if location denied
-           // Morning: 4 AM - 11 AM
-           // Evening: 2 PM - 10 PM
-           const hour = new Date().getHours();
-           if (hour >= 4 && hour < 12) setSuggestion('sabah');
-           else if (hour >= 14 && hour < 22) setSuggestion('masaa');
-           setLoading(false);
+        (error) => {
+           console.warn("Geolocation failed/denied:", error);
+           useFallbackLogic();
+        },
+        { 
+            timeout: 5000,
+            maximumAge: 60000, 
+            enableHighAccuracy: false
         }
       );
     };
@@ -48,25 +63,29 @@ const SmartAzkarSuggestion: React.FC = () => {
         
         const now = new Date();
         
-        // Logic:
-        // Morning Azkar: Fajr -> Dhuhr
-        // Evening Azkar: Asr -> Isha
-        
         if (now >= prayerTimes.fajr && now < prayerTimes.dhuhr) {
             setSuggestion('sabah');
         } else if (now >= prayerTimes.asr && now < prayerTimes.isha) {
             setSuggestion('masaa');
         } else {
-            setSuggestion(null); // No specific suggestion (e.g., late night or mid-day)
+            const hour = now.getHours();
+            if (hour >= 5 && hour < 12) setSuggestion('sabah');
+            else if (hour >= 14 && hour < 22) setSuggestion('masaa');
+            else setSuggestion(null);
         }
       } catch (e) {
-        console.error(e);
+        console.error("Adhan calculation error:", e);
+        useFallbackLogic();
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     determineTime();
+
+    return () => {
+        isMounted = false;
+    };
   }, []);
 
   if (loading) return null;
@@ -78,33 +97,34 @@ const SmartAzkarSuggestion: React.FC = () => {
     <div 
         onClick={() => navigate(`/category/${suggestion}`)}
         className={`
-            relative overflow-hidden rounded-3xl p-6 mb-8 cursor-pointer group shadow-sm transition-all duration-300
+            relative overflow-hidden rounded-3xl p-6 mb-8 cursor-pointer group shadow-lg transition-all duration-300 animate-fadeIn
             ${isSabah 
-                ? 'bg-gradient-to-br from-orange-50 to-amber-100 border border-orange-200 hover:shadow-orange-200/50' 
-                : 'bg-gradient-to-br from-indigo-50 to-blue-100 border border-indigo-200 hover:shadow-indigo-200/50'}
+                ? 'bg-gradient-to-br from-[#F1C40F] to-[#F39C12] text-white shadow-orange-500/20' // Accent Gradient for Sabah (Sun/Gold)
+                : 'bg-gradient-to-br from-[#5D6D7E] to-[#34495E] text-white shadow-slate-500/20' // Secondary Gradient for Masaa (Night/Slate)
+            }
         `}
     >
         {/* Decorative Icon Background */}
-        <div className={`absolute -left-4 -bottom-4 opacity-10 transition-transform group-hover:scale-110 duration-500 ${isSabah ? 'text-orange-600' : 'text-indigo-600'}`}>
+        <div className="absolute -left-4 -bottom-4 opacity-10 transition-transform group-hover:scale-110 duration-500 text-white">
             {isSabah ? <Sun size={120} /> : <Moon size={120} />}
         </div>
 
         <div className="relative z-10 flex items-center justify-between">
             <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-full ${isSabah ? 'bg-orange-200 text-orange-700' : 'bg-indigo-200 text-indigo-700'}`}>
+                <div className="p-3 rounded-full bg-white/20 backdrop-blur-sm text-white">
                     {isSabah ? <Sun size={24} /> : <Moon size={24} />}
                 </div>
                 <div>
-                    <h3 className={`text-lg font-bold ${isSabah ? 'text-orange-800' : 'text-indigo-800'}`}>
+                    <h3 className="text-xl font-bold text-white">
                         {isSabah ? 'وقت أذكار الصباح' : 'وقت أذكار المساء'}
                     </h3>
-                    <p className={`text-sm opacity-80 ${isSabah ? 'text-orange-900' : 'text-indigo-900'}`}>
+                    <p className="text-sm text-white/90 font-medium mt-1">
                         {isSabah ? 'ابدأ يومك بذكر الله وحفظه' : 'اختم يومك بالذكر والطمأنينة'}
                     </p>
                 </div>
             </div>
 
-            <div className={`p-2 rounded-full transition-transform group-hover:-translate-x-1 ${isSabah ? 'bg-orange-200/50 text-orange-700' : 'bg-indigo-200/50 text-indigo-700'}`}>
+            <div className="p-2 rounded-full bg-white/20 backdrop-blur-sm transition-transform group-hover:-translate-x-1 text-white">
                 <ArrowRight size={20} className="rtl:rotate-180" />
             </div>
         </div>

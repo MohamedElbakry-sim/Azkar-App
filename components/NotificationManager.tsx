@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import * as storage from '../services/storage';
 
@@ -8,10 +7,7 @@ const NotificationManager: React.FC = () => {
   useEffect(() => {
     // Check permission on mount
     if ('Notification' in window && Notification.permission === 'default') {
-        // We generally don't want to spam request on load, but for a web app feature
-        // it's often better to wait for a user action. 
-        // However, the manager needs permission to work.
-        // We will rely on the Settings page to trigger the initial request,
+        // We rely on the Settings page to trigger the initial request,
         // but this effect ensures we are ready if permission was already granted.
     }
 
@@ -31,30 +27,37 @@ const NotificationManager: React.FC = () => {
       const matchingReminders = reminders.filter(r => r.enabled && r.time === currentTime);
 
       if (matchingReminders.length > 0 && 'Notification' in window && Notification.permission === 'granted') {
+        // Get user preferences for sound and vibration
+        const settings = storage.getNotificationSettings();
+        const vibratePattern = storage.getVibrationPattern(settings.vibrationType);
+
         matchingReminders.forEach(reminder => {
           try {
             // FIX: Check for .controller to ensure a SW is actually active before waiting on .ready
-            // navigator.serviceWorker.ready is a Promise and is always truthy, which caused the previous logic to hang
-            // if no SW was registered.
             if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.ready.then(registration => {
                     registration.showNotification('تذكير من نور', {
                         body: reminder.label,
-                        icon: '/pwa-192x192.png', // Assuming pwa icon path, browser usually handles default
+                        icon: '/pwa-192x192.png', 
                         tag: `nour-reminder-${reminder.id}`,
                         lang: 'ar',
-                        dir: 'rtl'
-                    });
+                        dir: 'rtl',
+                        vibrate: vibratePattern,
+                        silent: !settings.soundEnabled,
+                    } as any);
                 });
             } else {
-                // Fallback to standard Notification API (Works when app is open)
+                // Fallback to standard Notification API
+                // Note: 'vibrate' property in new Notification() is supported mainly on Android Chrome
                 new Notification('تذكير من نور', {
                     body: reminder.label,
                     icon: '/pwa-192x192.png',
                     tag: `nour-reminder-${reminder.id}`,
                     lang: 'ar',
-                    dir: 'rtl'
-                });
+                    dir: 'rtl',
+                    vibrate: vibratePattern,
+                    silent: !settings.soundEnabled,
+                } as any);
             }
           } catch (e) {
             console.error("Failed to show notification", e);

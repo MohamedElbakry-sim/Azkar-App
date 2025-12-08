@@ -1,4 +1,5 @@
 
+
 export interface Dhikr {
   id: number;
   category: CategoryId;
@@ -10,7 +11,7 @@ export interface Dhikr {
   translation?: string;
 }
 
-export type CategoryId = 'sabah' | 'masaa' | 'sleep' | 'waking' | 'prayer' | 'quran';
+export type CategoryId = 'sabah' | 'masaa' | 'sleep' | 'waking' | 'prayer';
 
 export interface Category {
   id: CategoryId;
@@ -64,4 +65,28 @@ export interface NameOfAllah {
   arabic: string;
   transliteration: string;
   meaning: string;
+}
+
+// --- Missed Prayers Types ---
+export interface MissedPrayers {
+  fajr: number;
+  dhuhr: number;
+  asr: number;
+  maghrib: number;
+  isha: number;
+  witr: number;
+}
+
+// --- Situational Duas Types ---
+export interface SituationalDua {
+  text: string;
+  source?: string;
+}
+
+export interface DuaCategory {
+  id: string;
+  title: string;
+  icon: any; // Lucide icon component or string identifier
+  color: string;
+  items: SituationalDua[];
 }

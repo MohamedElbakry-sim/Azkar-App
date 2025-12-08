@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { NAMES_OF_ALLAH } from '../data';
 import { Search, X } from 'lucide-react';
 import { normalizeArabic } from '../utils';
@@ -22,6 +22,19 @@ const NamesOfAllah: React.FC = () => {
              normTranslit.includes(normalizedQuery) ||
              normMeaning.includes(normalizedQuery);
     });
+  }, [searchQuery]);
+
+  // Warn user before leaving if they have an active search
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (searchQuery.trim().length > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [searchQuery]);
 
   return (

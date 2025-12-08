@@ -3,20 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>نور | أذكار وتسبيح</title>
-    <meta name="description" content="تطبيق أذكار المسلم - أذكار الصباح والمساء وتسبيح إلكتروني" />
-    <meta name="theme-color" content="#15803d" />
+    <title>Rayyan | ريان</title>
+    <meta name="description" content="تطبيق ريان - أذكار الصباح والمساء وتسبيح إلكتروني" />
+    <meta name="theme-color" content="#1ABC9C" />
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     
-    <!-- Favicon (Updated to match new Logo with Green Background) -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='25' fill='%2315803d'/%3E%3Cpath d='M75 45C75 64.33 59.33 80 40 80C26.1929 80 15 68.8071 15 55C15 45 22 35 28 30' stroke='white' stroke-width='10' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M50 35L54 42L62 42L56 48L58 56L50 51L42 56L44 48L38 42L46 42L50 35Z' fill='white'/%3E%3C/svg%3E" />
+    <!-- Favicon (Crisp SVG 'Ra') -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='120' fill='%231ABC9C'/%3E%3Ctext x='50%25' y='50%25' dy='.1em' dominant-baseline='middle' text-anchor='middle' font-family='serif' font-weight='bold' font-size='300' fill='white'%3Eر%3C/text%3E%3C/svg%3E" />
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;500;600;700&family=Reem+Kufi:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -31,29 +31,56 @@
             fontFamily: {
               sans: ['Cairo', 'sans-serif'],
               serif: ['Amiri', 'serif'],
+              kufi: ['Reem Kufi', 'sans-serif'],
             },
             colors: {
-              // New "Natural Green" Primary Palette
+              // Primary Palette: "Jannah Green" (Emerald to Deep Teal)
               primary: {
-                50: '#f0fdf4',  // Lightest Mint
-                100: '#dcfce7',
-                200: '#bbf7d0',
-                300: '#86efac',
-                400: '#4ade80',
-                500: '#22c55e', // Vibrant Green
-                600: '#16a34a', // Standard Green
-                700: '#15803d', // Deep Green (Brand)
-                800: '#166534',
-                900: '#14532d',
-                950: '#052e16',
+                50: '#E8F8F5',
+                100: '#D1F2EB',
+                200: '#A3E4D7',
+                300: '#76D7C4',
+                400: '#2ECC71', // Start Gradient
+                500: '#1ABC9C', // Mid Gradient (Main Brand)
+                600: '#16A085', // End Gradient
+                700: '#148F77',
+                800: '#117864',
+                900: '#0E6251',
+                950: '#0B5345',
+              },
+              // Secondary Palette: "Midnight Prayer" (Slate Blue to Deep Navy)
+              secondary: {
+                50: '#EBEDEF',
+                100: '#D6DBDF',
+                200: '#AEB6BF',
+                300: '#85929E',
+                400: '#5D6D7E', // Start Gradient
+                500: '#34495E', // End Gradient
+                600: '#2E4053',
+                700: '#283747',
+                800: '#212F3C',
+                900: '#1B2631',
+              },
+              // Accent Palette: "Golden Nour" (Yellow to Gold)
+              accent: {
+                50: '#FEF9E7',
+                100: '#FCF3CF',
+                200: '#F9E79F',
+                300: '#F7DC6F',
+                400: '#F1C40F', // Start Gradient
+                500: '#F39C12', // End Gradient
+                600: '#D68910',
+                700: '#B9770E',
+                800: '#9C640C',
+                900: '#7E5109',
               },
               // Custom Dark Mode Palette (Dim / Dark Gray)
               dark: {
-                bg: '#18181b',      // Zinc 900 (Dim background, not black)
-                surface: '#27272a', // Zinc 800 (Lighter surface for cards)
-                border: '#3f3f46',  // Zinc 700 (Softer borders)
-                text: '#f4f4f5',    // Zinc 100 (White text)
-                muted: '#a1a1aa'    // Zinc 400 (Muted text)
+                bg: '#18181b',      // Zinc 900
+                surface: '#27272a', // Zinc 800
+                border: '#3f3f46',  // Zinc 700
+                text: '#f4f4f5',    // Zinc 100
+                muted: '#a1a1aa'    // Zinc 400
               }
             },
             animation: {
@@ -85,32 +112,15 @@
       }
     </script>
     <style>
-      /* Custom scrollbar for better aesthetics */
-      ::-webkit-scrollbar {
-        width: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background-color: #cbd5e1;
-        border-radius: 20px;
-      }
-      .dark ::-webkit-scrollbar-thumb {
-        background-color: #3f3f46;
-      }
-      /* Disable double-tap zoom on buttons */
-      button {
-        touch-action: manipulation;
-      }
-      /* Utility for hiding scrollbar in flex containers */
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
+      /* Custom scrollbar */
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+      .dark ::-webkit-scrollbar-thumb { background-color: #3f3f46; }
+      
+      button { touch-action: manipulation; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
   <script type="importmap">
 {
@@ -118,6 +128,7 @@
     "react/": "https://aistudiocdn.com/react@^19.2.1/",
     "react": "https://aistudiocdn.com/react@^19.2.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.1",
     "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.10.1",
     "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
     "adhan": "https://cdn.jsdelivr.net/npm/adhan@4.4.1/+esm",
@@ -126,7 +137,7 @@
 }
 </script>
 </head>
-  <body class="bg-white text-gray-900 dark:bg-dark-bg dark:text-dark-text transition-colors duration-300">
+  <body class="bg-gradient-to-b from-white to-[#F8F9F9] dark:from-dark-bg dark:to-black min-h-screen text-gray-900 dark:text-dark-text transition-colors duration-300 bg-fixed">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

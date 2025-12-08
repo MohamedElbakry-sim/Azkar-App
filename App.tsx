@@ -5,6 +5,8 @@ import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import NotificationManager from './components/NotificationManager';
+import OnboardingModal from './components/OnboardingModal';
+import SplashScreen from './components/SplashScreen'; // Import Splash Screen
 import { Loader2 } from 'lucide-react';
 import * as storage from './services/storage';
 
@@ -17,8 +19,13 @@ const Settings = React.lazy(() => import('./pages/Settings'));
 const PrayerTimes = React.lazy(() => import('./pages/PrayerTimes'));
 const NamesOfAllah = React.lazy(() => import('./pages/NamesOfAllah'));
 const Contact = React.lazy(() => import('./pages/Contact'));
+const MissedPrayers = React.lazy(() => import('./pages/MissedPrayers')); // New
+const Duas = React.lazy(() => import('./pages/Duas')); // New
 
 const App: React.FC = () => {
+  // Splash screen disabled for now
+  const [showSplash, setShowSplash] = useState(false);
+
   const [darkMode, setDarkMode] = useState(() => {
     // Check localStorage or system preference
     if (typeof window !== 'undefined') {
@@ -74,24 +81,33 @@ const App: React.FC = () => {
   );
 
   return (
-    <Router>
-      <NotificationManager />
-      <Layout darkMode={darkMode} toggleTheme={toggleTheme}>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/category/:id" element={<CategoryView />} />
-            <Route path="/prayers" element={<PrayerTimes />} />
-            <Route path="/tasbeeh" element={<Tasbeeh />} />
-            <Route path="/names" element={<NamesOfAllah />} />
-            <Route path="/favorites" element={<Favorites />} />
-            <Route path="/stats" element={<Stats />} />
-            <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
-            <Route path="/contact" element={<Contact />} />
-          </Routes>
-        </Suspense>
-      </Layout>
-    </Router>
+    <>
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      
+      <Router>
+        <NotificationManager />
+        {/* Only show onboarding if splash is finished to avoid conflict */}
+        {!showSplash && <OnboardingModal />}
+        
+        <Layout darkMode={darkMode} toggleTheme={toggleTheme}>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/category/:id" element={<CategoryView />} />
+              <Route path="/prayers" element={<PrayerTimes />} />
+              <Route path="/tasbeeh" element={<Tasbeeh />} />
+              <Route path="/names" element={<NamesOfAllah />} />
+              <Route path="/qada" element={<MissedPrayers />} /> {/* Route for Qada */}
+              <Route path="/duas" element={<Duas />} /> {/* Route for Duas */}
+              <Route path="/favorites" element={<Favorites />} />
+              <Route path="/stats" element={<Stats />} />
+              <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
+              <Route path="/contact" element={<Contact />} />
+            </Routes>
+          </Suspense>
+        </Layout>
+      </Router>
+    </>
   );
 };
 
