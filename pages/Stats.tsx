@@ -244,7 +244,7 @@ const ContributionGraph: React.FC<{ data: { [date: string]: number }, history: P
                         </div>
                         
                         <div className="p-6 max-h-[60vh] overflow-y-auto">
-                            <h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">تفاصيل</h4>
+                            <h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">تفاصيل الإنجاز</h4>
                             <div className="space-y-3">
                                 {selectedDay.categories.map((cat, idx) => (
                                     <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-dark-bg border border-gray-100 dark:border-gray-700">

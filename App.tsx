@@ -1,11 +1,10 @@
 
-
 import React, { useState, useEffect, Suspense } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import NotificationManager from './components/NotificationManager';
-import OnboardingModal from './components/OnboardingModal';
+// import OnboardingModal from './components/OnboardingModal'; // Onboarding disabled
 import SplashScreen from './components/SplashScreen'; // Import Splash Screen
 import { Loader2 } from 'lucide-react';
 import * as storage from './services/storage';
@@ -86,8 +85,9 @@ const App: React.FC = () => {
       
       <Router>
         <NotificationManager />
-        {/* Only show onboarding if splash is finished to avoid conflict */}
-        {!showSplash && <OnboardingModal />}
+        {/* Onboarding disabled
+        {!showSplash && <OnboardingModal />} 
+        */}
         
         <Layout darkMode={darkMode} toggleTheme={toggleTheme}>
           <Suspense fallback={<PageLoader />}>
