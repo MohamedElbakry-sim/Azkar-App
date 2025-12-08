@@ -3,7 +3,8 @@
 import { ProgressState } from '../types';
 
 const FAVORITES_KEY = 'nour_favorites_v1';
-const PROGRESS_KEY = 'nour_progress_v1';
+const PROGRESS_KEY = 'nour_progress_v1'; // Now acts as SESSION storage
+const HISTORY_KEY = 'nour_history_v1';   // New PERMANENT storage for stats
 const TASBEEH_KEY = 'nour_tasbeeh_count';
 const CUSTOM_TARGETS_KEY = 'nour_custom_targets_v1';
 const REMINDERS_KEY = 'nour_reminders_v1';
@@ -48,6 +49,7 @@ export const getTodayKey = (): string => {
   return new Date().toISOString().split('T')[0];
 };
 
+// Returns SESSION progress (Reset daily/on-refresh)
 export const getProgress = (): ProgressState => {
   try {
     const stored = localStorage.getItem(PROGRESS_KEY);
@@ -57,6 +59,17 @@ export const getProgress = (): ProgressState => {
   }
 };
 
+// Returns PERMANENT history (Never deleted automatically)
+export const getHistory = (): ProgressState => {
+  try {
+    const stored = localStorage.getItem(HISTORY_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+};
+
+// Saves SESSION progress (UI State)
 export const saveProgress = (dhikrId: number, count: number) => {
   const progress = getProgress();
   const today = getTodayKey();
@@ -70,13 +83,35 @@ export const saveProgress = (dhikrId: number, count: number) => {
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
 };
 
-// ** NEW: Reset Today's Progress Only (Session Reset) **
+// Increments PERMANENT History (Stats)
+export const incrementHistory = (dhikrId: number, amount: number = 1) => {
+  const history = getHistory();
+  const today = getTodayKey();
+  
+  if (!history[today]) {
+    history[today] = {};
+  }
+  
+  const current = history[today][dhikrId] || 0;
+  history[today][dhikrId] = current + amount;
+  
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+};
+
+// Reset Session but Keep History
 export const resetTodayProgress = () => {
   try {
+    // 1. MIGRATION: If History doesn't exist yet, copy current Progress to History
+    // This ensures existing users don't lose their stats when this update ships.
+    if (!localStorage.getItem(HISTORY_KEY)) {
+        const legacyProgress = getProgress();
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(legacyProgress));
+    }
+
+    // 2. RESET SESSION: Clear today's UI counters
     const progress = getProgress();
     const today = getTodayKey();
     
-    // If there is data for today, delete it to reset the session
     if (progress[today]) {
       delete progress[today];
       localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
@@ -87,7 +122,7 @@ export const resetTodayProgress = () => {
 };
 
 export const markAsSkipped = (dhikrId: number) => {
-  // Use -1 to represent skipped
+  // Use -1 to represent skipped in session
   saveProgress(dhikrId, -1);
 };
 
@@ -206,9 +241,10 @@ export interface StatsData {
 }
 
 export const getStats = (): StatsData => {
-  const progress = getProgress();
+  // Use HISTORY for stats, not session progress
+  const history = getHistory();
   const today = getTodayKey();
-  const dates = Object.keys(progress).sort();
+  const dates = Object.keys(history).sort();
   
   let totalDhikrCompleted = 0;
   let todayCount = 0;
@@ -218,7 +254,7 @@ export const getStats = (): StatsData => {
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
   dates.forEach(date => {
-    const dayData = progress[date];
+    const dayData = history[date];
     const counts = Object.values(dayData);
     const sum = counts.reduce((a, b) => (b > 0 ? a + b : a), 0);
     
@@ -240,9 +276,9 @@ export const getStats = (): StatsData => {
     d.setDate(todayDate.getDate() - i);
     const key = d.toISOString().split('T')[0];
     
-    if (progress[key] && Object.keys(progress[key]).length > 0) {
+    if (history[key] && Object.keys(history[key]).length > 0) {
       streak++;
-    } else if (i === 0 && (!progress[key] || Object.keys(progress[key]).length === 0)) {
+    } else if (i === 0 && (!history[key] || Object.keys(history[key]).length === 0)) {
       continue; 
     } else {
       break;
@@ -260,11 +296,11 @@ export const getStats = (): StatsData => {
 };
 
 export const getHeatmapData = () => {
-  const progress = getProgress();
+  const history = getHistory();
   const data: { [date: string]: number } = {};
   
-  Object.keys(progress).forEach(date => {
-    const dayData = progress[date];
+  Object.keys(history).forEach(date => {
+    const dayData = history[date];
     const total = Object.values(dayData).reduce((a, b) => (b > 0 ? a + b : a), 0);
     if (total > 0) {
       data[date] = total;

@@ -1,11 +1,10 @@
 
-import React, { useEffect, useState } from 'react';
-import { Compass, Clock, MapPin, Loader2, Calendar } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Compass, Clock, MapPin, Loader2, Calendar, Navigation, RefreshCw } from 'lucide-react';
 import * as AdhanLib from 'adhan';
 import * as storage from '../services/storage';
 
 // Robustly resolve the adhan library object to handle CJS/ESM interop differences across CDNs
-// If AdhanLib has a 'default' property (ESM wrapping CJS), use it. Otherwise use AdhanLib directly.
 const adhan = (AdhanLib as any).default || AdhanLib;
 
 interface PrayerTimeData {
@@ -18,11 +17,17 @@ interface PrayerTimeData {
 
 const PrayerTimes: React.FC = () => {
   const [times, setTimes] = useState<PrayerTimeData[]>([]);
-  const [qibla, setQibla] = useState<number>(0);
+  const [qiblaAngle, setQiblaAngle] = useState<number>(0);
   const [locationName, setLocationName] = useState('جاري تحديد الموقع...');
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [hijriDate, setHijriDate] = useState('');
+
+  // --- Dynamic Compass State ---
+  const [heading, setHeading] = useState<number>(0);
+  const [isCompassActive, setIsCompassActive] = useState(false);
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [calibrationNeeded, setCalibrationNeeded] = useState(false);
 
   useEffect(() => {
     // Set Hijri Date with User Offset
@@ -38,7 +43,6 @@ const PrayerTimes: React.FC = () => {
       }).format(date);
       setHijriDate(hijri);
     } catch (e) {
-      // Fallback if islamic calendar not supported
       setHijriDate(new Date().toLocaleDateString('ar-SA'));
     }
 
@@ -50,15 +54,12 @@ const PrayerTimes: React.FC = () => {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        console.log("Location OK:", position);
         const { latitude, longitude } = position.coords;
         calculateTimes(latitude, longitude);
         setLocationName(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
         setLoading(false);
       },
       (error) => {
-        console.error("Location error:", error);
-
         if (error.code === error.PERMISSION_DENIED) {
           setError("لو سمحت، فعّل إذن الموقع من إعدادات المتصفح.");
         } else if (error.code === error.POSITION_UNAVAILABLE) {
@@ -69,17 +70,22 @@ const PrayerTimes: React.FC = () => {
           setError("حدث خطأ غير معروف في تحديد الموقع.");
         }
         
-        // Default to Mecca coordinates as fallback so the UI isn't empty
+        // Default to Mecca coordinates as fallback
         calculateTimes(21.4225, 39.8262);
         setLocationName('مكة المكرمة (افتراضي)');
         setLoading(false);
       },
       {
-        enableHighAccuracy: false,
+        enableHighAccuracy: true, // Better accuracy for Qibla
         timeout: 20000,
         maximumAge: 0
       }
     );
+
+    // Cleanup compass listener
+    return () => {
+        window.removeEventListener('deviceorientation', handleOrientation);
+    };
   }, []);
 
   const calculateTimes = (lat: number, lng: number) => {
@@ -90,16 +96,15 @@ const PrayerTimes: React.FC = () => {
 
       const coordinates = new adhan.Coordinates(lat, lng);
       
-      // Determine calculation method based on location roughly or default to Muslim World League
       const params = adhan.CalculationMethod.MuslimWorldLeague();
       params.madhab = adhan.Madhab.Shafi;
       
       const date = new Date();
       const prayerTimes = new adhan.PrayerTimes(coordinates, date, params);
       
-      // Calculate Qibla
-      const qiblaDirection = adhan.Qibla(coordinates);
-      setQibla(qiblaDirection);
+      // Calculate Qibla Angle relative to North
+      const qiblaDir = adhan.Qibla(coordinates);
+      setQiblaAngle(qiblaDir);
 
       const formatter = new Intl.DateTimeFormat('ar-SA', {
         hour: 'numeric',
@@ -123,13 +128,74 @@ const PrayerTimes: React.FC = () => {
       })));
     } catch (e) {
       console.error(e);
-      // Ensure error is a string
-      setError('حدث خطأ أثناء حساب المواقيت. يرجى المحاولة مرة أخرى.');
+      setError('حدث خطأ أثناء حساب المواقيت.');
     }
   };
 
+  // --- Compass Logic ---
+
+  const handleOrientation = (event: DeviceOrientationEvent) => {
+    let compassHeading = 0;
+    
+    // iOS devices
+    if ((event as any).webkitCompassHeading) {
+        compassHeading = (event as any).webkitCompassHeading;
+    } 
+    // Android/Non-iOS
+    else if (event.alpha) {
+        // alpha is counter-clockwise, we need clockwise
+        compassHeading = 360 - event.alpha;
+    }
+
+    setHeading(compassHeading);
+    setIsCompassActive(true);
+  };
+
+  const startCompass = async () => {
+    if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+        // iOS 13+ requires permission
+        try {
+            const response = await (DeviceOrientationEvent as any).requestPermission();
+            if (response === 'granted') {
+                setPermissionGranted(true);
+                window.addEventListener('deviceorientation', handleOrientation);
+            } else {
+                alert('يرجى السماح بالوصول إلى المستشعرات لاستخدام البوصلة');
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    } else {
+        // Non-iOS or older devices
+        setPermissionGranted(true);
+        window.addEventListener('deviceorientation', handleOrientation);
+    }
+  };
+
+  // Calculate rotation: 
+  // We rotate the compass disk so that 'North' on the disk points to True North.
+  // Disk Rotation = -Heading
+  // Kaaba Marker Rotation = Qibla Angle (It stays fixed relative to the North on the disk)
+  
+  // Calculate if aligned (within 5 degrees)
+  // Logic: The device is aligned if the Heading is close to the Qibla Angle
+  // Difference should be near 0
+  let bearing = qiblaAngle - heading;
+  // Normalize to -180 to +180
+  while (bearing < -180) bearing += 360;
+  while (bearing > 180) bearing -= 360;
+
+  const isAligned = isCompassActive && Math.abs(bearing) < 5;
+
+  // Haptic feedback on alignment
+  useEffect(() => {
+    if (isAligned && navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+  }, [isAligned]);
+
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-6 max-w-3xl mx-auto pb-10">
       <div className="text-center mb-6">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">مواقيت الصلاة</h2>
         
@@ -155,15 +221,15 @@ const PrayerTimes: React.FC = () => {
         
         {error && (
             <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm mt-4 inline-flex items-center gap-2">
-                <Loader2 size={16} className="animate-spin" /> {/* Just using an icon */}
+                <Loader2 size={16} className="animate-spin" />
                 {error}
             </div>
         )}
       </div>
 
-      {/* Prayer List */}
       {!loading && (
       <>
+        {/* Prayer List */}
         <div className="grid gap-3">
             {times.map((item, idx) => (
             <div 
@@ -185,41 +251,115 @@ const PrayerTimes: React.FC = () => {
             ))}
         </div>
 
-        {/* Qibla Section */}
-        <div className="mt-8 bg-white dark:bg-dark-surface p-8 rounded-2xl border border-gray-100 dark:border-dark-border text-center shadow-sm">
-            <h3 className="text-xl font-bold mb-4 flex items-center justify-center gap-2 text-gray-800 dark:text-white">
-                <Compass size={24} />
-                اتجاه القبلة
-            </h3>
+        {/* Dynamic Qibla Compass */}
+        <div className="mt-8 bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl border border-gray-100 dark:border-dark-border text-center shadow-sm relative overflow-hidden">
+            <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold flex items-center gap-2 text-gray-800 dark:text-white">
+                    <Compass size={24} className="text-primary-500" />
+                    القبلة الذكية
+                </h3>
+                {isCompassActive && (
+                    <button 
+                        onClick={() => setCalibrationNeeded(!calibrationNeeded)}
+                        className="text-xs text-gray-400 hover:text-primary-500 flex items-center gap-1"
+                    >
+                        <RefreshCw size={14} />
+                        معايرة
+                    </button>
+                )}
+            </div>
             
-            <div className="relative w-56 h-56 mx-auto my-6 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center border-4 border-gray-200 dark:border-gray-700 shadow-inner">
-                <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400 font-bold pointer-events-none">
-                    <span className="absolute top-3">N</span>
-                    <span className="absolute bottom-3">S</span>
-                    <span className="absolute right-3">E</span>
-                    <span className="absolute left-3">W</span>
+            {!isCompassActive ? (
+                <div className="py-12 flex flex-col items-center">
+                    <div className="w-48 h-48 bg-gray-100 dark:bg-gray-800/50 rounded-full flex items-center justify-center mb-6 border-4 border-dashed border-gray-300 dark:border-gray-700">
+                        <Navigation size={48} className="text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 mb-6 max-w-xs text-sm">
+                        لتفعيل البوصلة المتحركة، نحتاج إلى الوصول لمستشعرات الحركة في هاتفك.
+                    </p>
+                    <button 
+                        onClick={startCompass}
+                        className="bg-primary-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20"
+                    >
+                        تفعيل البوصلة
+                    </button>
                 </div>
-                
-                {/* Compass Dial */}
-                <div 
-                    className="w-full h-full absolute transition-transform duration-1000 ease-out will-change-transform"
-                    style={{ transform: `rotate(${qibla}deg)` }}
-                >
-                    {/* Qibla Indicator (Kaaba direction) */}
-                    <div className="absolute top-2 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                        <div className="w-4 h-4 bg-primary-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.6)] z-20"></div>
-                        <div className="w-1 h-24 bg-gradient-to-b from-primary-500/50 to-transparent rounded-full"></div>
+            ) : (
+                <div className="relative flex flex-col items-center justify-center py-4">
+                    {/* Compass Container */}
+                    <div className="relative w-64 h-64 md:w-72 md:h-72">
+                        
+                        {/* Outer Static Ring */}
+                        <div className={`absolute inset-0 rounded-full border-4 transition-colors duration-500 ${isAligned ? 'border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)]' : 'border-gray-200 dark:border-gray-700'}`}></div>
+                        
+                        {/* Alignment Arrow (Fixed at top) */}
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+                             <div className={`w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[16px] transition-colors duration-300 ${isAligned ? 'border-b-emerald-500' : 'border-b-gray-300 dark:border-b-gray-600'}`}></div>
+                        </div>
+
+                        {/* Rotating Compass Disc */}
+                        <div 
+                            className="w-full h-full rounded-full bg-gray-50 dark:bg-gray-800 shadow-inner relative transition-transform duration-300 ease-out will-change-transform"
+                            style={{ transform: `rotate(${-heading}deg)` }}
+                        >
+                            {/* Cardinal Points */}
+                            <div className="absolute top-4 left-1/2 -translate-x-1/2 text-red-500 font-bold">N</div>
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-gray-400 text-xs">S</div>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs">E</div>
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs">W</div>
+
+                            {/* Ticks */}
+                            {[0, 90, 180, 270].map(deg => (
+                                <div 
+                                    key={deg}
+                                    className="absolute top-0 left-1/2 h-full w-0.5"
+                                    style={{ transform: `translateX(-50%) rotate(${deg}deg)` }}
+                                >
+                                    <div className="w-full h-2 bg-gray-300 dark:bg-gray-600"></div>
+                                    <div className="w-full h-2 bg-gray-300 dark:bg-gray-600 absolute bottom-0"></div>
+                                </div>
+                            ))}
+
+                            {/* Kaaba/Qibla Indicator */}
+                            <div 
+                                className="absolute top-1/2 left-1/2 w-full h-full pointer-events-none"
+                                style={{ transform: `translate(-50%, -50%) rotate(${qiblaAngle}deg)` }}
+                            >
+                                {/* The Pointer Line */}
+                                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-1 h-1/2 bg-gradient-to-t from-transparent to-emerald-500/50 origin-bottom"></div>
+                                
+                                {/* The Icon */}
+                                <div className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center transform -rotate-[${qiblaAngle}deg]">
+                                    <div className={`transition-all duration-300 p-2 rounded-lg ${isAligned ? 'bg-emerald-500 text-white shadow-lg scale-110' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}>
+                                        <div className="w-6 h-6 bg-black rounded-sm border border-amber-400 relative">
+                                            <div className="absolute top-1 w-full h-[1px] bg-amber-400"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Center Hub */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white dark:bg-dark-surface rounded-full border-2 border-gray-200 dark:border-gray-600 z-10 shadow-sm"></div>
+                    </div>
+
+                    <div className="mt-6 text-center">
+                        <p className={`text-lg font-bold transition-colors ${isAligned ? 'text-emerald-500' : 'text-gray-600 dark:text-gray-300'}`}>
+                            {isAligned ? 'أنت بمواجهة القبلة الآن' : 'قم بتدوير هاتفك'}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1 font-mono" dir="ltr">
+                            Heading: {Math.round(heading)}° | Qibla: {Math.round(qiblaAngle)}°
+                        </p>
                     </div>
                 </div>
-
-                {/* Center Point */}
-                <div className="z-10 bg-white dark:bg-dark-surface px-4 py-2 rounded-xl shadow-lg border border-gray-100 dark:border-dark-border font-bold text-2xl text-primary-600 dark:text-primary-400">
-                    {Math.round(qibla)}°
+            )}
+            
+            {calibrationNeeded && (
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-xs text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                    <RefreshCw size={16} className="animate-spin" />
+                    حرك هاتفك على شكل رقم 8 لمعايرة البوصلة إذا كانت الاتجاهات غير دقيقة.
                 </div>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
-                السهم يشير إلى اتجاه القبلة بالنسبة للشمال. قم بتوجيه هاتفك بحيث يتطابق اتجاه الشمال في البوصلة مع الشمال الحقيقي.
-            </p>
+            )}
         </div>
       </>
       )}

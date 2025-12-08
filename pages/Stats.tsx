@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { Flame, CheckCircle, BarChart3 } from 'lucide-react';
 import * as storage from '../services/storage';
@@ -7,18 +8,18 @@ import { ProgressState } from '../types';
 
 const Stats: React.FC = () => {
   const [stats, setStats] = useState<storage.StatsData | null>(null);
-  const [progress, setProgress] = useState<ProgressState>({});
+  const [history, setHistory] = useState<ProgressState>({});
 
   useEffect(() => {
     setStats(storage.getStats());
-    setProgress(storage.getProgress());
+    setHistory(storage.getHistory());
   }, []);
 
-  // Derive simple heatmap data (date -> total count) for the graph visuals
+  // Derive simple heatmap data (date -> total count) for the graph visuals using History
   const heatmapData = useMemo(() => {
     const data: { [date: string]: number } = {};
-    Object.keys(progress).forEach(date => {
-      const dayData = progress[date];
+    Object.keys(history).forEach(date => {
+      const dayData = history[date];
       const values = Object.values(dayData) as number[];
       const total = values.reduce((a, b) => (b > 0 ? a + b : a), 0);
       if (total > 0) {
@@ -26,7 +27,7 @@ const Stats: React.FC = () => {
       }
     });
     return data;
-  }, [progress]);
+  }, [history]);
 
   if (!stats) return <div className="p-10 text-center">جاري التحميل...</div>;
 
@@ -74,7 +75,7 @@ const Stats: React.FC = () => {
             <span className="text-xs md:text-sm font-normal text-gray-400">(آخر 3 أشهر)</span>
         </h3>
         
-        <ContributionGraph data={heatmapData} progress={progress} />
+        <ContributionGraph data={heatmapData} history={history} />
         
         <div className="flex items-center justify-end gap-2 mt-6 text-xs text-gray-400">
             <span>أقل</span>
@@ -99,7 +100,7 @@ interface TooltipData {
   categories: { title: string; count: number }[];
 }
 
-const ContributionGraph: React.FC<{ data: { [date: string]: number }, progress: ProgressState }> = ({ data, progress }) => {
+const ContributionGraph: React.FC<{ data: { [date: string]: number }, history: ProgressState }> = ({ data, history }) => {
     const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
     // Generate last 90 days for mobile friendliness
@@ -124,13 +125,13 @@ const ContributionGraph: React.FC<{ data: { [date: string]: number }, progress: 
         const dateKey = date.toISOString().split('T')[0];
         const dateStr = new Intl.DateTimeFormat('ar-SA', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
         
-        // Calculate Category Breakdown
-        const dayData = progress[dateKey] || {};
+        // Calculate Category Breakdown using History
+        const dayData = history[dateKey] || {};
         const catCounts: { [key: string]: number } = {};
         
         Object.entries(dayData).forEach(([dhikrId, val]) => {
             const value = val as number;
-            if (value <= 0) return; // Skip if 0 or skipped (-1)
+            if (value <= 0) return;
             
             const dhikr = AZKAR_DATA.find(d => d.id === parseInt(dhikrId));
             if (dhikr) {

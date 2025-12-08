@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Dhikr } from '../types';
 import { Heart, Repeat, Info, SkipForward, Settings, Copy, Share2, Check, Loader2, Play, Pause, Volume2 } from 'lucide-react';
@@ -153,7 +154,10 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
     if (count < currentTarget) {
       const newCount = count + 1;
       setCount(newCount);
+      // Save Session Progress (UI reset daily)
       storage.saveProgress(item.id, newCount);
+      // Increment Historical Stats (Permanent)
+      storage.incrementHistory(item.id, 1);
       
       // Tap Animation
       setAnimate(true);
@@ -186,7 +190,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
     e.stopPropagation();
     if (resetConfirm) {
       setCount(0);
-      storage.saveProgress(item.id, 0);
+      storage.saveProgress(item.id, 0); // Only reset session, keep history
       setResetConfirm(false);
     } else {
       setResetConfirm(true);
