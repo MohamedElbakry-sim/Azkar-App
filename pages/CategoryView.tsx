@@ -4,7 +4,7 @@ import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { AZKAR_DATA, CATEGORIES } from '../data';
 import DhikrCard from '../components/DhikrCard';
 import * as storage from '../services/storage';
-import { CheckCircle, SunMedium, MoonStar, CloudMoon, Sparkles, BookOpen, Copy, Home, BarChart3 } from 'lucide-react';
+import { CheckCircle, SunMedium, MoonStar, CloudMoon, Sparkles, BookOpen, Copy, Home, BarChart3, Loader2 } from 'lucide-react';
 
 const CategoryView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,8 +17,10 @@ const CategoryView: React.FC = () => {
   
   // Track IDs that are "visible"
   const [visibleIds, setVisibleIds] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    setIsLoading(true);
     setFavorites(storage.getFavorites());
     const allProgress = storage.getProgress();
     const today = storage.getTodayKey();
@@ -44,6 +46,7 @@ const CategoryView: React.FC = () => {
         
         setVisibleIds(incompleteIds);
     }
+    setIsLoading(false);
   }, [id]);
 
   const handleToggleFavorite = (dhikrId: number) => {
@@ -177,60 +180,68 @@ const CategoryView: React.FC = () => {
 
       {/* List */}
       <div className="space-y-6 min-h-[50vh]">
-        {items
-          .filter(item => visibleIds.includes(item.id))
-          .map((item, index) => (
-            <div 
-              key={item.id} 
-              className="animate-slideUp opacity-0 fill-mode-forwards"
-              style={{ animationDelay: `${index * 80}ms` }}
-            >
-              <DhikrCard
-                item={item}
-                isFavorite={favorites.includes(item.id)}
-                initialCount={progress[item.id] || 0}
-                targetCount={customTargets[item.id] || item.count}
-                onToggleFavorite={handleToggleFavorite}
-                onComplete={handleComplete}
-                onTargetChange={handleTargetChange}
-              />
+        {isLoading ? (
+             <div className="flex justify-center py-20">
+                 <Loader2 className="animate-spin text-primary-300" size={40} />
             </div>
-        ))}
+        ) : (
+          <>
+            {items
+            .filter(item => visibleIds.includes(item.id))
+            .map((item, index) => (
+                <div 
+                key={item.id} 
+                className="animate-slideUp opacity-0 fill-mode-forwards"
+                style={{ animationDelay: `${index * 80}ms` }}
+                >
+                <DhikrCard
+                    item={item}
+                    isFavorite={favorites.includes(item.id)}
+                    initialCount={progress[item.id] || 0}
+                    targetCount={customTargets[item.id] || item.count}
+                    onToggleFavorite={handleToggleFavorite}
+                    onComplete={handleComplete}
+                    onTargetChange={handleTargetChange}
+                />
+                </div>
+            ))}
 
-        {visibleIds.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-10 md:py-16 text-center animate-slideUp">
-            <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6 text-green-600 dark:text-green-400 shadow-sm animate-popIn">
-                <CheckCircle size={48} />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">فتح الله عليك</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-lg mb-8">لقد أنهيت {category.title} لهذا اليوم</p>
-            
-            {/* Stats Card */}
-            <div className="bg-gray-50 dark:bg-dark-surface rounded-2xl p-6 w-full max-w-sm mb-8 border border-gray-100 dark:border-dark-border shadow-sm">
-                <h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 flex items-center justify-center gap-2">
-                    <BarChart3 size={16} />
-                    ملخص الإنجاز
-                </h4>
-                <div className="flex items-center justify-around divide-x divide-x-reverse divide-gray-200 dark:divide-gray-700">
-                    <div className="flex flex-col items-center p-2">
-                         <span className="text-3xl font-bold text-primary-600 dark:text-primary-400">{items.length}</span>
-                         <span className="text-xs text-gray-400 mt-1">عدد الأذكار</span>
-                    </div>
-                    <div className="flex flex-col items-center p-2">
-                         <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">{totalRepetitions}</span>
-                         <span className="text-xs text-gray-400 mt-1">مجموع التكرار</span>
+            {!isLoading && visibleIds.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-10 md:py-16 text-center animate-slideUp">
+                <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6 text-green-600 dark:text-green-400 shadow-sm animate-popIn">
+                    <CheckCircle size={48} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">فتح الله عليك</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-lg mb-8">لقد أنهيت {category.title} لهذا اليوم</p>
+                
+                {/* Stats Card */}
+                <div className="bg-gray-50 dark:bg-dark-surface rounded-2xl p-6 w-full max-w-sm mb-8 border border-gray-100 dark:border-dark-border shadow-sm">
+                    <h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 flex items-center justify-center gap-2">
+                        <BarChart3 size={16} />
+                        ملخص الإنجاز
+                    </h4>
+                    <div className="flex items-center justify-around divide-x divide-x-reverse divide-gray-200 dark:divide-gray-700">
+                        <div className="flex flex-col items-center p-2">
+                            <span className="text-3xl font-bold text-primary-600 dark:text-primary-400">{items.length}</span>
+                            <span className="text-xs text-gray-400 mt-1">عدد الأذكار</span>
+                        </div>
+                        <div className="flex flex-col items-center p-2">
+                            <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">{totalRepetitions}</span>
+                            <span className="text-xs text-gray-400 mt-1">مجموع التكرار</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <button 
-                onClick={() => navigate('/')}
-                className="mt-4 flex items-center justify-center gap-2 w-full max-w-sm px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20 font-bold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-                <Home size={18} />
-                <span>العودة للرئيسية</span>
-            </button>
-          </div>
+                <button 
+                    onClick={() => navigate('/')}
+                    className="mt-4 flex items-center justify-center gap-2 w-full max-w-sm px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20 font-bold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                    <Home size={18} />
+                    <span>العودة للرئيسية</span>
+                </button>
+            </div>
+            )}
+          </>
         )}
       </div>
     </div>

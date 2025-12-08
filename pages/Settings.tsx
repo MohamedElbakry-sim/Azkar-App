@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, Smartphone, Trash2, Globe, Languages, BellOff, Clock, Bell, Plus, X, Type } from 'lucide-react';
+import { Moon, Sun, Trash2, Bell, Plus, Type } from 'lucide-react';
 import * as storage from '../services/storage';
 
 interface SettingsProps {
@@ -9,11 +9,7 @@ interface SettingsProps {
 }
 
 const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
-  const [hapticEnabled, setHapticEnabled] = useState(true);
-  const [showTranslation, setShowTranslation] = useState(false);
-  const [showTransliteration, setShowTransliteration] = useState(false);
   const [fontSize, setFontSize] = useState<storage.FontSize>('medium');
-  const [dndSettings, setDndSettings] = useState<storage.DNDSettings>({ enabled: false, endTime: null });
   
   // Reminder State
   const [reminders, setReminders] = useState<storage.Reminder[]>([]);
@@ -22,53 +18,13 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   const [newReminderLabel, setNewReminderLabel] = useState('');
 
   useEffect(() => {
-    setHapticEnabled(storage.getHapticEnabled());
-    setShowTranslation(storage.getShowTranslation());
-    setShowTransliteration(storage.getShowTransliteration());
     setFontSize(storage.getFontSize());
-    setDndSettings(storage.getDNDSettings());
     setReminders(storage.getReminders());
   }, []);
-
-  const toggleHaptic = () => {
-    const newValue = !hapticEnabled;
-    setHapticEnabled(newValue);
-    storage.saveHapticEnabled(newValue);
-    if (newValue && !dndSettings.enabled && navigator.vibrate) navigator.vibrate(20);
-  };
-
-  const toggleTranslation = () => {
-    const newValue = !showTranslation;
-    setShowTranslation(newValue);
-    storage.saveShowTranslation(newValue);
-  };
-
-  const toggleTransliteration = () => {
-    const newValue = !showTransliteration;
-    setShowTransliteration(newValue);
-    storage.saveShowTransliteration(newValue);
-  };
 
   const changeFontSize = (size: storage.FontSize) => {
     setFontSize(size);
     storage.saveFontSize(size);
-  };
-
-  const toggleDND = () => {
-    const newEnabled = !dndSettings.enabled;
-    const newSettings = { 
-        enabled: newEnabled, 
-        endTime: null // Default to manual/indefinite when toggling
-    };
-    setDndSettings(newSettings);
-    storage.saveDNDSettings(newSettings);
-  };
-
-  const setDNDDuration = (minutes: number | null) => {
-    const newEndTime = minutes === null ? null : Date.now() + minutes * 60 * 1000;
-    const newSettings = { ...dndSettings, enabled: true, endTime: newEndTime };
-    setDndSettings(newSettings);
-    storage.saveDNDSettings(newSettings);
   };
 
   const clearData = () => {
@@ -132,16 +88,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
 
   // --- Render Helpers ---
 
-  const formatTime = (timestamp: number) => {
-    return new Intl.DateTimeFormat('ar-SA', { hour: 'numeric', minute: 'numeric' }).format(new Date(timestamp));
-  };
-
-  const getDNDStatusString = () => {
-      if (!dndSettings.enabled) return "تعطيل الاهتزاز والتنبيهات مؤقتاً";
-      if (dndSettings.endTime) return `مفعل حتى ${formatTime(dndSettings.endTime)}`;
-      return "مفعل (يدوياً)";
-  };
-
   const getPreviewFontSizeClass = () => {
     switch (fontSize) {
       case 'small': return 'text-xl md:text-2xl';
@@ -197,20 +143,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
         `} 
       />
     </button>
-  );
-
-  const DurationButton = ({ label, active, onClick }: { label: string, active: boolean, onClick: () => void }) => (
-      <button 
-        onClick={onClick}
-        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400
-            ${active 
-                ? 'bg-primary-500 text-white border-primary-500' 
-                : 'bg-white dark:bg-dark-bg text-gray-600 dark:text-gray-300 border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-surface'
-            }
-        `}
-      >
-          {label}
-      </button>
   );
 
   return (
@@ -367,54 +299,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
              <p className="text-xs text-gray-400 mt-2">معاينة النص</p>
           </div>
         </div>
-
-        {/* Do Not Disturb Toggle */}
-        <SettingsItem 
-          icon={BellOff}
-          label="عدم الإزعاج"
-          description={getDNDStatusString()}
-          action={<Toggle checked={dndSettings.enabled} onChange={toggleDND} label="تفعيل وضع عدم الإزعاج" />}
-        />
-
-        {/* Duration Options */}
-        {dndSettings.enabled && (
-            <div className="bg-gray-50 dark:bg-dark-surface rounded-xl p-4 mx-2 border border-gray-100 dark:border-dark-border animate-fadeIn">
-                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-600 dark:text-gray-300">
-                    <Clock size={16} />
-                    <span>إيقاف التشغيل تلقائياً بعد:</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    <DurationButton label="يدوياً" active={dndSettings.endTime === null} onClick={() => setDNDDuration(null)} />
-                    <DurationButton label="30 دقيقة" active={false} onClick={() => setDNDDuration(30)} />
-                    <DurationButton label="ساعة" active={false} onClick={() => setDNDDuration(60)} />
-                    <DurationButton label="8 ساعات" active={false} onClick={() => setDNDDuration(480)} />
-                </div>
-            </div>
-        )}
-
-        {/* Haptic Feedback Toggle */}
-        <SettingsItem 
-          icon={Smartphone}
-          label="الاهتزاز"
-          description={dndSettings.enabled ? "متوقف مؤقتاً بسبب وضع عدم الإزعاج" : "تشغيل الاهتزاز عند التسبيح"}
-          action={<Toggle checked={hapticEnabled} onChange={toggleHaptic} label="تفعيل الاهتزاز" />}
-        />
-
-        {/* Translation Toggle */}
-        <SettingsItem 
-          icon={Globe}
-          label="الترجمة"
-          description="عرض الترجمة الإنجليزية (إن وجدت)"
-          action={<Toggle checked={showTranslation} onChange={toggleTranslation} label="تفعيل الترجمة" />}
-        />
-
-        {/* Transliteration Toggle */}
-        <SettingsItem 
-          icon={Languages}
-          label="النطق الصوتي"
-          description="عرض النطق بالحروف اللاتينية"
-          action={<Toggle checked={showTransliteration} onChange={toggleTransliteration} label="تفعيل النطق الصوتي" />}
-        />
 
         <div className="my-8 border-t border-gray-200 dark:border-gray-700"></div>
 

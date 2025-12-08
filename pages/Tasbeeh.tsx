@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { RotateCcw, Check } from 'lucide-react';
 import * as storage from '../services/storage';
@@ -19,18 +20,6 @@ const Tasbeeh: React.FC = () => {
     // Trigger animation
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 150);
-    
-    // Haptic feedback (respects DND)
-    if (storage.shouldTriggerHaptics() && navigator.vibrate) {
-       // Subtle haptic feedback on multiples of 33
-       if (newCount % 33 === 0) {
-         // Distinct but subtle vibration for milestones
-         navigator.vibrate(40);
-       } else {
-         // Very light tick for normal counts
-         navigator.vibrate(10);
-       }
-    }
   };
 
   const handleReset = () => {
@@ -38,12 +27,8 @@ const Tasbeeh: React.FC = () => {
       setCount(0);
       storage.saveTasbeehCount(0);
       setResetConfirm(false);
-      // Success Haptic
-      if (storage.shouldTriggerHaptics() && navigator.vibrate) navigator.vibrate(50);
     } else {
       setResetConfirm(true);
-      // Warning Haptic
-      if (storage.shouldTriggerHaptics() && navigator.vibrate) navigator.vibrate(20);
       
       // Auto dismiss after 3s
       setTimeout(() => setResetConfirm(false), 3000);

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Dhikr } from '../types';
-import { Heart, Repeat, Info, SkipForward, Settings, Check, Download, Globe } from 'lucide-react';
+import { Heart, Repeat, Info, SkipForward, Settings } from 'lucide-react';
 import * as storage from '../services/storage';
 import { getHighlightRegex } from '../utils';
 
@@ -33,8 +33,6 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   const [resetConfirm, setResetConfirm] = useState(false);
   
   // Settings state
-  const [showTranslation, setShowTranslation] = useState(false);
-  const [showTransliteration, setShowTransliteration] = useState(false);
   const [fontSize, setFontSize] = useState<storage.FontSize>('medium');
 
   // Edit mode state
@@ -48,8 +46,6 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
 
   useEffect(() => {
     setCount(initialCount);
-    setShowTranslation(storage.getShowTranslation());
-    setShowTransliteration(storage.getShowTransliteration());
     setFontSize(storage.getFontSize());
   }, [initialCount]);
 
@@ -67,11 +63,6 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
 
       // Completion Logic
       if (newCount >= currentTarget) {
-        // Success Haptic
-        if (storage.shouldTriggerHaptics() && navigator.vibrate) {
-          navigator.vibrate([50, 80, 50]); 
-        }
-
         // Trigger Exit Animation
         setTimeout(() => {
           setIsExiting(true);
@@ -80,11 +71,6 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             if (onComplete) onComplete(item.id);
           }, 800); 
         }, 300); 
-      } else {
-        // Normal Haptic
-        if (storage.shouldTriggerHaptics() && navigator.vibrate) {
-          navigator.vibrate(10);
-        }
       }
     }
   };
@@ -104,8 +90,6 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
       setCount(0);
       storage.saveProgress(item.id, 0);
       setResetConfirm(false);
-      // Haptic
-      if (storage.shouldTriggerHaptics() && navigator.vibrate) navigator.vibrate(20);
     } else {
       setResetConfirm(true);
       setTimeout(() => setResetConfirm(false), 3000);
@@ -279,18 +263,6 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             <p className={`font-serif leading-loose text-gray-800 dark:text-gray-100 mb-4 transition-all duration-300 ${getFontSizeClass()}`}>
               {renderHighlightedText(item.text, highlightQuery)}
             </p>
-            
-            {showTransliteration && item.transliteration && (
-              <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 italic mb-2 dir-ltr" lang="en">
-                {item.transliteration}
-              </p>
-            )}
-            
-            {showTranslation && item.translation && (
-              <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 dir-ltr" lang="en">
-                {item.translation}
-              </p>
-            )}
           </div>
         )}
 

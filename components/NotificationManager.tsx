@@ -16,11 +16,7 @@ const NotificationManager: React.FC = () => {
     }
 
     const checkReminders = () => {
-      // 1. Check if DND is active
-      const dnd = storage.getDNDSettings();
-      if (dnd.enabled) return;
-
-      // 2. Get current time
+      // 1. Get current time
       const now = new Date();
       const hours = now.getHours().toString().padStart(2, '0');
       const minutes = now.getMinutes().toString().padStart(2, '0');
@@ -30,7 +26,7 @@ const NotificationManager: React.FC = () => {
       if (lastCheckedMinute.current === currentTime) return;
       lastCheckedMinute.current = currentTime;
 
-      // 3. Check against reminders
+      // 2. Check against reminders
       const reminders = storage.getReminders();
       const matchingReminders = reminders.filter(r => r.enabled && r.time === currentTime);
 

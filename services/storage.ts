@@ -5,19 +5,9 @@ const FAVORITES_KEY = 'nour_favorites_v1';
 const PROGRESS_KEY = 'nour_progress_v1';
 const TASBEEH_KEY = 'nour_tasbeeh_count';
 const CUSTOM_TARGETS_KEY = 'nour_custom_targets_v1';
-const HAPTIC_KEY = 'nour_haptic_enabled';
-const SHOW_TRANSLATION_KEY = 'nour_show_translation';
-const SHOW_TRANSLITERATION_KEY = 'nour_show_transliteration';
-const DND_KEY = 'nour_dnd_settings';
 const TUTORIAL_KEY = 'nour_tutorial_seen_v1';
 const REMINDERS_KEY = 'nour_reminders_v1';
 const FONT_SIZE_KEY = 'nour_font_size_v1';
-
-// --- Do Not Disturb Types ---
-export interface DNDSettings {
-  enabled: boolean;
-  endTime: number | null; // Timestamp in ms. null means indefinite if enabled.
-}
 
 // --- Reminder Types ---
 export interface Reminder {
@@ -108,77 +98,6 @@ export const saveCustomTarget = (id: number, target: number) => {
   const targets = getCustomTargets();
   targets[id] = target;
   localStorage.setItem(CUSTOM_TARGETS_KEY, JSON.stringify(targets));
-};
-
-export const getHapticEnabled = (): boolean => {
-  try {
-    const stored = localStorage.getItem(HAPTIC_KEY);
-    return stored === null ? true : stored === 'true';
-  } catch {
-    return true;
-  }
-};
-
-export const saveHapticEnabled = (enabled: boolean) => {
-  localStorage.setItem(HAPTIC_KEY, String(enabled));
-};
-
-// --- Do Not Disturb Logic ---
-
-export const getDNDSettings = (): DNDSettings => {
-  try {
-    const stored = localStorage.getItem(DND_KEY);
-    if (!stored) return { enabled: false, endTime: null };
-    
-    const settings: DNDSettings = JSON.parse(stored);
-    
-    // Check for expiration
-    if (settings.enabled && settings.endTime && Date.now() > settings.endTime) {
-      const expiredSettings = { enabled: false, endTime: null };
-      saveDNDSettings(expiredSettings);
-      return expiredSettings;
-    }
-    
-    return settings;
-  } catch {
-    return { enabled: false, endTime: null };
-  }
-};
-
-export const saveDNDSettings = (settings: DNDSettings) => {
-  localStorage.setItem(DND_KEY, JSON.stringify(settings));
-};
-
-// Helper to determine if vibration should occur
-// Returns false if DND is active OR if Haptics are disabled globally
-export const shouldTriggerHaptics = (): boolean => {
-  const dnd = getDNDSettings();
-  if (dnd.enabled) return false;
-  return getHapticEnabled();
-};
-
-export const getShowTranslation = (): boolean => {
-  try {
-    return localStorage.getItem(SHOW_TRANSLATION_KEY) === 'true';
-  } catch {
-    return false;
-  }
-};
-
-export const saveShowTranslation = (enabled: boolean) => {
-  localStorage.setItem(SHOW_TRANSLATION_KEY, String(enabled));
-};
-
-export const getShowTransliteration = (): boolean => {
-  try {
-    return localStorage.getItem(SHOW_TRANSLITERATION_KEY) === 'true';
-  } catch {
-    return false;
-  }
-};
-
-export const saveShowTransliteration = (enabled: boolean) => {
-  localStorage.setItem(SHOW_TRANSLITERATION_KEY, String(enabled));
 };
 
 // --- Font Size Logic ---
