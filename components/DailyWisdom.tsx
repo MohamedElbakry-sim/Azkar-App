@@ -87,13 +87,13 @@ const DailyWisdom: React.FC = () => {
             }
 
             const canvas = await html2canvas(shareRef.current, {
-                scale: 1.5, // Reduced from 2 to 1.5 to save file size
+                scale: 3, // High quality scale
                 backgroundColor: null,
                 useCORS: true,
                 logging: false,
             });
 
-            // Use JPEG with 0.85 quality for better compression
+            // Use JPEG with 0.95 quality for better compression but high visual quality
             canvas.toBlob(async (blob: Blob | null) => {
                 if (!blob) {
                      setIsSharing(null);
@@ -114,12 +114,12 @@ const DailyWisdom: React.FC = () => {
                 } else {
                     const link = document.createElement('a');
                     link.download = `nour-${type}-of-day.jpg`;
-                    link.href = canvas.toDataURL('image/jpeg', 0.85);
+                    link.href = canvas.toDataURL('image/jpeg', 0.95);
                     link.click();
                 }
                 setIsSharing(null);
                 setShareData(null); // Reset
-            }, 'image/jpeg', 0.85);
+            }, 'image/jpeg', 0.95);
 
         } catch (error) {
             console.error('Image generation failed', error);
@@ -188,15 +188,15 @@ const DailyWisdom: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Footer Branding - Redesigned */}
-                <div className="absolute bottom-16 flex items-center justify-center" dir="rtl">
-                     <div className="flex items-center gap-4 bg-black/20 backdrop-blur-md px-8 py-4 rounded-full border border-white/10 shadow-2xl">
-                        <Logo size={56} className="text-white" />
-                        <div className="flex flex-col items-start gap-0.5">
-                            <span className="text-white text-2xl font-bold font-serif leading-none">تطبيق نور</span>
-                            <span className="text-white/70 text-lg leading-none">رفيقك اليومي في الذكر</span>
+                {/* Footer Branding - Fixed & Clean */}
+                <div className="absolute bottom-12 left-0 right-0 flex justify-center items-center" dir="rtl">
+                    <div className="flex items-center gap-5 bg-black/20 backdrop-blur-xl px-10 py-5 rounded-full border border-white/10 shadow-2xl">
+                        <Logo size={72} className="text-white drop-shadow-md" />
+                        <div className="flex flex-col gap-1 text-right">
+                            <span className="text-white text-3xl font-bold font-serif leading-none tracking-wide drop-shadow-md">نور</span>
+                            <span className="text-white/90 text-xl font-medium leading-none drop-shadow-sm">رفيقك اليومي في الذكر</span>
                         </div>
-                     </div>
+                    </div>
                 </div>
             </div>
         )}

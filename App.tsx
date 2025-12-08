@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, Suspense } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -12,6 +13,7 @@ const Favorites = React.lazy(() => import('./pages/Favorites'));
 const Stats = React.lazy(() => import('./pages/Stats'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 const PrayerTimes = React.lazy(() => import('./pages/PrayerTimes'));
+const NamesOfAllah = React.lazy(() => import('./pages/NamesOfAllah'));
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(() => {
@@ -73,6 +75,7 @@ const App: React.FC = () => {
             <Route path="/category/:id" element={<CategoryView />} />
             <Route path="/prayers" element={<PrayerTimes />} />
             <Route path="/tasbeeh" element={<Tasbeeh />} />
+            <Route path="/names" element={<NamesOfAllah />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />

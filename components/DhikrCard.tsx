@@ -186,13 +186,13 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         }
 
         const canvas = await html2canvas(shareRef.current, {
-            scale: 1.5, // Optimized scale (was 2) to reduce file size while maintaining good quality
+            scale: 3, // High quality scale
             backgroundColor: null, 
             useCORS: true,
             logging: false,
         });
 
-        // Use JPEG with 0.85 quality for significant file size reduction compared to PNG
+        // Use JPEG with 0.95 quality for high quality result
         canvas.toBlob(async (blob: Blob | null) => {
             if (!blob) return;
             
@@ -212,11 +212,11 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                 // Fallback: Download the image
                 const link = document.createElement('a');
                 link.download = 'dhikr-nour.jpg';
-                link.href = canvas.toDataURL('image/jpeg', 0.85);
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
                 link.click();
             }
             setIsSharing(false);
-        }, 'image/jpeg', 0.85);
+        }, 'image/jpeg', 0.95);
 
     } catch (err) {
         console.error('Share failed', err);
@@ -293,7 +293,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                 )}
                 
                 {/* Main Text */}
-                <div className="max-w-4xl">
+                <div className="max-w-4xl px-8">
                    {hasBasmala && (
                         <div className="text-primary-200 font-serif text-4xl mb-6 opacity-90 drop-shadow-sm">
                             {BASMALA}
@@ -312,12 +312,14 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                 )}
             </div>
 
-            {/* Footer Branding */}
-            <div className="mt-12 flex items-center gap-4 text-white/80">
-                <Logo size={64} className="text-white" />
-                <div className="flex flex-col items-start gap-1">
-                    <span className="text-3xl font-bold font-serif tracking-wide">نور</span>
-                    <span className="text-xl opacity-80">أذكار المسلم</span>
+            {/* Footer Branding - Fixed & Clean */}
+            <div className="absolute bottom-12 left-0 right-0 flex justify-center items-center" dir="rtl">
+                <div className="flex items-center gap-5 bg-black/20 backdrop-blur-xl px-10 py-5 rounded-full border border-white/10 shadow-2xl">
+                    <Logo size={72} className="text-white drop-shadow-md" />
+                    <div className="flex flex-col gap-1 text-right">
+                        <span className="text-white text-3xl font-bold font-serif leading-none tracking-wide drop-shadow-md">نور</span>
+                        <span className="text-white/90 text-xl font-medium leading-none drop-shadow-sm">رفيقك اليومي في الذكر</span>
+                    </div>
                 </div>
             </div>
         </div>

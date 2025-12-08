@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CATEGORIES, AZKAR_DATA } from '../data';
 import { ChevronLeft, Search, X, AlertCircle } from 'lucide-react';
@@ -33,53 +33,60 @@ const Home: React.FC = () => {
     }
   };
 
-  const filteredAzkar = searchQuery.trim().length > 0 
-    ? AZKAR_DATA
-        .filter(item => activeCategory ? item.category === activeCategory : true)
-        .map(item => {
-           let score = 0;
-           const normalizedQuery = normalizeArabic(searchQuery.toLowerCase());
-           const normalizedText = normalizeArabic(item.text);
-           const normalizedBenefit = item.benefit ? normalizeArabic(item.benefit) : '';
-           const normalizedSource = item.source ? normalizeArabic(item.source) : '';
-           
-           const queryWords = normalizedQuery.split(' ').filter(w => w.trim().length > 0);
-           
-           // Calculate matches for each field
-           const textMatches = queryWords.filter(w => normalizedText.includes(w)).length;
-           const benefitMatches = queryWords.filter(w => normalizedBenefit.includes(w)).length;
-           const sourceMatches = queryWords.filter(w => normalizedSource.includes(w)).length;
+  // Advanced Search Logic with Memoization
+  const filteredAzkar = useMemo(() => {
+    if (searchQuery.trim().length === 0) return [];
 
-           // STRICT MODE: All words must appear somewhere in the item (AND logic)
-           const isMatch = queryWords.every(w => 
-             normalizedText.includes(w) || 
-             normalizedBenefit.includes(w) || 
-             normalizedSource.includes(w)
-           );
+    const normalizedQuery = normalizeArabic(searchQuery.toLowerCase());
+    const queryWords = normalizedQuery.split(/\s+/).filter(w => w.length > 0);
 
-           if (isMatch) {
-              // Base score for match
-              score += 100;
-              
-              // Relevance Boosting
-              score += textMatches * 20; // Text matches are more valuable
-              score += benefitMatches * 10; // Benefit matches are secondary
-              score += sourceMatches * 5; 
-              
-              // Exact Phrase Bonus (Very High)
-              if (normalizedText.includes(normalizedQuery)) score += 50;
-              if (normalizedText.startsWith(normalizedQuery)) score += 30; // Starts with query
+    return AZKAR_DATA
+      .filter(item => activeCategory ? item.category === activeCategory : true)
+      .map(item => {
+          let score = 0;
+          const normalizedText = normalizeArabic(item.text);
+          const normalizedBenefit = item.benefit ? normalizeArabic(item.benefit) : '';
+          const normalizedSource = item.source ? normalizeArabic(item.source) : '';
 
-              return { item, score };
-           }
-           
-           return null;
-        })
-        .filter((result): result is { item: typeof AZKAR_DATA[0], score: number } => result !== null)
-        .sort((a, b) => b.score - a.score) // Sort by score descending
-        .map(result => result.item)
-        .slice(0, 20) // Limit results
-    : [];
+          // 1. Exact Phrase Match (Highest Priority)
+          if (normalizedText.includes(normalizedQuery)) score += 100;
+          if (normalizedSource.includes(normalizedQuery)) score += 80;
+
+          // 2. Word Scoring
+          let matchedWordsCount = 0;
+          queryWords.forEach(word => {
+            let wordMatch = false;
+            // Text Match
+            if (normalizedText.includes(word)) {
+              score += 20;
+              wordMatch = true;
+            }
+            // Source Match
+            if (normalizedSource.includes(word)) {
+              score += 15;
+              wordMatch = true;
+            }
+            // Benefit Match (Lower priority)
+            if (normalizedBenefit.includes(word)) {
+              score += 5;
+              wordMatch = true;
+            }
+
+            if (wordMatch) matchedWordsCount++;
+          });
+
+          // 3. Completeness Bonus (If all typed words exist somewhere in the item)
+          if (matchedWordsCount === queryWords.length && queryWords.length > 0) {
+            score += 50;
+          }
+
+          return { item, score };
+      })
+      .filter(result => result.score > 0) // Remove items with 0 score
+      .sort((a, b) => b.score - a.score) // Sort highest score first
+      .map(result => result.item)
+      .slice(0, 50); // Limit results for performance
+  }, [searchQuery, activeCategory]);
 
   const handleToggleFavorite = (dhikrId: number) => {
     const newFavs = storage.toggleFavoriteStorage(dhikrId);

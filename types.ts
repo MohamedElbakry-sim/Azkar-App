@@ -49,3 +49,11 @@ export interface DailyContent {
   verse: QuranVerse;
   hadith: Hadith;
 }
+
+// --- 99 Names Types ---
+export interface NameOfAllah {
+  id: number;
+  arabic: string;
+  transliteration: string;
+  meaning: string;
+}

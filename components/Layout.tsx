@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
-import { Home, Heart, Activity, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, BookHeart } from 'lucide-react';
+import { Home, Heart, Activity, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, BookHeart, Sparkles } from 'lucide-react';
 import { CATEGORIES } from '../data';
 import Logo from './Logo';
 
@@ -33,6 +33,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
     { path: '/', icon: <Home size={22} />, label: 'الرئيسية' },
     { path: '/prayers', icon: <Clock size={22} />, label: 'المواقيت' },
     { path: '/tasbeeh', icon: <Activity size={22} />, label: 'السبحة' },
+    { path: '/names', icon: <Sparkles size={22} />, label: 'الأسماء' },
     { path: '/stats', icon: <BarChart2 size={22} />, label: 'إحصائيات' },
     { path: '/favorites', icon: <Heart size={22} />, label: 'المفضلة' },
     { path: '/settings', icon: <Settings size={22} />, label: 'إعدادات' },
