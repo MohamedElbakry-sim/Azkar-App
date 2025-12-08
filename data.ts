@@ -1,4 +1,5 @@
 
+
 import { Category, Dhikr, NameOfAllah } from './types';
 
 export const CATEGORIES: Category[] = [
@@ -109,7 +110,7 @@ export const NAMES_OF_ALLAH: NameOfAllah[] = [
   { id: 67, arabic: "الْوَاحِد", transliteration: "Al-Wahid", meaning: "المنفرد بذاته وصفاته وأفعاله" },
   { id: 68, arabic: "الصَّمَد", transliteration: "As-Samad", meaning: "الذي يقصده الخلائق في حوائجهم" },
   { id: 69, arabic: "الْقَادِر", transliteration: "Al-Qadir", meaning: "الذي له القدرة التامة على كل شيء" },
-  { id: 70, arabic: "الْمُقْتَدِر", transliteration: "Al-Muqtadir", meaning: "المتناهي في القدرة والقوة" },
+  { id: 70, arabic: "الْمُقْتَدِر", transliteration: "Al-Muqitadir", meaning: "المتناهي في القدرة والقوة" },
   { id: 71, arabic: "الْمُقَدِّم", transliteration: "Al-Muqaddim", meaning: "الذي يقدم الأشياء ويضعها في مواضعها" },
   { id: 72, arabic: "الْمُؤَخِّر", transliteration: "Al-Mu'akhkhir", meaning: "الذي يؤخر الأشياء بحكمته" },
   { id: 73, arabic: "الْأَوَّل", transliteration: "Al-Awwal", meaning: "الذي ليس قبله شيء" },
@@ -150,6 +151,7 @@ export const AZKAR_DATA: Dhikr[] = [
     count: 1,
     source: "آية الكرسي",
     benefit: "من قالها حين يصبح أُجير من الجن حتى يمسي",
+    audioUrl: "https://everyayah.com/data/Alafasy_128kbps/002255.mp3"
   },
   {
     id: 102,
@@ -158,6 +160,7 @@ export const AZKAR_DATA: Dhikr[] = [
     count: 3,
     source: "سورة الإخلاص",
     benefit: "من قالها ثلاث مرات حين يصبح وحين يمسي كفته من كل شيء",
+    audioUrl: "https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/112.mp3"
   },
   {
     id: 103,
@@ -166,6 +169,7 @@ export const AZKAR_DATA: Dhikr[] = [
     count: 3,
     source: "سورة الفلق",
     benefit: "من قالها ثلاث مرات حين يصبح وحين يمسي كفته من كل شيء",
+    audioUrl: "https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/113.mp3"
   },
   {
     id: 104,
@@ -174,6 +178,7 @@ export const AZKAR_DATA: Dhikr[] = [
     count: 3,
     source: "سورة الناس",
     benefit: "من قالها ثلاث مرات حين يصبح وحين يمسي كفته من كل شيء",
+    audioUrl: "https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/114.mp3"
   },
   {
     id: 105,
@@ -383,6 +388,7 @@ export const AZKAR_DATA: Dhikr[] = [
     count: 1,
     source: "آية الكرسي",
     benefit: "من قالها حين يمسي أجير من الجن حتى يصبح",
+    audioUrl: "https://everyayah.com/data/Alafasy_128kbps/002255.mp3"
   },
   {
     id: 202,
@@ -399,6 +405,7 @@ export const AZKAR_DATA: Dhikr[] = [
     count: 3,
     source: "سورة الإخلاص",
     benefit: "من قالها ثلاث مرات حين يصبح وحين يمسي كفته من كل شيء",
+    audioUrl: "https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/112.mp3"
   },
   {
     id: 204,
@@ -407,6 +414,7 @@ export const AZKAR_DATA: Dhikr[] = [
     count: 3,
     source: "سورة الفلق",
     benefit: "من قالها ثلاث مرات حين يصبح وحين يمسي كفته من كل شيء",
+    audioUrl: "https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/113.mp3"
   },
   {
     id: 205,
@@ -415,6 +423,7 @@ export const AZKAR_DATA: Dhikr[] = [
     count: 3,
     source: "سورة الناس",
     benefit: "من قالها ثلاث مرات حين يصبح وحين يمسي كفته من كل شيء",
+    audioUrl: "https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/114.mp3"
   },
   {
     id: 206,
@@ -695,7 +704,8 @@ export const AZKAR_DATA: Dhikr[] = [
     text: "اللّهُ لاَ إِلَـهَ إِلاَّ هُوَ الْحَيُّ الْقَيُّومُ لاَ تَأْخُذُهُ سِنَةٌ وَلاَ نَوْمٌ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الأَرْضِ مَن ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلاَّ بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلاَ يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلاَّ بِمَا شَاء وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالأَرْضَ وَلاَ يَؤُودُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ.",
     count: 1,
     source: "آية الكرسي",
-    benefit: "لن يزال عليك من الله حافظ، ولا يقربك شيطان حتى تصبح"
+    benefit: "لن يزال عليك من الله حافظ، ولا يقربك شيطان حتى تصبح",
+    audioUrl: "https://everyayah.com/data/Alafasy_128kbps/002255.mp3"
   },
 
   // ------------------- أذكار الاستيقاظ -------------------
@@ -774,7 +784,8 @@ export const AZKAR_DATA: Dhikr[] = [
     text: "اللّهُ لاَ إِلَـهَ إِلاَّ هُوَ الْحَيُّ الْقَيُّومُ لاَ تَأْخُذُهُ سِنَةٌ وَلاَ نَوْمٌ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الأَرْضِ مَن ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلاَّ بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلاَ يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلاَّ بِمَا شَاء وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالأَرْضَ وَلاَ يَؤُودُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ.",
     count: 1,
     source: "آية الكرسي - النسائي",
-    benefit: "من قرأها دبر كل صلاة لم يمنعه من دخول الجنة إلا أن يموت"
+    benefit: "من قرأها دبر كل صلاة لم يمنعه من دخول الجنة إلا أن يموت",
+    audioUrl: "https://everyayah.com/data/Alafasy_128kbps/002255.mp3"
   },
   {
     id: 508,

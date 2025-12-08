@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { NAMES_OF_ALLAH } from '../data';
-import { Search, Sparkles } from 'lucide-react';
+import { Search, Scroll } from 'lucide-react';
 
 const NamesOfAllah: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,7 +16,7 @@ const NamesOfAllah: React.FC = () => {
     <div className="space-y-6 animate-fadeIn max-w-6xl mx-auto pb-10">
       <div className="text-center py-6 md:py-10">
         <div className="inline-flex items-center justify-center p-3 bg-amber-50 dark:bg-amber-900/20 rounded-full mb-4 text-amber-600 dark:text-amber-400">
-           <Sparkles size={32} />
+           <Scroll size={32} />
         </div>
         <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-serif">أسماء الله الحسنى</h2>
         <p className="text-gray-500 dark:text-gray-400 md:text-lg max-w-2xl mx-auto">

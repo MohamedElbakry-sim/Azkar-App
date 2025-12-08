@@ -14,6 +14,7 @@ const Stats = React.lazy(() => import('./pages/Stats'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 const PrayerTimes = React.lazy(() => import('./pages/PrayerTimes'));
 const NamesOfAllah = React.lazy(() => import('./pages/NamesOfAllah'));
+const Contact = React.lazy(() => import('./pages/Contact'));
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(() => {
@@ -79,6 +80,7 @@ const App: React.FC = () => {
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
+            <Route path="/contact" element={<Contact />} />
           </Routes>
         </Suspense>
       </Layout>

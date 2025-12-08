@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Dhikr } from '../types';
-import { Heart, Repeat, Info, SkipForward, Settings, Copy, Share2, Check, Loader2 } from 'lucide-react';
+import { Heart, Repeat, Info, SkipForward, Settings, Copy, Share2, Check, Loader2, Play, Pause, Volume2 } from 'lucide-react';
 import * as storage from '../services/storage';
 import { getHighlightRegex } from '../utils';
 import Logo from './Logo';
@@ -48,6 +47,13 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   const [isCopied, setIsCopied] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   
+  // Audio State
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [audioLoading, setAudioLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
   const cardRef = useRef<HTMLDivElement>(null);
   const shareRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +79,73 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
       setFontSize(storage.getFontSize());
     }
   }, [fontSizeOverride]);
+
+  // Audio Cleanup
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleAudioToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!item.audioUrl) return;
+
+    if (!audioRef.current) {
+      const audio = new Audio(item.audioUrl);
+      audioRef.current = audio;
+      
+      setAudioLoading(true);
+
+      audio.addEventListener('loadedmetadata', () => {
+        setAudioDuration(audio.duration);
+        setAudioLoading(false);
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        const progress = (audio.currentTime / audio.duration) * 100;
+        setAudioProgress(progress);
+      });
+
+      audio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setAudioProgress(0);
+      });
+      
+      audio.addEventListener('error', () => {
+        setAudioLoading(false);
+        setIsPlaying(false);
+        alert("تعذر تشغيل الملف الصوتي");
+      });
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(e => {
+        console.error("Play error:", e);
+        setIsPlaying(false);
+      });
+    }
+  };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (!audioRef.current || !audioDuration) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = Math.min(Math.max(x / rect.width, 0), 1);
+    
+    audioRef.current.currentTime = percentage * audioDuration;
+    setAudioProgress(percentage * 100);
+  };
+
 
   const handleTap = () => {
     if (readonly || isEditing || isExiting) return; 
@@ -312,8 +385,8 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                 )}
             </div>
 
-            {/* Footer Branding - Fixed & Clean */}
-            <div className="absolute bottom-12 left-0 right-0 flex justify-center items-center" dir="rtl">
+            {/* Footer Branding - Bottom Right */}
+            <div className="absolute bottom-12 right-12" dir="rtl">
                 <div className="flex items-center gap-5 bg-black/20 backdrop-blur-xl px-10 py-5 rounded-full border border-white/10 shadow-2xl">
                     <Logo size={72} className="text-white drop-shadow-md" />
                     <div className="flex flex-col gap-1 text-right">
@@ -378,6 +451,18 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
               </button>
             )}
             
+            {/* Audio Toggle */}
+            {item.audioUrl && (
+              <button 
+                onClick={handleAudioToggle}
+                disabled={audioLoading}
+                className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 ${isPlaying ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'text-gray-400 hover:text-emerald-500 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
+                aria-label={isPlaying ? "إيقاف الاستماع" : "استماع"}
+              >
+                 {audioLoading ? <Loader2 size={20} className="animate-spin" /> : (isPlaying ? <Pause size={20} /> : <Volume2 size={20} />)}
+              </button>
+            )}
+            
             {!readonly && (
                 <button 
                 onClick={startEditing}
@@ -396,6 +481,29 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
              </span>
           </div>
         </div>
+
+        {/* Audio Player UI */}
+        {(isPlaying || audioProgress > 0) && (
+            <div className="mb-4 bg-gray-50 dark:bg-dark-bg/60 p-3 rounded-xl border border-gray-100 dark:border-dark-border animate-slideUp" onClick={(e) => e.stopPropagation()}>
+               <div className="flex items-center gap-3">
+                  <button onClick={handleAudioToggle} className="text-primary-600 dark:text-primary-400">
+                      {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+                  </button>
+                  {/* Progress Bar */}
+                  <div 
+                    className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full cursor-pointer relative group"
+                    onClick={handleSeek}
+                  >
+                     <div 
+                        className="absolute top-0 right-0 h-full bg-primary-500 rounded-full transition-all duration-100 group-hover:bg-primary-600"
+                        style={{ width: `${audioProgress}%` }}
+                     >
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white border border-primary-500 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+        )}
 
         {/* Edit Mode UI */}
         {isEditing ? (

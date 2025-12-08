@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
-import { Home, Heart, Activity, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, BookHeart, Sparkles } from 'lucide-react';
+import { Home, Heart, Activity, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Scroll, Mail, MessageCircle } from 'lucide-react';
 import { CATEGORIES } from '../data';
 import Logo from './Logo';
 
@@ -33,10 +33,11 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
     { path: '/', icon: <Home size={22} />, label: 'الرئيسية' },
     { path: '/prayers', icon: <Clock size={22} />, label: 'المواقيت' },
     { path: '/tasbeeh', icon: <Activity size={22} />, label: 'السبحة' },
-    { path: '/names', icon: <Sparkles size={22} />, label: 'الأسماء' },
+    { path: '/names', icon: <Scroll size={22} />, label: 'الأسماء' },
     { path: '/stats', icon: <BarChart2 size={22} />, label: 'إحصائيات' },
     { path: '/favorites', icon: <Heart size={22} />, label: 'المفضلة' },
     { path: '/settings', icon: <Settings size={22} />, label: 'إعدادات' },
+    { path: '/contact', icon: <Mail size={22} />, label: 'تواصل معنا' },
   ];
 
   return (
@@ -100,13 +101,22 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
             </div>
           </div>
           
-          <button 
-            onClick={toggleTheme}
-            className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            aria-label={darkMode ? 'التبديل إلى الوضع النهاري' : 'التبديل إلى الوضع الليلي'}
-          >
-            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => navigate('/contact')}
+              className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              aria-label="تواصل معنا"
+            >
+              <MessageCircle size={22} />
+            </button>
+            <button 
+              onClick={toggleTheme}
+              className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              aria-label={darkMode ? 'التبديل إلى الوضع النهاري' : 'التبديل إلى الوضع الليلي'}
+            >
+              {darkMode ? <Sun size={22} /> : <Moon size={22} />}
+            </button>
+          </div>
         </header>
 
         {/* Desktop Header Spacer / Title Bar */}
@@ -137,7 +147,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
         {!isCategoryView && (
           <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-surface border-t border-gray-100 dark:border-dark-border px-2 py-2 pb-safe z-40 transition-colors shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
             <div className="flex justify-around items-center pb-1">
-              {navItems.map((item) => (
+              {navItems.filter(item => item.path !== '/contact').map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}

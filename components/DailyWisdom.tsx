@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { BookOpen, Scroll, Loader2, Share2, Quote, Image as ImageIcon } from 'lucide-react';
 import { getDailyContent } from '../services/dailyContent';
@@ -188,8 +187,8 @@ const DailyWisdom: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Footer Branding - Fixed & Clean */}
-                <div className="absolute bottom-12 left-0 right-0 flex justify-center items-center" dir="rtl">
+                {/* Footer Branding - Bottom Right */}
+                <div className="absolute bottom-12 right-12" dir="rtl">
                     <div className="flex items-center gap-5 bg-black/20 backdrop-blur-xl px-10 py-5 rounded-full border border-white/10 shadow-2xl">
                         <Logo size={72} className="text-white drop-shadow-md" />
                         <div className="flex flex-col gap-1 text-right">
