@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
-import { Home, Heart, Activity, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Sparkles, Mail, Menu, X, Scroll } from 'lucide-react';
+import { Home, Heart, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Sparkles, Mail, Menu, X } from 'lucide-react';
 import { CATEGORIES } from '../data';
 import Logo from './Logo';
 
@@ -10,6 +10,66 @@ interface LayoutProps {
   darkMode: boolean;
   toggleTheme: () => void;
 }
+
+// Custom Tasbeeh Icon to resemble prayer beads
+export const TasbeehIcon = ({ size = 24, className = "" }: {size?: number, className?: string}) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg" 
+    className={className}
+  >
+    {/* The Beads Loop (Dashed Circle) */}
+    <circle 
+      cx="12" 
+      cy="13" 
+      r="8" 
+      stroke="currentColor" 
+      strokeWidth="2.5" 
+      strokeDasharray="1 3.5" 
+      strokeLinecap="round" 
+    />
+    {/* The Imam/Tassel Top */}
+    <path 
+      d="M12 5V2" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+    />
+    <path 
+      d="M9.5 2H14.5" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+    />
+  </svg>
+);
+
+// Custom Icon for Names of Allah (Calligraphy style using Text)
+export const AllahIcon = ({ size = 24, className = "" }: {size?: number, className?: string}) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg" 
+    className={className}
+  >
+     <text 
+       x="12" 
+       y="19" 
+       textAnchor="middle" 
+       fontSize="19" 
+       fontFamily="Amiri, serif" 
+       fontWeight="bold" 
+       fill="currentColor"
+     >
+       الله
+     </text>
+  </svg>
+);
 
 const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   const location = useLocation();
@@ -37,9 +97,9 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
 
   const navItems = [
     { path: '/', icon: <Home size={22} />, label: 'الرئيسية' },
-    { path: '/prayers', icon: <Clock size={22} />, label: 'المواقيت' },
-    { path: '/tasbeeh', icon: <Activity size={22} />, label: 'السبحة' },
-    { path: '/names', icon: <Scroll size={22} />, label: 'الأسماء الحسنى' },
+    { path: '/prayers', icon: <Clock size={22} />, label: 'مواقيت الصلاة' },
+    { path: '/tasbeeh', icon: <TasbeehIcon size={22} />, label: 'السبحة' },
+    { path: '/names', icon: <AllahIcon size={24} />, label: 'أسماء الله الحسني' },
     { path: '/stats', icon: <BarChart2 size={22} />, label: 'إحصائيات' },
     { path: '/favorites', icon: <Heart size={22} />, label: 'المفضلة' },
     { path: '/settings', icon: <Settings size={22} />, label: 'إعدادات' },

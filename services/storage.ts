@@ -70,6 +70,22 @@ export const saveProgress = (dhikrId: number, count: number) => {
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
 };
 
+// ** NEW: Reset Today's Progress Only (Session Reset) **
+export const resetTodayProgress = () => {
+  try {
+    const progress = getProgress();
+    const today = getTodayKey();
+    
+    // If there is data for today, delete it to reset the session
+    if (progress[today]) {
+      delete progress[today];
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+    }
+  } catch (e) {
+    console.error("Failed to reset session progress", e);
+  }
+};
+
 export const markAsSkipped = (dhikrId: number) => {
   // Use -1 to represent skipped
   saveProgress(dhikrId, -1);

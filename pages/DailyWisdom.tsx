@@ -92,7 +92,7 @@ const DailyWisdom: React.FC = () => {
               {content.verse.text}
             </p>
             <div className="inline-block px-4 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 text-sm font-bold">
-               سورة {content.verse.surah} • آية {content.verse.ayahNumber}
+              سورة {content.verse.surah} • آية {content.verse.ayahNumber}
             </div>
           </div>
 

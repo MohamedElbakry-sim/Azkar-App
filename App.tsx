@@ -1,10 +1,12 @@
 
+
 import React, { useState, useEffect, Suspense } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import NotificationManager from './components/NotificationManager';
 import { Loader2 } from 'lucide-react';
+import * as storage from './services/storage';
 
 // Lazy load secondary pages to reduce initial bundle size
 const CategoryView = React.lazy(() => import('./pages/CategoryView'));
@@ -27,6 +29,11 @@ const App: React.FC = () => {
     }
     return false; // Default fallback if window is undefined
   });
+
+  // Reset Azkar progress for the current day whenever the app initializes (refresh or open)
+  useEffect(() => {
+    storage.resetTodayProgress();
+  }, []);
 
   // Apply theme class to DOM
   useEffect(() => {

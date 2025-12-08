@@ -1,8 +1,6 @@
 
 import { DailyContent, QuranVerse, Hadith } from '../types';
 
-const DAILY_CONTENT_KEY = 'nour_daily_content_v1';
-
 // --- Verified Authentic Verses ---
 const FALLBACK_VERSES: QuranVerse[] = [
   {
@@ -133,26 +131,14 @@ const FALLBACK_HADITHS: Hadith[] = [
 
 // --- Helpers ---
 
-// Generate a deterministic index for the day to rotate fallback content if API fails
-const getDailyIndex = (length: number) => {
-  const now = new Date();
-  // Day of year calculation
-  const start = new Date(now.getFullYear(), 0, 0);
-  const diff = now.getTime() - start.getTime();
-  const oneDay = 1000 * 60 * 60 * 24;
-  const day = Math.floor(diff / oneDay);
-  return day % length;
+// Generate a random index based on array length
+const getRandomIndex = (length: number) => {
+  return Math.floor(Math.random() * length);
 };
 
-// Generate a random ID between 1 and 6236 seeded by the date string for Quran API
-const getDailyAyahId = (): number => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    let hash = 0;
-    for (let i = 0; i < todayStr.length; i++) {
-        hash = ((hash << 5) - hash) + todayStr.charCodeAt(i);
-        hash |= 0;
-    }
-    return (Math.abs(hash) % 6236) + 1;
+// Generate a random ID between 1 and 6236 for Quran API
+const getRandomAyahId = (): number => {
+    return Math.floor(Math.random() * 6236) + 1;
 };
 
 // --- Fetch Functions ---
@@ -163,7 +149,7 @@ const fetchDailyVerse = async (): Promise<QuranVerse> => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
 
-    const ayahId = getDailyAyahId();
+    const ayahId = getRandomAyahId();
     // Fetch Arabic (Uthmani) and Tafsir (Muyassar)
     const response = await fetch(`https://api.alquran.cloud/v1/ayah/${ayahId}/editions/quran-uthmani,ar.muyassar`, {
         signal: controller.signal
@@ -184,8 +170,8 @@ const fetchDailyVerse = async (): Promise<QuranVerse> => {
       tafsir: tafsir.text
     };
   } catch (error) {
-    // console.warn("Quran API failed, using fallback", error);
-    const index = getDailyIndex(FALLBACK_VERSES.length);
+    // Random fallback
+    const index = getRandomIndex(FALLBACK_VERSES.length);
     return FALLBACK_VERSES[index];
   }
 };
@@ -194,46 +180,26 @@ const fetchDailyHadith = async (): Promise<Hadith> => {
     // To ensure 100% authenticity and reliability as requested, 
     // we will strictly use our curated list of verified Sahih Hadiths 
     // instead of relying on external APIs that might return unverified content.
-    const index = getDailyIndex(FALLBACK_HADITHS.length);
+    const index = getRandomIndex(FALLBACK_HADITHS.length);
     return Promise.resolve(FALLBACK_HADITHS[index]);
 };
 
 // --- Main Service ---
 
 export const getDailyContent = async (): Promise<DailyContent> => {
-  const todayKey = new Date().toISOString().split('T')[0];
+  // We no longer check localStorage for a cached daily item.
+  // Instead, we fetch new random authentic content every time this function is called.
   
-  // 1. Check Local Cache
-  try {
-    const cached = localStorage.getItem(DAILY_CONTENT_KEY);
-    if (cached) {
-      const parsed: DailyContent = JSON.parse(cached);
-      if (parsed.date === todayKey) {
-        return parsed;
-      }
-    }
-  } catch (e) {
-    console.error("Cache read error", e);
-  }
-
-  // 2. Fetch New Content
   const [verse, hadith] = await Promise.all([
     fetchDailyVerse(),
     fetchDailyHadith()
   ]);
 
   const newContent: DailyContent = {
-    date: todayKey,
+    date: new Date().toISOString().split('T')[0],
     verse,
     hadith
   };
-
-  // 3. Save to Cache
-  try {
-    localStorage.setItem(DAILY_CONTENT_KEY, JSON.stringify(newContent));
-  } catch (e) {
-    console.error("Cache save error", e);
-  }
 
   return newContent;
 };

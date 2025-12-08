@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CATEGORIES, AZKAR_DATA } from '../data';
-import { ChevronLeft, Search, X, AlertCircle } from 'lucide-react';
+import { Search, X, AlertCircle, ArrowLeft } from 'lucide-react';
 import DhikrCard from '../components/DhikrCard';
 import DailyWisdom from '../components/DailyWisdom';
 import RandomNameCard from '../components/RandomNameCard';
@@ -83,11 +83,22 @@ const Home: React.FC = () => {
   // Logic to show filters: if search is focused, or there is text, or a category is selected
   const showFilters = isSearchFocused || searchQuery.length > 0 || activeCategory !== null;
 
+  // Helper to get theme text colors
+  const getThemeTextColor = (theme: string) => {
+    switch (theme) {
+      case 'orange': return 'text-orange-600 dark:text-orange-400 group-hover:text-orange-700 dark:group-hover:text-orange-300';
+      case 'indigo': return 'text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300';
+      case 'slate': return 'text-slate-600 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300';
+      case 'yellow': return 'text-yellow-600 dark:text-yellow-400 group-hover:text-yellow-700 dark:group-hover:text-yellow-300';
+      case 'emerald': return 'text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-300';
+      default: return 'text-gray-800 dark:text-gray-100';
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <div className="text-center py-6 md:py-10">
-        <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-serif">حصن المسلم</h2>
-        <p className="text-gray-500 dark:text-gray-400 md:text-lg">اختر الأذكار التي تريد قراءتها الآن</p>
+        <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-serif">اختر الأذكار التي تريد قراءتها الآن</h2>
       </div>
 
       {/* Search Bar */}
@@ -202,35 +213,22 @@ const Home: React.FC = () => {
               <button
                 key={cat.id}
                 onClick={() => navigate(`/category/${cat.id}`)}
-                className={`
-                  relative flex items-end p-6 rounded-3xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-xl
-                  group focus:outline-none focus:ring-2 focus:ring-primary-500 overflow-hidden h-40 md:h-48
-                `}
+                className="group relative bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md transition-all duration-300 text-right focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-[0.98] flex flex-col justify-center min-h-[130px]"
                 aria-label={`قسم ${cat.title}`}
               >
-                {/* Background Image */}
-                <div className="absolute inset-0 z-0">
-                   {cat.imageUrl && (
-                     <img 
-                       src={cat.imageUrl} 
-                       alt="" 
-                       loading="lazy"
-                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                     />
-                   )}
-                   {/* Gradient Overlay */}
-                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                </div>
-
-                {/* Content (z-10 to sit above image) */}
-                <div className="relative z-10 flex w-full justify-between items-center">
-                   <div className="text-right">
-                      <h3 className="text-2xl font-bold text-white mb-1 shadow-sm font-serif">{cat.title}</h3>
-                      <p className="text-gray-200 text-xs md:text-sm font-medium opacity-90">{cat.description}</p>
-                   </div>
-                   <div className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white">
-                      <ChevronLeft size={24} />
-                   </div>
+                <div className="flex items-center justify-between w-full">
+                    <div className="pr-1">
+                        <h3 className={`text-xl md:text-2xl font-bold font-serif mb-2 transition-colors ${getThemeTextColor(cat.theme)}`}>
+                            {cat.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
+                            {cat.description}
+                        </p>
+                    </div>
+                    
+                    <div className="pl-2 text-gray-300 dark:text-gray-600 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors">
+                        <ArrowLeft size={20} className="rtl:rotate-0" />
+                    </div>
                 </div>
               </button>
             );
