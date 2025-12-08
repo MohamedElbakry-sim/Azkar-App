@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import { Category, Dhikr, NameOfAllah } from './types';
 
 export const CATEGORIES: Category[] = [
@@ -29,7 +24,7 @@ export const CATEGORIES: Category[] = [
     icon: 'sleep',
     description: 'قبل النوم مباشرة',
     theme: 'slate',
-    imageUrl: 'https://i.pinimg.com/736x/49/e3/d1/49e3d10da7c0c52b3b3663611b725092.jpg', // Body of water under cloudy sky (Requested)
+    imageUrl: 'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?q=80&w=1000&auto=format&fit=crop', // Body of water under cloudy sky (Requested)
   },
   {
     id: 'waking',
@@ -46,6 +41,14 @@ export const CATEGORIES: Category[] = [
     description: 'دبر كل صلاة مكتوبة',
     theme: 'emerald',
     imageUrl: 'https://i.pinimg.com/736x/06/b4/8f/06b48f77114ae46cf8e8a26db2648ff7.jpg', // Islamic Pattern/Mosque (Requested)
+  },
+  {
+    id: 'quran',
+    title: 'القرآن الكريم',
+    icon: 'quran',
+    description: 'وردك اليومي من القرآن',
+    theme: 'emerald',
+    imageUrl: 'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?q=80&w=1000&auto=format&fit=crop', // Quran
   },
 ];
 
@@ -393,7 +396,6 @@ export const AZKAR_DATA: Dhikr[] = [
     count: 1,
     source: "آية الكرسي",
     benefit: "من قالها حين يمسي أجير من الجن حتى يصبح",
-    audioUrl: "https://everyayah.com/data/Alafasy_128kbps/002255.mp3"
   },
   {
     id: 202,

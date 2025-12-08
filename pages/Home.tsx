@@ -6,6 +6,8 @@ import { Search, X, AlertCircle, ArrowLeft } from 'lucide-react';
 import DhikrCard from '../components/DhikrCard';
 import DailyWisdom from '../components/DailyWisdom';
 import RandomNameCard from '../components/RandomNameCard';
+import DailySahabi from '../components/DailySahabi';
+import SmartAzkarSuggestion from '../components/SmartAzkarSuggestion';
 import * as storage from '../services/storage';
 import { normalizeArabic } from '../utils';
 
@@ -164,6 +166,9 @@ const Home: React.FC = () => {
         </div>
       </div>
 
+      {/* Smart Suggestion (Only show when not searching) */}
+      {!searchQuery && !activeCategory && <SmartAzkarSuggestion />}
+
       {/* Search Results or Categories */}
       {searchQuery ? (
         <div className="space-y-4" role="region" aria-label="نتائج البحث">
@@ -236,11 +241,12 @@ const Home: React.FC = () => {
         </div>
       )}
 
-      {/* Random Name and Daily Wisdom Widgets (Only if no search and no specific category selected) */}
+      {/* Widgets (Only if no search and no specific category selected) */}
       {!searchQuery && !activeCategory && (
         <div className="max-w-2xl mx-auto mt-16 mb-12 space-y-10 md:space-y-10">
             <RandomNameCard />
             <DailyWisdom />
+            <DailySahabi />
         </div>
       )}
     </div>

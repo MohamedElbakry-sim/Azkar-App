@@ -6,12 +6,11 @@ export interface Dhikr {
   count: number;
   source?: string; // e.g., Bukhari
   benefit?: string; // Fadilah
-  audioUrl?: string;
   transliteration?: string;
   translation?: string;
 }
 
-export type CategoryId = 'sabah' | 'masaa' | 'sleep' | 'waking' | 'prayer';
+export type CategoryId = 'sabah' | 'masaa' | 'sleep' | 'waking' | 'prayer' | 'quran';
 
 export interface Category {
   id: CategoryId;
@@ -48,6 +47,15 @@ export interface DailyContent {
   date: string; // YYYY-MM-DD
   verse: QuranVerse;
   hadith: Hadith;
+}
+
+// --- Sahaba Types ---
+export interface Sahabi {
+  id: number;
+  arabic_name: string;
+  name: string; // English Name
+  description: string;
+  notable_facts: string[];
 }
 
 // --- 99 Names Types ---
