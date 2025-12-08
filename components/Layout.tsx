@@ -1,6 +1,8 @@
+
 import React from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
 import { Home, Heart, Activity, Moon, Sun, ArrowRight, BarChart2, Settings, Clock } from 'lucide-react';
+import { CATEGORIES } from '../data';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,6 +17,16 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   
   // Hide navigation elements when inside a category for immersive reading
   const isCategoryView = location.pathname.startsWith('/category/');
+
+  // Determine page title based on route
+  let pageTitle = 'حصن المسلم';
+  const categoryMatch = matchPath('/category/:id', location.pathname);
+  if (categoryMatch) {
+    const currentCategory = CATEGORIES.find(c => c.id === categoryMatch.params.id);
+    if (currentCategory) {
+      pageTitle = currentCategory.title;
+    }
+  }
 
   const navItems = [
     { path: '/', icon: <Home size={22} />, label: 'الرئيسية' },
@@ -94,9 +106,9 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
 
         {/* Desktop Header Spacer / Title Bar */}
         <header className="hidden md:flex sticky top-0 z-40 bg-gray-50/90 dark:bg-dark-bg/90 backdrop-blur px-8 py-6 justify-between items-center">
-            {/* Can add breadcrumbs or page title here dynamically if needed */}
+            {/* Page title depending on category */}
             <div className="text-sm text-gray-400 dark:text-gray-500 font-medium">
-               {!isHome && 'حصن المسلم'}
+               {!isHome && pageTitle}
             </div>
             
              {/* Back button for desktop sub-pages */}

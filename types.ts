@@ -19,6 +19,7 @@ export interface Category {
   icon: string;
   description: string;
   theme: string; // e.g., 'orange', 'blue'
+  imageUrl?: string; // URL for image-based icon (supports lazy loading)
 }
 
 export interface ProgressState {

@@ -17,23 +17,43 @@ const App: React.FC = () => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('nour_theme');
       if (saved) return saved === 'dark';
+      // Fallback to system preference
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
-    return false;
+    return false; // Default fallback if window is undefined
   });
 
+  // Apply theme class to DOM
   useEffect(() => {
     const root = window.document.documentElement;
     if (darkMode) {
       root.classList.add('dark');
-      localStorage.setItem('nour_theme', 'dark');
     } else {
       root.classList.remove('dark');
-      localStorage.setItem('nour_theme', 'light');
     }
   }, [darkMode]);
 
-  const toggleTheme = () => setDarkMode(!darkMode);
+  // Listen for system preference changes
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    const handleChange = (e: MediaQueryListEvent) => {
+      // Only automatically toggle if the user hasn't manually set a preference
+      if (!localStorage.getItem('nour_theme')) {
+        setDarkMode(e.matches);
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  const toggleTheme = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    // Persist manual choice
+    localStorage.setItem('nour_theme', newMode ? 'dark' : 'light');
+  };
 
   return (
     <Router>

@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Compass, Clock, MapPin, Loader2, Calendar } from 'lucide-react';
 import * as AdhanLib from 'adhan';
+import * as storage from '../services/storage';
 
 // Robustly resolve the adhan library object to handle CJS/ESM interop differences across CDNs
 // If AdhanLib has a 'default' property (ESM wrapping CJS), use it. Otherwise use AdhanLib directly.
@@ -24,9 +25,12 @@ const PrayerTimes: React.FC = () => {
   const [hijriDate, setHijriDate] = useState('');
 
   useEffect(() => {
-    // Set Hijri Date
+    // Set Hijri Date with User Offset
     try {
+      const offset = storage.getHijriOffset();
       const date = new Date();
+      date.setDate(date.getDate() + offset);
+
       const hijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
         day: 'numeric',
         month: 'long',

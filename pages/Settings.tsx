@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, Trash2, Bell, Plus, Type } from 'lucide-react';
+import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus } from 'lucide-react';
 import * as storage from '../services/storage';
 
 interface SettingsProps {
@@ -10,6 +10,7 @@ interface SettingsProps {
 
 const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   const [fontSize, setFontSize] = useState<storage.FontSize>('medium');
+  const [hijriOffset, setHijriOffset] = useState<number>(0);
   
   // Reminder State
   const [reminders, setReminders] = useState<storage.Reminder[]>([]);
@@ -20,11 +21,21 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   useEffect(() => {
     setFontSize(storage.getFontSize());
     setReminders(storage.getReminders());
+    setHijriOffset(storage.getHijriOffset());
   }, []);
 
   const changeFontSize = (size: storage.FontSize) => {
     setFontSize(size);
     storage.saveFontSize(size);
+  };
+
+  const changeHijriOffset = (delta: number) => {
+    const newOffset = hijriOffset + delta;
+    // Limit offset between -5 and +5 days
+    if (newOffset >= -5 && newOffset <= 5) {
+      setHijriOffset(newOffset);
+      storage.saveHijriOffset(newOffset);
+    }
   };
 
   const clearData = () => {
@@ -251,6 +262,32 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
              </div>
         </div>
 
+        {/* Hijri Date Offset */}
+        <SettingsItem
+          icon={Calendar}
+          label="تعديل التاريخ الهجري"
+          description={`ضبط التاريخ يدوياً (${hijriOffset > 0 ? '+' : ''}${hijriOffset} يوم)`}
+          action={
+            <div className="flex items-center gap-3 bg-gray-100 dark:bg-dark-bg rounded-lg p-1">
+              <button 
+                onClick={() => changeHijriOffset(-1)}
+                className="p-1 hover:bg-white dark:hover:bg-dark-surface rounded-md shadow-sm transition-all text-gray-600 dark:text-gray-300"
+                aria-label="إنقاص يوم"
+              >
+                <Minus size={16} />
+              </button>
+              <span className="text-sm font-bold w-4 text-center text-gray-800 dark:text-white">{hijriOffset}</span>
+              <button 
+                onClick={() => changeHijriOffset(1)}
+                className="p-1 hover:bg-white dark:hover:bg-dark-surface rounded-md shadow-sm transition-all text-gray-600 dark:text-gray-300"
+                aria-label="زيادة يوم"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+          }
+        />
+
         {/* Theme Toggle */}
         <SettingsItem 
           icon={darkMode ? Moon : Sun}
@@ -322,7 +359,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
 
       <div className="mt-12 text-center">
          <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
-           Nour App v1.3.0
+           Nour App v1.4.0
          </p>
       </div>
     </div>

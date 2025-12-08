@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Dhikr } from '../types';
-import { Heart, Repeat, Info, SkipForward, Settings } from 'lucide-react';
+import { Heart, Repeat, Info, SkipForward, Settings, Copy, Share2, Check, Loader2 } from 'lucide-react';
 import * as storage from '../services/storage';
 import { getHighlightRegex } from '../utils';
 
@@ -39,7 +39,12 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [targetInput, setTargetInput] = useState<string>("");
 
+  // Copy/Share State
+  const [isCopied, setIsCopied] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  
   const cardRef = useRef<HTMLDivElement>(null);
+  const shareRef = useRef<HTMLDivElement>(null);
 
   // Use the prop target count or default to item.count
   const currentTarget = propTargetCount || item.count;
@@ -135,6 +140,69 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
     setIsEditing(false);
   };
 
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(item.text).then(() => {
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    });
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!shareRef.current || isSharing) return;
+    
+    setIsSharing(true);
+
+    try {
+        // Access html2canvas from window since it's loaded via CDN
+        const html2canvas = (window as any).html2canvas;
+        
+        if (!html2canvas) {
+            console.error('html2canvas not loaded');
+            alert('خطأ في تحميل مكتبة المشاركة');
+            setIsSharing(false);
+            return;
+        }
+
+        const canvas = await html2canvas(shareRef.current, {
+            scale: 2, // High quality
+            backgroundColor: null, 
+            useCORS: true,
+            logging: false,
+        });
+
+        canvas.toBlob(async (blob: Blob | null) => {
+            if (!blob) return;
+            
+            const file = new File([blob], 'dhikr-nour.png', { type: 'image/png' });
+            
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'نور - ذكر',
+                    });
+                } catch (shareError) {
+                    // User likely cancelled share, do nothing
+                    console.log('Share cancelled');
+                }
+            } else {
+                // Fallback: Download the image
+                const link = document.createElement('a');
+                link.download = 'dhikr-nour.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+            setIsSharing(false);
+        }, 'image/png');
+
+    } catch (err) {
+        console.error('Share failed', err);
+        setIsSharing(false);
+    }
+  };
+
   const renderHighlightedText = (text: string, query?: string) => {
     if (!query) return text;
     
@@ -181,6 +249,51 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         ${isEditing ? 'ring-2 ring-primary-400' : ''}
       `}
     >
+      {/* Hidden Aesthetic Template for Image Generation */}
+      <div className="fixed -left-[9999px] top-0 overflow-hidden" aria-hidden="true">
+        <div 
+            ref={shareRef}
+            className="w-[1080px] h-[1080px] bg-gradient-to-br from-[#15803d] to-[#052e16] flex flex-col items-center justify-center p-20 relative text-center"
+        >
+            {/* Decorative Top */}
+            <div className="text-white/20 mb-12">
+                <svg width="120" height="40" viewBox="0 0 100 20" fill="currentColor">
+                    <path d="M50 0 C30 0 20 10 0 10 V20 C20 20 30 10 50 10 C70 10 80 20 100 20 V10 C80 10 70 0 50 0 Z" />
+                </svg>
+            </div>
+
+            <div className="flex-1 flex flex-col justify-center items-center w-full">
+                {/* Source Label */}
+                {item.source && (
+                    <span className="text-white/80 font-serif text-2xl mb-8 border-b border-white/20 pb-2 inline-block">
+                        {item.source}
+                    </span>
+                )}
+                
+                {/* Main Text */}
+                <p className="text-white font-serif text-5xl leading-relaxed max-w-4xl drop-shadow-md" dir="rtl">
+                    {item.text}
+                </p>
+
+                {/* Benefit if short */}
+                {item.benefit && item.benefit.length < 100 && (
+                    <div className="mt-12 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+                         <p className="text-white/90 text-2xl font-light">{item.benefit}</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Footer Branding */}
+            <div className="mt-12 flex items-center gap-4 text-white/60">
+                <div className="w-12 h-12 rounded-lg bg-white text-[#15803d] flex items-center justify-center font-bold text-2xl">ن</div>
+                <div className="flex flex-col items-start">
+                    <span className="text-2xl font-bold tracking-wide">تطبيق نور</span>
+                    <span className="text-lg opacity-80">أذكار المسلم</span>
+                </div>
+            </div>
+        </div>
+      </div>
+
       {/* Progress Bar Background */}
       <div 
         className="absolute bottom-0 right-0 h-1.5 bg-primary-500 transition-all duration-300 ease-out"
@@ -199,6 +312,28 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             >
               <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
             </button>
+
+            {/* Copy Button */}
+            <button 
+                onClick={handleCopy}
+                className="p-2 rounded-full text-gray-400 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                title="نسخ النص"
+                aria-label="نسخ النص"
+            >
+                {isCopied ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
+            </button>
+
+            {/* Share Button */}
+            <button 
+                onClick={handleShare}
+                disabled={isSharing}
+                className="p-2 rounded-full text-gray-400 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                title="مشاركة كصورة"
+                aria-label="مشاركة كصورة"
+            >
+                {isSharing ? <Loader2 size={20} className="animate-spin text-primary-500" /> : <Share2 size={20} />}
+            </button>
+
             {item.benefit && (
               <button 
                 onClick={(e) => { e.stopPropagation(); setShowBenefit(!showBenefit); }}

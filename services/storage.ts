@@ -8,6 +8,7 @@ const CUSTOM_TARGETS_KEY = 'nour_custom_targets_v1';
 const TUTORIAL_KEY = 'nour_tutorial_seen_v1';
 const REMINDERS_KEY = 'nour_reminders_v1';
 const FONT_SIZE_KEY = 'nour_font_size_v1';
+const HIJRI_OFFSET_KEY = 'nour_hijri_offset_v1';
 
 // --- Reminder Types ---
 export interface Reminder {
@@ -113,6 +114,21 @@ export const getFontSize = (): FontSize => {
 
 export const saveFontSize = (size: FontSize) => {
   localStorage.setItem(FONT_SIZE_KEY, size);
+};
+
+// --- Hijri Offset Logic ---
+
+export const getHijriOffset = (): number => {
+  try {
+    const stored = localStorage.getItem(HIJRI_OFFSET_KEY);
+    return stored ? parseInt(stored, 10) : 0;
+  } catch {
+    return 0;
+  }
+};
+
+export const saveHijriOffset = (offset: number) => {
+  localStorage.setItem(HIJRI_OFFSET_KEY, offset.toString());
 };
 
 // --- Reminders Logic ---

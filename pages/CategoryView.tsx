@@ -4,7 +4,7 @@ import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { AZKAR_DATA, CATEGORIES } from '../data';
 import DhikrCard from '../components/DhikrCard';
 import * as storage from '../services/storage';
-import { CheckCircle, SunMedium, MoonStar, CloudMoon, Sparkles, BookOpen, Copy, Home, BarChart3, Loader2 } from 'lucide-react';
+import { CheckCircle, Home, BarChart3 } from 'lucide-react';
 
 const CategoryView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +18,9 @@ const CategoryView: React.FC = () => {
   // Track IDs that are "visible"
   const [visibleIds, setVisibleIds] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Get raw items immediately to determine skeleton count
+  const items = AZKAR_DATA.filter(item => item.category === id);
 
   useEffect(() => {
     setIsLoading(true);
@@ -33,9 +36,7 @@ const CategoryView: React.FC = () => {
 
     // Initial Filter: Only show items not yet completed and not skipped
     if (id) {
-        const catItems = AZKAR_DATA.filter(item => item.category === id);
-        
-        const incompleteIds = catItems
+        const incompleteIds = items
             .filter(item => {
                 const count = todayProgress[item.id];
                 if (count === -1) return false; // Hide skipped items
@@ -46,7 +47,8 @@ const CategoryView: React.FC = () => {
         
         setVisibleIds(incompleteIds);
     }
-    setIsLoading(false);
+    // Simulate a slight network/processing delay for smoother skeleton transition
+    setTimeout(() => setIsLoading(false), 300);
   }, [id]);
 
   const handleToggleFavorite = (dhikrId: number) => {
@@ -63,24 +65,6 @@ const CategoryView: React.FC = () => {
     storage.saveCustomTarget(dhikrId, newTarget);
     setCustomTargets(prev => ({ ...prev, [dhikrId]: newTarget }));
   };
-
-  const handleCopyAll = () => {
-    const catItems = AZKAR_DATA.filter(item => item.category === id);
-    if (!catItems.length) return;
-
-    const text = catItems.map(item => {
-        const target = customTargets[item.id] || item.count;
-        return `${item.text}\n(التكرار: ${target})`;
-    }).join('\n\n----------------\n\n');
-
-    const fullText = `🌟 ${category?.title} 🌟\n\n${text}\n\n📱 تم النسخ من تطبيق نور`;
-    
-    navigator.clipboard.writeText(fullText)
-      .then(() => alert('تم نسخ جميع الأذكار إلى الحافظة'))
-      .catch(err => console.error('Failed to copy', err));
-  };
-
-  const items = AZKAR_DATA.filter(item => item.category === id);
 
   if (!category) {
     return <Navigate to="/" />;
@@ -115,38 +99,12 @@ const CategoryView: React.FC = () => {
     }
   };
 
-  const getIcon = (name: string) => {
-    switch (name) {
-      case 'sabah': return <SunMedium size={48} strokeWidth={1.5} />;
-      case 'masaa': return <MoonStar size={48} strokeWidth={1.5} />;
-      case 'sleep': return <CloudMoon size={48} strokeWidth={1.5} />;
-      case 'waking': return <Sparkles size={48} strokeWidth={1.5} />;
-      case 'prayer': return <BookOpen size={48} strokeWidth={1.5} />;
-      default: return <SunMedium size={48} strokeWidth={1.5} />;
-    }
-  };
-
   const themeClasses = getThemeClasses(category.theme);
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       {/* Category Header */}
       <div className={`rounded-3xl p-8 text-center mb-8 shadow-sm ${themeClasses} animate-fadeIn relative overflow-hidden`}>
-        {/* Actions Bar */}
-        <div className="absolute top-4 left-4 flex gap-2">
-            <button 
-                onClick={handleCopyAll}
-                className="p-2 bg-white/40 hover:bg-white/60 text-current rounded-full transition-colors backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
-                title="نسخ جميع الأذكار نصاً"
-                aria-label="نسخ جميع الأذكار نصاً"
-            >
-                <Copy size={18} />
-            </button>
-        </div>
-
-        <div className="mb-4 inline-flex p-4 bg-white/30 rounded-2xl backdrop-blur-sm">
-           {getIcon(category.icon)}
-        </div>
         <h2 className="text-3xl font-bold mb-2 opacity-90">{category.title}</h2>
         <div className="flex justify-center items-center gap-2 text-base font-medium opacity-80">
            {remainingCount === 0 ? (
@@ -181,8 +139,31 @@ const CategoryView: React.FC = () => {
       {/* List */}
       <div className="space-y-6 min-h-[50vh]">
         {isLoading ? (
-             <div className="flex justify-center py-20">
-                 <Loader2 className="animate-spin text-primary-300" size={40} />
+            // Skeleton Loader Loop
+            <div className="space-y-6">
+                {items.map((_, idx) => (
+                    <div key={idx} className="bg-white dark:bg-dark-surface rounded-2xl p-6 border border-gray-100 dark:border-dark-border shadow-sm animate-pulse">
+                        {/* Header Skeleton */}
+                        <div className="flex justify-between items-start mb-6">
+                            <div className="flex gap-2">
+                                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+                                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+                            </div>
+                            <div className="w-16 h-6 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                        </div>
+                        {/* Body Skeleton */}
+                        <div className="space-y-4 mb-6 px-4">
+                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6 mx-auto"></div>
+                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5 mx-auto"></div>
+                        </div>
+                        {/* Footer Skeleton */}
+                        <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-dark-border mt-4">
+                            <div className="w-20 h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                            <div className="w-24 h-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                        </div>
+                    </div>
+                ))}
             </div>
         ) : (
           <>
