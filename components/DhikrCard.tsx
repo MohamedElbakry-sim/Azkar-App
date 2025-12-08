@@ -295,7 +295,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                             {BASMALA}
                         </div>
                     )}
-                    <p className="text-white font-serif text-5xl leading-[4] drop-shadow-md" dir="rtl">
+                    <p className="text-white font-serif text-5xl leading-[2.5] drop-shadow-md" dir="rtl">
                         {displayText}
                     </p>
                 </div>
@@ -414,7 +414,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                     {BASMALA}
                 </div>
             )}
-            <p className={`font-serif leading-[2.3] md:leading-[2.5] text-gray-800 dark:text-gray-100 mb-4 transition-all duration-300 ${getFontSizeClass()}`}>
+            <p className={`font-serif leading-[2.5] text-gray-800 dark:text-gray-100 mb-4 transition-all duration-300 ${getFontSizeClass()}`}>
                 {renderHighlightedText(displayText, highlightQuery)}
             </p>
         </div>

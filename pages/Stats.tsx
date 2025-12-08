@@ -153,6 +153,8 @@ const ContributionGraph: React.FC<{ data: { [date: string]: number }, history: P
     };
 
     const handleDayClick = (date: Date, count: number) => {
+        setTooltip(null); // Clear tooltip immediately to prevent sticking
+        
         if (count === 0) return;
 
         const dateKey = date.toISOString().split('T')[0];
@@ -227,7 +229,7 @@ const ContributionGraph: React.FC<{ data: { [date: string]: number }, history: P
 
             {/* Detailed Click Modal/Card */}
             {selectedDay && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedDay(null)}>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedDay(null)}>
                     <div className="bg-white dark:bg-dark-surface w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-popIn border border-gray-100 dark:border-gray-700" onClick={e => e.stopPropagation()}>
                         <div className="bg-gradient-to-r from-primary-500 to-primary-600 p-6 text-white text-center relative">
                             <button 

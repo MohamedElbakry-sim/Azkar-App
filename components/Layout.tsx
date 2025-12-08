@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
 import { Home, Heart, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Sparkles, Mail, Menu, X, ListTodo, BookOpenText } from 'lucide-react';
 import { CATEGORIES } from '../data';
 import Logo from './Logo';
+import Breadcrumbs from './Breadcrumbs';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -174,11 +176,9 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
           </div>
           
           {/* Center: Logo (Absolute) */}
-          {(isHome || isCategoryView) && (
-              <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                  <Logo size={50} className="text-primary-600 dark:text-primary-500" />
-              </div>
-          )}
+          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+              <Logo size={50} className="text-primary-600 dark:text-primary-500" />
+          </div>
           
           {/* Right Side: Actions */}
           <div className="flex items-center gap-1 z-10">
@@ -264,8 +264,11 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
         </header>
 
         <main className="flex-1 p-4 md:p-8 w-full">
+          {/* Breadcrumbs for navigation */}
+          <Breadcrumbs />
+          
           {/* Animated Page Transition Wrapper */}
-          <div key={location.pathname} className="animate-slideUp w-full">
+          <div className="animate-slideUp w-full">
             {children}
           </div>
         </main>

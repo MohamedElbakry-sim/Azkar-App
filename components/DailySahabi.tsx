@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { User, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { getDailySahabi } from '../services/sahabaService';
@@ -75,7 +76,7 @@ const DailySahabi: React.FC = () => {
 
             <div className="space-y-6">
                 <div className="bg-gray-50 dark:bg-dark-bg/50 p-5 rounded-2xl border border-gray-100 dark:border-dark-border">
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-justify">
+                    <p className="text-gray-600 dark:text-gray-300 leading-loose text-justify">
                         {sahabi.description}
                     </p>
                 </div>
@@ -88,7 +89,7 @@ const DailySahabi: React.FC = () => {
                         </h4>
                         <ul className="space-y-2 pr-4 border-r-2 border-cyan-100 dark:border-cyan-900/30">
                             {sahabi.notable_facts.map((fact, idx) => (
-                                <li key={idx} className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed pl-2">
+                                <li key={idx} className="text-sm text-gray-600 dark:text-gray-400 leading-loose pl-2">
                                     {fact}
                                 </li>
                             ))}

@@ -106,7 +106,7 @@ const Duas: React.FC = () => {
             <div className="space-y-4">
                 {selectedCategory.items.map((dua, index) => (
                     <div key={index} className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border">
-                        <p className="font-serif text-2xl md:text-3xl leading-[2.2] text-gray-800 dark:text-gray-100 text-center mb-6" dir="rtl">
+                        <p className="font-serif text-2xl md:text-3xl leading-[2.5] text-gray-800 dark:text-gray-100 text-center mb-6" dir="rtl">
                             {dua.text}
                         </p>
                         

@@ -93,7 +93,7 @@ const NamesOfAllah: React.FC = () => {
                 
                 <div className="w-8 h-0.5 bg-gray-100 dark:bg-gray-700 mx-auto mb-3"></div>
                 
-                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                <p className="text-sm text-gray-600 dark:text-gray-300 leading-loose">
                     {item.meaning}
                 </p>
             </div>
