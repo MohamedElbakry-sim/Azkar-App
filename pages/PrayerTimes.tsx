@@ -129,7 +129,7 @@ const PrayerTimes: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-3xl mx-auto">
+    <div className="space-y-6 max-w-3xl mx-auto">
       <div className="text-center mb-6">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">مواقيت الصلاة</h2>
         

@@ -24,7 +24,7 @@ const Favorites: React.FC = () => {
   const favoriteItems = AZKAR_DATA.filter(item => favorites.includes(item.id));
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-3xl mx-auto">
+    <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6 md:mb-10">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">المفضلة</h2>
         <span className="bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 px-3 py-1 rounded-full text-sm font-bold">

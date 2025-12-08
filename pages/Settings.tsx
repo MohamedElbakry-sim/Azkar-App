@@ -157,7 +157,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   );
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-3xl mx-auto">
+    <div className="space-y-6 max-w-3xl mx-auto">
       <div className="mb-8">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">الإعدادات</h2>
         <p className="text-gray-500 dark:text-gray-400">تخصيص تجربة التطبيق</p>

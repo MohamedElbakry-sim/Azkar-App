@@ -126,7 +126,7 @@ const CategoryView: React.FC = () => {
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       {/* Category Header */}
-      <div className={`rounded-3xl p-6 md:p-8 text-center mb-8 shadow-sm ${themeClasses} animate-fadeIn relative overflow-visible`}>
+      <div className={`rounded-3xl p-6 md:p-8 text-center mb-8 shadow-sm ${themeClasses} relative overflow-visible`}>
         
         {/* Font Size Toggle Button */}
         <div className="absolute top-4 left-4 z-20">

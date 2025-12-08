@@ -36,7 +36,7 @@ const Tasbeeh: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col items-center justify-center py-6 animate-fadeIn min-h-[70vh]">
+    <div className="h-full flex flex-col items-center justify-center py-6 min-h-[70vh]">
       
       <div className="text-center space-y-2 mb-10">
         <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">المسبحة الإلكترونية</h2>

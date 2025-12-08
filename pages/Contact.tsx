@@ -4,7 +4,7 @@ import { Mail, MessageCircle, Send } from 'lucide-react';
 
 const Contact: React.FC = () => {
   return (
-    <div className="space-y-6 animate-fadeIn max-w-2xl mx-auto pb-10">
+    <div className="space-y-6 max-w-2xl mx-auto pb-10">
       <div className="text-center py-6 md:py-10">
         <div className="inline-flex items-center justify-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-full mb-4 text-blue-600 dark:text-blue-400">
            <Mail size={32} />
@@ -27,7 +27,7 @@ const Contact: React.FC = () => {
             </div>
             <div>
               <h3 className="font-bold text-gray-800 dark:text-gray-100">البريد الإلكتروني</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">support@nour-app.com</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">mohamedkadrym1975@gmail.com</p>
             </div>
           </div>
           <div className="bg-gray-50 dark:bg-dark-bg p-2 rounded-lg text-gray-400 group-hover:text-primary-500 transition-colors">

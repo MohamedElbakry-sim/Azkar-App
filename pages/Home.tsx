@@ -5,6 +5,7 @@ import { CATEGORIES, AZKAR_DATA } from '../data';
 import { ChevronLeft, Search, X, AlertCircle } from 'lucide-react';
 import DhikrCard from '../components/DhikrCard';
 import DailyWisdom from '../components/DailyWisdom';
+import RandomNameCard from '../components/RandomNameCard';
 import * as storage from '../services/storage';
 import { normalizeArabic } from '../utils';
 
@@ -14,24 +15,6 @@ const Home: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<number[]>(storage.getFavorites());
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-
-  // Color Theme Mapping - Only for borders now as text is neutral
-  const getThemeClasses = (theme: string) => {
-    switch (theme) {
-      case 'orange':
-        return { border: 'border-orange-100 dark:border-orange-900/20' };
-      case 'indigo':
-        return { border: 'border-indigo-100 dark:border-indigo-900/20' };
-      case 'slate':
-        return { border: 'border-slate-100 dark:border-slate-800' };
-      case 'yellow':
-        return { border: 'border-yellow-100 dark:border-yellow-900/20' };
-      case 'emerald':
-        return { border: 'border-emerald-100 dark:border-emerald-900/20' };
-      default:
-        return { border: 'border-gray-100' };
-    }
-  };
 
   // Advanced Search Logic with Memoization
   const filteredAzkar = useMemo(() => {
@@ -101,7 +84,7 @@ const Home: React.FC = () => {
   const showFilters = isSearchFocused || searchQuery.length > 0 || activeCategory !== null;
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto">
       <div className="text-center py-6 md:py-10">
         <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-serif">حصن المسلم</h2>
         <p className="text-gray-500 dark:text-gray-400 md:text-lg">اختر الأذكار التي تريد قراءتها الآن</p>
@@ -215,31 +198,50 @@ const Home: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {displayedCategories.map((cat) => {
-            const themeClasses = getThemeClasses(cat.theme);
             return (
               <button
                 key={cat.id}
                 onClick={() => navigate(`/category/${cat.id}`)}
                 className={`
-                  relative flex items-center p-6 rounded-3xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md 
-                  bg-white dark:bg-dark-surface border ${themeClasses.border} group focus:outline-none focus:ring-2 focus:ring-primary-500
+                  relative flex items-end p-6 rounded-3xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-xl
+                  group focus:outline-none focus:ring-2 focus:ring-primary-500 overflow-hidden h-40 md:h-48
                 `}
                 aria-label={`قسم ${cat.title}`}
               >
-                <div className="flex-1 text-right">
-                  {/* Updated Text Color to Neutral Black/White */}
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">{cat.title}</h3>
+                {/* Background Image */}
+                <div className="absolute inset-0 z-0">
+                   {cat.imageUrl && (
+                     <img 
+                       src={cat.imageUrl} 
+                       alt="" 
+                       loading="lazy"
+                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                     />
+                   )}
+                   {/* Gradient Overlay */}
+                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                 </div>
-                <ChevronLeft size={24} className="text-gray-300 dark:text-gray-600 transition-transform group-hover:-translate-x-1" />
+
+                {/* Content (z-10 to sit above image) */}
+                <div className="relative z-10 flex w-full justify-between items-center">
+                   <div className="text-right">
+                      <h3 className="text-2xl font-bold text-white mb-1 shadow-sm font-serif">{cat.title}</h3>
+                      <p className="text-gray-200 text-xs md:text-sm font-medium opacity-90">{cat.description}</p>
+                   </div>
+                   <div className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white">
+                      <ChevronLeft size={24} />
+                   </div>
+                </div>
               </button>
             );
           })}
         </div>
       )}
 
-      {/* Daily Wisdom Widget (Only if no search and no specific category selected) */}
+      {/* Random Name and Daily Wisdom Widgets (Only if no search and no specific category selected) */}
       {!searchQuery && !activeCategory && (
-        <div className="max-w-2xl mx-auto mt-12 mb-8">
+        <div className="max-w-2xl mx-auto mt-16 mb-12 space-y-10 md:space-y-10">
+            <RandomNameCard />
             <DailyWisdom />
         </div>
       )}

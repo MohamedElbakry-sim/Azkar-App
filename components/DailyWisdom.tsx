@@ -139,7 +139,7 @@ const DailyWisdom: React.FC = () => {
   if (!content) return null;
 
   return (
-    <div className="space-y-4 mb-8 animate-fadeIn">
+    <div className="space-y-10 mb-12 animate-fadeIn">
       
       {/* --- Hidden Template for Image Generation --- */}
       <div className="fixed -left-[9999px] top-0 overflow-hidden" aria-hidden="true">

@@ -31,7 +31,7 @@ const Stats: React.FC = () => {
   if (!stats) return <div className="p-10 text-center">جاري التحميل...</div>;
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto">
       <div className="text-center mb-6 md:mb-10">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">إحصائياتك</h2>
         <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base">تابع تقدمك واستمر في الذكر</p>

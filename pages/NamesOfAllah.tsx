@@ -13,7 +13,7 @@ const NamesOfAllah: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-6xl mx-auto pb-10">
+    <div className="space-y-6 max-w-6xl mx-auto pb-10">
       <div className="text-center py-6 md:py-10">
         <div className="inline-flex items-center justify-center p-3 bg-amber-50 dark:bg-amber-900/20 rounded-full mb-4 text-amber-600 dark:text-amber-400">
            <Scroll size={32} />
