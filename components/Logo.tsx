@@ -32,13 +32,13 @@ const Logo: React.FC<LogoProps> = ({ className = "", size = 40, color = "current
         y={showEnglish ? "45%" : "55%"} 
         dominantBaseline="middle" 
         textAnchor="middle" 
-        fontFamily="Amiri, serif" 
+        fontFamily="IBM Plex Sans Arabic, sans-serif" 
         fontWeight="700" 
         fontSize="42" 
         fill={color === 'currentColor' ? color : "url(#logoGradient)"}
         style={{ filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.05))' }}
       >
-        ريان
+        رَيَّان
       </text>
 
       

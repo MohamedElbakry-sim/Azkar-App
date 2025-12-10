@@ -16,6 +16,7 @@ const OVERRIDE_DHIKR_KEY = 'nour_override_dhikr_v1';
 const DELETED_DEFAULTS_KEY = 'nour_deleted_defaults_v1'; // New key for hidden defaults
 const MISSED_PRAYERS_KEY = 'nour_missed_prayers_v1'; // Key for Qada tracker
 const ALKAHF_PROMPT_KEY = 'nour_alkahf_prompt_date'; // Key for Friday reminder
+const HEATMAP_THEME_KEY = 'nour_heatmap_theme_v1'; // Key for heatmap color preference
 const QADA_HISTORY_ID = 9999; // Special ID to track Qada performance in history
 
 // --- Reminder Types ---
@@ -42,6 +43,9 @@ export interface NotificationSettings {
 
 // --- Font Size Types ---
 export type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
+
+// --- Heatmap Theme Types ---
+export type HeatmapTheme = 'emerald' | 'blue' | 'flame';
 
 /**
  * Retrieves the list of favorite Dhikr IDs from local storage.
@@ -551,6 +555,29 @@ export const getVibrationPattern = (type: VibrationType): number[] => {
     case 'none': return [];
     default: return [200]; // Default single buzz
   }
+};
+
+// --- Heatmap Theme Logic ---
+
+/**
+ * Retrieves the user's preferred heatmap color theme.
+ * @returns {HeatmapTheme} The theme name (default: 'emerald').
+ */
+export const getHeatmapTheme = (): HeatmapTheme => {
+  try {
+    const stored = localStorage.getItem(HEATMAP_THEME_KEY);
+    return (stored as HeatmapTheme) || 'emerald';
+  } catch {
+    return 'emerald';
+  }
+};
+
+/**
+ * Saves the user's preferred heatmap color theme.
+ * @param {HeatmapTheme} theme - The selected theme.
+ */
+export const saveHeatmapTheme = (theme: HeatmapTheme) => {
+  localStorage.setItem(HEATMAP_THEME_KEY, theme);
 };
 
 // --- Statistics Helpers ---

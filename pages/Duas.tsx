@@ -86,6 +86,8 @@ const Duas: React.FC = () => {
       if ('theme' in item) {
           navigate(`/category/${item.id}`);
       } else {
+          // Clear search query so the view switches to the selected category
+          setSearchQuery('');
           setSelectedCategory(item as DuaCategory);
       }
   };

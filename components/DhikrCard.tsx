@@ -242,11 +242,11 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
 
   const getFontSizeClass = () => {
     switch (fontSize) {
-      case 'small': return 'text-xl md:text-2xl';
-      case 'medium': return 'text-2xl md:text-3xl';
-      case 'large': return 'text-3xl md:text-4xl';
-      case 'xlarge': return 'text-4xl md:text-5xl';
-      default: return 'text-2xl md:text-3xl';
+      case 'small': return 'text-h3 md:text-h2';
+      case 'medium': return 'text-h2 md:text-h1';
+      case 'large': return 'text-[30px] md:text-[36px]';
+      case 'xlarge': return 'text-[34px] md:text-[42px]';
+      default: return 'text-h2 md:text-h1';
     }
   };
 
@@ -261,10 +261,10 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
       tabIndex={readonly ? -1 : 0}
       aria-label={readonly ? item.text : `${item.text} - ${count} من ${currentTarget}`}
       className={`
-        relative overflow-hidden bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border 
+        relative overflow-hidden bg-white dark:bg-dark-surface rounded-2xl shadow-sm dark:shadow-soft border border-gray-100 dark:border-dark-border 
         transition-all duration-500 ease-in-out outline-none focus:ring-2 focus:ring-primary-500
         ${isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}
-        ${!readonly ? 'cursor-pointer active:scale-[0.99]' : ''}
+        ${!readonly ? 'cursor-pointer active:scale-[0.99] hover:border-primary-500/30' : ''}
       `}
     >
       {/* Hidden Aesthetic Template for Image Generation */}
@@ -283,7 +283,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             <div className="flex-1 flex flex-col justify-center items-center w-full">
                 {/* Source Label */}
                 {item.source && (
-                    <span className="text-white/80 font-serif text-2xl mb-8 border-b border-white/20 pb-2 inline-block">
+                    <span className="text-white/80 font-arabic text-h2 mb-8 border-b border-white/20 pb-2 inline-block">
                         {item.source}
                     </span>
                 )}
@@ -291,11 +291,11 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                 {/* Main Text */}
                 <div className="max-w-4xl px-8">
                    {hasBasmala && (
-                        <div className="text-primary-200 font-serif text-4xl mb-6 opacity-90 drop-shadow-sm">
+                        <div className="text-primary-200 font-arabic text-4xl mb-6 opacity-90 drop-shadow-sm">
                             {BASMALA}
                         </div>
                     )}
-                    <p className="text-white font-serif text-5xl leading-[3.5] drop-shadow-md" dir="rtl">
+                    <p className="text-white font-arabic text-[40px] leading-[2.2] drop-shadow-md" dir="rtl">
                         {displayText}
                     </p>
                 </div>
@@ -303,7 +303,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                 {/* Benefit if short */}
                 {item.benefit && item.benefit.length < 100 && (
                     <div className="mt-12 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-                         <p className="text-white/90 text-2xl font-light">{item.benefit}</p>
+                         <p className="text-white/90 text-h3 font-light">{item.benefit}</p>
                     </div>
                 )}
             </div>
@@ -335,7 +335,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
           <div className="flex gap-2">
              <button 
               onClick={(e) => { e.stopPropagation(); onToggleFavorite(item.id); }}
-              className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg'} `}
+              className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-elevated dark:text-dark-secondary'} `}
               aria-label={isFavorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
             >
               <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
@@ -344,7 +344,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             {/* Copy Button */}
             <button 
                 onClick={handleCopy}
-                className="p-2 rounded-full text-gray-400 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                className="p-2 rounded-full text-gray-400 dark:text-dark-secondary hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-dark-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                 title="نسخ النص"
                 aria-label="نسخ النص"
             >
@@ -355,7 +355,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             <button 
                 onClick={handleShare}
                 disabled={isSharing}
-                className="p-2 rounded-full text-gray-400 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                className="p-2 rounded-full text-gray-400 dark:text-dark-secondary hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-dark-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
                 title="مشاركة كصورة"
                 aria-label="مشاركة كصورة"
             >
@@ -377,7 +377,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             {onEdit && (
                 <button 
                 onClick={handleEditClick}
-                className="p-2 rounded-full text-gray-400 hover:text-amber-500 hover:bg-gray-100 dark:hover:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+                className="p-2 rounded-full text-gray-400 dark:text-dark-secondary hover:text-amber-500 hover:bg-gray-100 dark:hover:bg-dark-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
                 title="تعديل الذكر"
                 >
                 <Edit3 size={20} />
@@ -388,11 +388,11 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             {onDelete && (
                 <button 
                 onClick={handleDeleteClick}
-                className={`p-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${deleteConfirm ? 'bg-red-50 text-red-600 px-3 w-auto' : 'text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'}`}
+                className={`p-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${deleteConfirm ? 'bg-red-50 text-red-600 px-3 w-auto' : 'text-gray-400 dark:text-dark-secondary hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'}`}
                 title="حذف/استعادة"
                 >
                 {deleteConfirm ? (
-                    <span className="text-xs font-bold whitespace-nowrap">تأكيد الحذف؟</span>
+                    <span className="text-caption font-bold whitespace-nowrap">تأكيد الحذف؟</span>
                 ) : (
                     <Trash2 size={20} />
                 )}
@@ -401,7 +401,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
           </div>
           
           <div className="flex items-center gap-2">
-             <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-dark-bg px-2 py-1 rounded-lg">
+             <span className="text-caption font-medium text-gray-500 dark:text-dark-secondary bg-gray-100 dark:bg-dark-elevated px-2 py-1 rounded-lg">
                {item.source || 'ذكر'}
              </span>
           </div>
@@ -410,18 +410,18 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         {/* Text Content */}
         <div className={`mb-6 text-center select-none transition-transform ${animate ? 'scale-[1.01]' : 'scale-100'}`}>
             {hasBasmala && (
-                <div className={`font-serif text-center text-primary-600 dark:text-primary-400 mb-2 opacity-90 ${getFontSizeClass()}`}>
+                <div className={`font-arabic text-center text-primary-600 dark:text-primary-400 mb-2 opacity-90 ${getFontSizeClass()}`}>
                     {BASMALA}
                 </div>
             )}
-            <p className={`font-serif leading-[3.5] text-gray-800 dark:text-gray-100 mb-4 transition-all duration-300 ${getFontSizeClass()}`}>
+            <p className={`font-arabic leading-[2.5] text-gray-800 dark:text-dark-text mb-4 transition-all duration-300 ${getFontSizeClass()}`}>
                 {renderHighlightedText(displayText, highlightQuery)}
             </p>
         </div>
 
         {/* Benefit Toggle */}
         {showBenefit && item.benefit && (
-           <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-900 text-sm text-blue-800 dark:text-blue-200 animate-fadeIn">
+           <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800 text-body-sm text-blue-800 dark:text-blue-200 animate-fadeIn">
              <strong>الفضل:</strong> {item.benefit}
            </div>
         )}
@@ -429,7 +429,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         {/* Footer: Counter (Hidden in Readonly) */}
         {!readonly && (
           <div className="flex justify-between items-center border-t border-gray-100 dark:border-dark-border pt-4 mt-2">
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400" aria-live="polite">
+            <div className="flex items-center gap-2 text-body-sm text-gray-500 dark:text-dark-muted" aria-live="polite">
                <Repeat size={16} />
                <span>{count} / {currentTarget}</span>
             </div>
@@ -438,7 +438,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                {count > 0 && (
                 <button 
                   onClick={handleReset}
-                  className={`text-xs px-2 py-1 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-400 ${
+                  className={`text-caption px-2 py-1 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-400 ${
                     resetConfirm 
                     ? 'text-red-600 bg-red-100 font-bold' 
                     : 'text-red-400 hover:text-red-500'
@@ -451,7 +451,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
               
               <button
                   onClick={handleSkip}
-                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded"
+                  className="flex items-center gap-1 text-caption text-gray-400 hover:text-gray-600 dark:text-dark-muted dark:hover:text-dark-text px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-400 rounded"
                   title="تخطي"
                   aria-label="تخطي هذا الذكر"
               >
@@ -460,7 +460,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
               </button>
             </div>
 
-            <div className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors bg-gray-100 text-gray-600 dark:bg-dark-bg dark:text-gray-300`}>
+            <div className={`px-4 py-1.5 rounded-full text-caption font-bold transition-colors bg-gray-100 text-gray-600 dark:bg-dark-elevated dark:text-dark-text`}>
               {currentTarget - count > 0 ? `${currentTarget - count} متبقي` : 'اكتمل'}
             </div>
           </div>

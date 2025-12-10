@@ -172,7 +172,7 @@ const DailyWisdom: React.FC = () => {
                     {/* Main Text */}
                     <div className="max-w-4xl relative">
                         <Quote size={80} className="absolute -top-12 -right-12 text-white/10" />
-                        <p className="text-white font-serif text-6xl leading-[2.5] drop-shadow-md" dir="rtl">
+                        <p className="text-white font-arabic text-6xl leading-[2.5] drop-shadow-md" dir="rtl">
                             {shareData.text}
                         </p>
                     </div>
@@ -180,7 +180,7 @@ const DailyWisdom: React.FC = () => {
                     {/* Source */}
                     <div className="mt-16 flex flex-col items-center gap-2">
                         <div className="bg-white/10 backdrop-blur-md rounded-full px-10 py-4 border border-white/20 shadow-lg">
-                            <span className="text-white text-3xl font-bold font-serif">{shareData.source}</span>
+                            <span className="text-white text-3xl font-bold font-arabic">{shareData.source}</span>
                         </div>
                         {shareData.subSource && (
                              <span className="text-white/70 text-2xl mt-2">{shareData.subSource}</span>
@@ -231,16 +231,16 @@ const DailyWisdom: React.FC = () => {
           <Quote size={32} className="absolute top-4 right-4 text-emerald-100 dark:text-emerald-900/40 opacity-50" />
           
           <div className="mb-4 relative z-10">
-            <p className="font-serif text-2xl leading-[2.5] text-gray-800 dark:text-gray-100 mb-4">
+            <p className="font-arabic text-h2 md:text-h1 leading-[2.5] text-gray-800 dark:text-gray-100 mb-4">
               {content.verse.text}
             </p>
-            <div className="inline-block px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
+            <div className="inline-block px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 text-caption font-bold">
                سورة {content.verse.surah} • آية {content.verse.ayahNumber}
             </div>
           </div>
 
           {content.verse.tafsir && (
-            <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed border-t border-emerald-50 dark:border-emerald-900/20 pt-3 mt-3">
+            <p className="text-gray-500 dark:text-gray-400 text-body-sm leading-relaxed border-t border-emerald-50 dark:border-emerald-900/20 pt-3 mt-3">
               <span className="font-bold text-emerald-600 dark:text-emerald-400 ml-1">التفسير:</span>
               {content.verse.tafsir}
             </p>
@@ -278,7 +278,7 @@ const DailyWisdom: React.FC = () => {
           <Quote size={32} className="absolute top-4 right-4 text-amber-100 dark:text-amber-900/40 opacity-50" />
           
           <div className="mb-4 relative z-10">
-            <p className="font-serif text-xl leading-[2.5] text-gray-800 dark:text-gray-100 mb-4">
+            <p className="font-arabic text-h2 md:text-h1 leading-[2.5] text-gray-800 dark:text-gray-100 mb-4">
               "{content.hadith.text}"
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">

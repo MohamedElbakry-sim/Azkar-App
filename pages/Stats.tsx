@@ -18,7 +18,7 @@ const Stats: React.FC = () => {
   // Heatmap Customization State
   const [timeRange, setTimeRange] = useState<number>(30); // Default Last Month
   // Removed 'orange' as requested, kept 'emerald' (default), 'blue', and 'flame'
-  const [themeColor, setThemeColor] = useState<'emerald' | 'blue' | 'flame'>('emerald');
+  const [themeColor, setThemeColor] = useState<storage.HeatmapTheme>(() => storage.getHeatmapTheme());
   const [isRangeDropdownOpen, setIsRangeDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -40,6 +40,11 @@ const Stats: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleThemeChange = (color: storage.HeatmapTheme) => {
+      setThemeColor(color);
+      storage.saveHeatmapTheme(color);
+  };
 
   if (!stats) return <div className="p-10 text-center flex justify-center"><RefreshCw className="animate-spin text-gray-400" /></div>;
 
@@ -142,7 +147,7 @@ const Stats: React.FC = () => {
                             text={color === 'emerald' ? 'النمط الأخضر' : color === 'blue' ? 'النمط الأزرق' : 'نمط اللهب'}
                         >
                             <button
-                                onClick={() => setThemeColor(color)}
+                                onClick={() => handleThemeChange(color)}
                                 className={`w-5 h-5 rounded-md transition-all ${
                                     color === 'emerald' ? 'bg-emerald-500' : 
                                     color === 'blue' ? 'bg-blue-500' : 
