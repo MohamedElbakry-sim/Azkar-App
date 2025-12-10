@@ -1,10 +1,12 @@
 
 import React, { useState } from 'react';
-import { SITUATIONAL_DUAS } from '../data';
-import { ArrowRight, Copy, Check, Share2, BookOpen } from 'lucide-react';
-import { DuaCategory } from '../types';
+import { SITUATIONAL_DUAS, CATEGORIES } from '../data';
+import { ArrowRight, Copy, Check, Share2, BookOpenText } from 'lucide-react';
+import { DuaCategory, Category } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 const Duas: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<DuaCategory | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
@@ -30,17 +32,15 @@ const Duas: React.FC = () => {
     }
   };
 
-  const getThemeColor = (color: string) => {
-      switch(color) {
-          case 'emerald': return 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400';
-          case 'indigo': return 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400';
-          case 'slate': return 'bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400';
-          case 'blue': return 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400';
-          case 'orange': return 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400';
-          case 'rose': return 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400';
-          case 'cyan': return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400';
-          case 'purple': return 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400';
-          default: return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
+  // Helper to unify handling standard Azkar Categories (Nav) vs Situational Duas (Inline)
+  const handleItemClick = (item: DuaCategory | Category) => {
+      // Check if it's a standard category (has 'id' like 'sabah', 'masaa', etc.)
+      if ('theme' in item) {
+          // It's a standard category, navigate
+          navigate(`/category/${item.id}`);
+      } else {
+          // It's a situational dua category, show inline
+          setSelectedCategory(item as DuaCategory);
       }
   };
 
@@ -52,39 +52,50 @@ const Duas: React.FC = () => {
         <div className="animate-fadeIn">
             <div className="text-center py-6 md:py-10">
                 <div className="inline-flex items-center justify-center p-3 bg-amber-50 dark:bg-amber-900/20 rounded-full mb-4 text-amber-600 dark:text-amber-400">
-                    <BookOpen size={32} />
+                    <BookOpenText size={32} />
                 </div>
                 <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-serif">حصن المسلم</h2>
                 <p className="text-gray-500 dark:text-gray-400 md:text-lg">
-                أدعية مختارة لكل أحوال المسلم في يومه وليلته
+                أذكار اليوم والليلة وأدعية لكل الأحوال
                 </p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {SITUATIONAL_DUAS.map((category) => {
-                    const Icon = category.icon;
-                    return (
-                        <button
-                            key={category.id}
-                            onClick={() => setSelectedCategory(category)}
-                            className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md hover:border-primary-200 dark:hover:border-primary-900 transition-all group text-center flex flex-col items-center gap-4"
-                        >
-                            <div className={`p-4 rounded-2xl ${getThemeColor(category.color)} transition-transform group-hover:scale-110`}>
-                                <Icon size={32} />
-                            </div>
-                            <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 font-serif">
-                                {category.title}
-                            </h3>
-                            <span className="text-xs text-gray-400 font-medium bg-gray-50 dark:bg-dark-bg px-2 py-1 rounded-md">
-                                {category.items.length} دعاء
-                            </span>
-                        </button>
-                    );
-                })}
+                {/* 1. Standard Azkar Categories (Sabah, Masaa, etc.) */}
+                {CATEGORIES.map((category) => (
+                    <button
+                        key={category.id}
+                        onClick={() => handleItemClick(category)}
+                        className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md hover:border-primary-200 dark:hover:border-primary-900 transition-all group text-center flex flex-col items-center justify-center min-h-[140px]"
+                    >
+                        <h3 className="font-bold text-xl text-gray-800 dark:text-gray-100 font-serif mb-2">
+                            {category.title}
+                        </h3>
+                        <p className="text-xs text-gray-400 font-medium line-clamp-2">
+                            {category.description}
+                        </p>
+                    </button>
+                ))}
+
+                {/* 2. Situational Dua Categories */}
+                {SITUATIONAL_DUAS.map((category) => (
+                    <button
+                        key={category.id}
+                        onClick={() => handleItemClick(category)}
+                        className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md hover:border-primary-200 dark:hover:border-primary-900 transition-all group text-center flex flex-col items-center justify-center min-h-[140px]"
+                    >
+                        <h3 className="font-bold text-xl text-gray-800 dark:text-gray-100 font-serif mb-2">
+                            {category.title}
+                        </h3>
+                        <span className="text-xs text-gray-400 font-medium bg-gray-50 dark:bg-dark-bg px-2 py-1 rounded-md">
+                            {category.items.length} دعاء
+                        </span>
+                    </button>
+                ))}
             </div>
         </div>
       ) : (
-        // --- Single Category List View ---
+        // --- Single Category List View (Situational Duas) ---
         <div className="animate-slideUp">
             {/* Header */}
             <div className="flex items-center gap-4 mb-8">
@@ -94,9 +105,6 @@ const Duas: React.FC = () => {
                 >
                     <ArrowRight size={24} />
                 </button>
-                <div className={`p-2 rounded-xl ${getThemeColor(selectedCategory.color)}`}>
-                    <selectedCategory.icon size={24} />
-                </div>
                 <h2 className="text-2xl font-bold font-serif text-gray-800 dark:text-white">
                     أدعية {selectedCategory.title}
                 </h2>
@@ -106,7 +114,7 @@ const Duas: React.FC = () => {
             <div className="space-y-4">
                 {selectedCategory.items.map((dua, index) => (
                     <div key={index} className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border">
-                        <p className="font-serif text-2xl md:text-3xl leading-[2.5] text-gray-800 dark:text-gray-100 text-center mb-6" dir="rtl">
+                        <p className="font-serif text-2xl md:text-3xl leading-[3.5] text-gray-800 dark:text-gray-100 text-center mb-6" dir="rtl">
                             {dua.text}
                         </p>
                         

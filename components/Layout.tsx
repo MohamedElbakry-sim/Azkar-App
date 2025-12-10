@@ -4,7 +4,6 @@ import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
 import { Home, Heart, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Sparkles, Mail, Menu, X, ListTodo, BookOpenText } from 'lucide-react';
 import { CATEGORIES } from '../data';
 import Logo from './Logo';
-import Breadcrumbs from './Breadcrumbs';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,7 +11,9 @@ interface LayoutProps {
   toggleTheme: () => void;
 }
 
-// Custom Tasbeeh Icon to resemble prayer beads
+/**
+ * Custom SVG component for the Tasbeeh/Rosary icon.
+ */
 export const TasbeehIcon = ({ size = 24, className = "" }: {size?: number, className?: string}) => (
   <svg 
     width={size} 
@@ -48,7 +49,9 @@ export const TasbeehIcon = ({ size = 24, className = "" }: {size?: number, class
   </svg>
 );
 
-// Custom Icon for Names of Allah (Calligraphy style using Text)
+/**
+ * Custom SVG component for the Allah (God) name calligraphy icon.
+ */
 export const AllahIcon = ({ size = 24, className = "" }: {size?: number, className?: string}) => (
   <svg 
     width={size} 
@@ -72,6 +75,10 @@ export const AllahIcon = ({ size = 24, className = "" }: {size?: number, classNa
   </svg>
 );
 
+/**
+ * Main Layout component wrapper for the application.
+ * Handles responsive navigation (sidebar/hamburger), theming, and layout structure.
+ */
 const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -160,7 +167,11 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
           {/* Left Side: Navigation/Back */}
           <div className="flex items-center gap-3 z-10">
             {!isHome && !isCategoryView ? (
-              <button onClick={() => navigate('/')} className="p-2 -mr-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full active:scale-95 transition-transform" aria-label="رجوع">
+              <button 
+                onClick={() => navigate(-1)} // Navigate back in history
+                className="p-2 -mr-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full active:scale-95 transition-transform" 
+                aria-label="رجوع"
+              >
                 <ArrowRight size={24} />
               </button>
             ) : (
@@ -253,20 +264,17 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
              {/* Back button for desktop sub-pages */}
              {!isHome && (
               <button 
-                onClick={() => navigate('/')} 
+                onClick={() => navigate(-1)} 
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-surface rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-                aria-label="رجوع للصفحة الرئيسية"
+                aria-label="رجوع"
               >
                 <ArrowRight size={18} />
-                <span>الرئيسية</span>
+                <span>رجوع</span>
               </button>
             )}
         </header>
 
         <main className="flex-1 p-4 md:p-8 w-full">
-          {/* Breadcrumbs for navigation */}
-          <Breadcrumbs />
-          
           {/* Animated Page Transition Wrapper */}
           <div className="animate-slideUp w-full">
             {children}

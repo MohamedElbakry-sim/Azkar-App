@@ -20,6 +20,7 @@ const NamesOfAllah = React.lazy(() => import('./pages/NamesOfAllah'));
 const Contact = React.lazy(() => import('./pages/Contact'));
 const MissedPrayers = React.lazy(() => import('./pages/MissedPrayers')); // New
 const Duas = React.lazy(() => import('./pages/Duas')); // New
+const NotFound = React.lazy(() => import('./pages/NotFound')); // 404 Page
 
 const App: React.FC = () => {
   // Splash screen disabled for now
@@ -103,6 +104,7 @@ const App: React.FC = () => {
               <Route path="/stats" element={<Stats />} />
               <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
         </Layout>

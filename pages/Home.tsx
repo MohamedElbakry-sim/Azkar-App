@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CATEGORIES, AZKAR_DATA } from '../data';
-import { Search, X, AlertCircle, ArrowLeft, SunMedium, Moon, CloudMoon, Sunrise, BookHeart } from 'lucide-react';
+import { AZKAR_DATA, CATEGORIES } from '../data';
+import { Search, X, AlertCircle, BookOpenText, ArrowLeft } from 'lucide-react';
 import DhikrCard from '../components/DhikrCard';
 import DailyWisdom from '../components/DailyWisdom';
 import RandomNameCard from '../components/RandomNameCard';
@@ -14,7 +14,6 @@ import { normalizeArabic } from '../utils';
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<number[]>(storage.getFavorites());
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
@@ -26,7 +25,6 @@ const Home: React.FC = () => {
     const queryWords = normalizedQuery.split(/\s+/).filter(w => w.length > 0);
 
     return AZKAR_DATA
-      .filter(item => activeCategory ? item.category === activeCategory : true)
       .map(item => {
           let score = 0;
           const normalizedText = normalizeArabic(item.text);
@@ -71,63 +69,20 @@ const Home: React.FC = () => {
       .sort((a, b) => b.score - a.score) // Sort highest score first
       .map(result => result.item)
       .slice(0, 50); // Limit results for performance
-  }, [searchQuery, activeCategory]);
+  }, [searchQuery]);
 
   const handleToggleFavorite = (dhikrId: number) => {
     const newFavs = storage.toggleFavoriteStorage(dhikrId);
     setFavorites(newFavs);
   };
 
-  const displayedCategories = activeCategory 
-    ? CATEGORIES.filter(c => c.id === activeCategory)
-    : CATEGORIES;
-
-  // Logic to show filters: if search is focused, or there is text, or a category is selected
-  const showFilters = isSearchFocused || searchQuery.length > 0 || activeCategory !== null;
-
-  // Helper to get theme text colors
-  const getThemeTextColor = (theme: string) => {
-    switch (theme) {
-      case 'orange': return 'text-orange-600 dark:text-orange-400 group-hover:text-orange-700 dark:group-hover:text-orange-300';
-      case 'indigo': return 'text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300';
-      case 'slate': return 'text-slate-600 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300';
-      case 'yellow': return 'text-yellow-600 dark:text-yellow-400 group-hover:text-yellow-700 dark:group-hover:text-yellow-300';
-      case 'emerald': return 'text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-300';
-      default: return 'text-gray-800 dark:text-gray-100';
-    }
-  };
-
-  const getThemeBgColor = (theme: string) => {
-    switch (theme) {
-      case 'orange': return 'bg-orange-100 dark:bg-orange-900/20';
-      case 'indigo': return 'bg-indigo-100 dark:bg-indigo-900/20';
-      case 'slate': return 'bg-slate-100 dark:bg-slate-800/50';
-      case 'yellow': return 'bg-yellow-100 dark:bg-yellow-900/20';
-      case 'emerald': return 'bg-emerald-100 dark:bg-emerald-900/20';
-      default: return 'bg-gray-100 dark:bg-gray-800';
-    }
-  };
-
-  const getCategoryIcon = (id: string, theme: string) => {
-    const colorClass = getThemeTextColor(theme);
-    const size = 28;
-    switch (id) {
-      case 'sabah': return <SunMedium size={size} className={colorClass} />;
-      case 'masaa': return <Moon size={size} className={colorClass} />;
-      case 'sleep': return <CloudMoon size={size} className={colorClass} />;
-      case 'waking': return <Sunrise size={size} className={colorClass} />;
-      case 'prayer': return <BookHeart size={size} className={colorClass} />;
-      default: return <SunMedium size={size} className={colorClass} />;
-    }
-  };
-
   return (
     <div className="space-y-6 max-w-6xl mx-auto relative">
       <div className="text-center py-6 md:py-10">
-        <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-serif">الأذكار التي تريد قراءتها الآن</h2>
+        <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-serif">إختر الأذكار التي تريد قراءتها</h2>
       </div>
 
-      {/* Sticky Search & Filters Section */}
+      {/* Sticky Search Section */}
       <div className="sticky top-0 z-30 pt-2 pb-1 -mx-4 px-4 md:mx-0 md:px-0 bg-gray-50/95 dark:bg-dark-bg/95 backdrop-blur-md transition-all duration-300">
         <div className="max-w-xl mx-auto">
           {/* Search Bar */}
@@ -158,48 +113,13 @@ const Home: React.FC = () => {
               </button>
             )}
           </div>
-
-          {/* Filter Chips - Scrollable */}
-          <div 
-            className={`transition-all duration-300 ease-in-out overflow-y-hidden ${showFilters ? 'max-h-20 opacity-100 mb-4' : 'max-h-0 opacity-0 mb-0'}`}
-          >
-            <div className="overflow-x-auto no-scrollbar pb-2 touch-pan-x">
-              <div className="flex gap-2 min-w-max px-1">
-                <button
-                  onClick={() => setActiveCategory(null)}
-                  className={`
-                    px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200
-                    ${activeCategory === null 
-                      ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20' 
-                      : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-dark-border'}
-                  `}
-                >
-                  الكل
-                </button>
-                {CATEGORIES.map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id === activeCategory ? null : cat.id)}
-                    className={`
-                      px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200
-                      ${activeCategory === cat.id 
-                        ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20' 
-                        : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-dark-border'}
-                    `}
-                  >
-                    {cat.title}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
       {/* Smart Suggestion (Only show when not searching) */}
-      {!searchQuery && !activeCategory && <SmartAzkarSuggestion />}
+      {!searchQuery && <SmartAzkarSuggestion />}
 
-      {/* Search Results or Categories */}
+      {/* Search Results or Hisn Al Muslim */}
       {searchQuery ? (
         <div className="space-y-4" role="region" aria-label="نتائج البحث">
           <div className="flex items-center justify-between">
@@ -230,7 +150,6 @@ const Home: React.FC = () => {
                  <AlertCircle size={48} className="text-gray-400" />
               </div>
               <p className="text-lg font-bold text-gray-600 dark:text-gray-300">لا توجد نتائج مطابقة لـ "{searchQuery}"</p>
-              {activeCategory && <p className="text-primary-500 mt-1 text-sm font-medium">في قسم: {CATEGORIES.find(c => c.id === activeCategory)?.title}</p>}
               <p className="text-gray-400 mt-2 text-sm">حاول البحث باستخدام كلمات مختلفة أو تأكد من الكتابة الصحيحة</p>
               <button 
                 onClick={() => setSearchQuery('')}
@@ -242,42 +161,38 @@ const Home: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {displayedCategories.map((cat) => {
-            return (
-              <button
-                key={cat.id}
-                onClick={() => navigate(`/category/${cat.id}`)}
-                className="group relative bg-white dark:bg-dark-surface p-5 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md transition-all duration-300 text-right focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-[0.98] flex items-center gap-5 min-h-[110px]"
-                aria-label={`قسم ${cat.title}`}
-              >
-                {/* Icon Container */}
-                <div className={`p-4 rounded-2xl ${getThemeBgColor(cat.theme)} transition-colors`}>
-                    {getCategoryIcon(cat.id, cat.theme)}
-                </div>
-
-                <div className="flex-1 flex items-center justify-between">
+        <div className="max-w-2xl mx-auto">
+            {/* Hisn Al Muslim Main Card */}
+            <button
+                onClick={() => navigate('/duas')}
+                className="group relative w-full bg-white dark:bg-dark-surface p-8 rounded-3xl border border-gray-100 dark:border-dark-border shadow-md hover:shadow-lg transition-all duration-300 text-right focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-[0.98] flex items-center justify-between gap-5 overflow-hidden"
+                aria-label="حصن المسلم - جميع الأذكار والأدعية"
+            >
+                <div className="absolute inset-0 bg-gradient-to-l from-primary-50/50 to-transparent dark:from-primary-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                
+                <div className="flex items-center gap-6 relative z-10">
+                    <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
+                        <BookOpenText size={40} />
+                    </div>
                     <div>
-                        <h3 className={`text-xl font-bold font-serif mb-1 transition-colors ${getThemeTextColor(cat.theme)}`}>
-                            {cat.title}
+                        <h3 className="text-2xl font-bold font-serif text-gray-800 dark:text-white mb-2">
+                            حصن المسلم
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                            {cat.description}
+                        <p className="text-gray-500 dark:text-gray-400 font-medium">
+                            أذكار الصباح، المساء، النوم، الصلاة، وكافة الأدعية
                         </p>
                     </div>
-                    
-                    <div className="pl-1 text-gray-300 dark:text-gray-600 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors">
-                        <ArrowLeft size={20} className="rtl:rotate-0" />
-                    </div>
                 </div>
-              </button>
-            );
-          })}
+                
+                <div className="pl-2 text-gray-300 dark:text-gray-600 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors relative z-10">
+                    <ArrowLeft size={28} className="rtl:rotate-0" />
+                </div>
+            </button>
         </div>
       )}
 
-      {/* Widgets (Only if no search and no specific category selected) */}
-      {!searchQuery && !activeCategory && (
+      {/* Widgets (Only if no search) */}
+      {!searchQuery && (
         <div className="max-w-2xl mx-auto mt-16 mb-12 space-y-10 md:space-y-10">
             <RandomNameCard />
             <DailyWisdom />
