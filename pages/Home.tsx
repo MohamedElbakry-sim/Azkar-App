@@ -30,10 +30,10 @@ const Home: React.FC = () => {
       <AlKahfAlert />
       
       <div className="text-center py-6 md:py-10 animate-fadeIn">
-        <h1 className="text-h1 text-gray-800 dark:text-white mb-3 font-arabic">
+        <h1 className="text-h1 text-gray-800 dark:text-white mb-3 font-arabicHead">
           مرحباً بك في ريان
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 text-body-md md:text-body-lg">
+        <p className="text-gray-500 dark:text-gray-400 text-body-md md:text-body-lg font-arabic">
           رفيقك اليومي في الذكر والطاعة
         </p>
       </div>
@@ -56,10 +56,10 @@ const Home: React.FC = () => {
                       <BookOpenText size={40} />
                   </div>
                   <div>
-                      <h2 className="text-h2 font-arabic text-gray-800 dark:text-white mb-2">
+                      <h2 className="text-h2 font-arabicHead text-gray-800 dark:text-white mb-2">
                           حصن المسلم
                       </h2>
-                      <p className="text-gray-500 dark:text-gray-400 font-medium text-body-md">
+                      <p className="text-gray-500 dark:text-gray-400 font-medium text-body-md font-arabic">
                           ابحث في الأذكار، الأدعية، والمناسبات
                       </p>
                   </div>

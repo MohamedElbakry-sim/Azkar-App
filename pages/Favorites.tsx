@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { AZKAR_DATA } from '../data';
+import { AZKAR_DATA, SITUATIONAL_DUAS } from '../data';
 import DhikrCard from '../components/DhikrCard';
 import * as storage from '../services/storage';
 import { HeartOff, Trash2, Hand } from 'lucide-react';
+import { Dhikr, CategoryId } from '../types';
 
 // --- Swipeable Card Component ---
 interface SwipeableCardProps {
@@ -102,13 +103,28 @@ const Favorites: React.FC = () => {
     setFavorites(newFavs);
   };
 
-  const favoriteItems = AZKAR_DATA.filter(item => favorites.includes(item.id));
+  // Generate IDs for Situational Duas to match those in Duas.tsx
+  const situationalItems: Dhikr[] = SITUATIONAL_DUAS.flatMap((cat, catIdx) => 
+    cat.items.map((item, itemIdx) => ({
+      id: 90000 + (catIdx * 1000) + itemIdx, // Deterministic ID generation
+      category: 'prayer' as CategoryId, // Placeholder category type
+      text: item.text,
+      count: 1,
+      source: item.source || cat.title,
+      benefit: ''
+    }))
+  );
+
+  // Combine standard Azkar and Situational Duas
+  const allItems = [...AZKAR_DATA, ...situationalItems];
+
+  const favoriteItems = allItems.filter(item => favorites.includes(item.id));
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-10">
       <div className="flex items-center justify-between mb-6 md:mb-10">
          <div className="flex items-center gap-3">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">المفضلة</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white font-arabicHead">المفضلة</h2>
             <span className="bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 px-3 py-1 rounded-full text-sm font-bold">
             {favorites.length}
             </span>
@@ -145,10 +161,10 @@ const Favorites: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400 text-center bg-white dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-800 border-dashed">
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400 text-center bg-white dark:bg-dark-surface rounded-3xl border border-gray-100 dark:border-dark-border border-dashed">
           <HeartOff size={64} className="mb-4 opacity-20" />
-          <p className="text-lg font-medium text-gray-600 dark:text-gray-400">لا توجد أذكار في المفضلة بعد</p>
-          <p className="text-sm opacity-70 mt-2">اضغط على رمز القلب لإضافة الأذكار هنا</p>
+          <p className="text-lg font-medium text-gray-600 dark:text-gray-400 font-arabic">لا توجد أذكار في المفضلة بعد</p>
+          <p className="text-sm opacity-70 mt-2 font-arabic">اضغط على رمز القلب لإضافة الأذكار هنا</p>
         </div>
       )}
     </div>

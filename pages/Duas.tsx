@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SITUATIONAL_DUAS, CATEGORIES, AZKAR_DATA } from '../data';
-import { ArrowRight, Copy, Check, Share2, BookOpenText, Search, X, AlertCircle } from 'lucide-react';
+import { ArrowRight, Copy, Check, Share2, BookOpenText, Search, X, AlertCircle, Heart } from 'lucide-react';
 import { DuaCategory, Category } from '../types';
 import * as storage from '../services/storage';
 import DhikrCard from '../components/DhikrCard';
@@ -93,6 +93,15 @@ const Duas: React.FC = () => {
   };
 
   /**
+   * Generates a deterministic ID for situational duas based on their position.
+   * Formula: 90000 + (CategoryIndex * 1000) + ItemIndex
+   * This prevents collision with standard Azkar IDs (100-1000).
+   */
+  const generateSituationalId = (catIndex: number, itemIndex: number) => {
+      return 90000 + (catIndex * 1000) + itemIndex;
+  };
+
+  /**
    * Memoized Search Logic.
    * Filters Categories and Individual Items based on the search query.
    * Uses a scoring system to prioritize exact matches.
@@ -134,12 +143,13 @@ const Duas: React.FC = () => {
       .map(r => r.item);
 
     // 3. Filter Situational Duas (Flattened)
-    const matchedSituational: { item: any, category: string }[] = [];
-    SITUATIONAL_DUAS.forEach(cat => {
-        cat.items.forEach(dua => {
+    const matchedSituational: { item: any, category: string, id: number }[] = [];
+    SITUATIONAL_DUAS.forEach((cat, cIdx) => {
+        cat.items.forEach((dua, dIdx) => {
             const normText = normalizeArabic(dua.text);
             if (normText.includes(normalizedQuery)) {
-                matchedSituational.push({ item: dua, category: cat.title });
+                const id = generateSituationalId(cIdx, dIdx);
+                matchedSituational.push({ item: dua, category: cat.title, id });
             }
         });
     });
@@ -165,7 +175,7 @@ const Duas: React.FC = () => {
             <input
               id="duas-search"
               type="text"
-              className="block w-full p-4 pr-11 text-base rounded-2xl border-none bg-white dark:bg-dark-surface shadow-sm focus:ring-2 focus:ring-primary-400 placeholder-gray-400 dark:text-white transition-shadow"
+              className="block w-full p-4 pr-11 text-base rounded-2xl border-none bg-white dark:bg-dark-surface shadow-sm focus:ring-2 focus:ring-primary-400 placeholder-gray-400 dark:text-white transition-shadow font-arabic"
               placeholder="ابحث عن ذكر، دعاء، أو شعور..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -191,7 +201,7 @@ const Duas: React.FC = () => {
               {/* 1. Matched Categories */}
               {searchResults.categories.length > 0 && (
                   <div>
-                      <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-4 px-2">الأقسام</h3>
+                      <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-4 px-2 font-arabicHead">الأقسام</h3>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           {searchResults.categories.map((cat: any) => (
                               <button
@@ -199,7 +209,7 @@ const Duas: React.FC = () => {
                                   onClick={() => handleItemClick(cat)}
                                   className="bg-white dark:bg-dark-surface p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm hover:border-primary-300 transition-colors text-center"
                               >
-                                  <span className="font-bold text-gray-800 dark:text-gray-100">{cat.title}</span>
+                                  <span className="font-bold text-gray-800 dark:text-gray-100 font-arabicHead">{cat.title}</span>
                               </button>
                           ))}
                       </div>
@@ -209,7 +219,7 @@ const Duas: React.FC = () => {
               {/* 2. Matched Standard Azkar */}
               {searchResults.azkar.length > 0 && (
                   <div>
-                      <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-4 px-2">الأذكار ({searchResults.azkar.length})</h3>
+                      <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-4 px-2 font-arabicHead">الأذكار ({searchResults.azkar.length})</h3>
                       <div className="space-y-4">
                           {searchResults.azkar.slice(0, 10).map(item => (
                               <DhikrCard
@@ -231,14 +241,20 @@ const Duas: React.FC = () => {
               {/* 3. Matched Situational Duas */}
               {searchResults.situational.length > 0 && (
                   <div>
-                      <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-4 px-2">أدعية متنوعة</h3>
+                      <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-4 px-2 font-arabicHead">أدعية متنوعة</h3>
                       <div className="space-y-4">
                           {searchResults.situational.map((res, idx) => (
                               <div key={idx} className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border">
-                                  <div className="flex items-center gap-2 mb-3">
-                                      <span className="text-xs bg-gray-100 dark:bg-dark-bg px-2 py-1 rounded text-gray-500">{res.category}</span>
+                                  <div className="flex items-center justify-between mb-3">
+                                      <span className="text-xs bg-gray-100 dark:bg-dark-bg px-2 py-1 rounded text-gray-500 font-arabic">{res.category}</span>
+                                      <button 
+                                          onClick={() => handleToggleFavorite(res.id)}
+                                          className={`p-2 rounded-full transition-colors ${favorites.includes(res.id) ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
+                                      >
+                                          <Heart size={18} fill={favorites.includes(res.id) ? "currentColor" : "none"} />
+                                      </button>
                                   </div>
-                                  <p className="font-serif text-xl leading-[3] text-gray-800 dark:text-gray-100 text-center mb-4" dir="rtl">
+                                  <p className="font-arabic text-xl leading-[3] text-gray-800 dark:text-gray-100 text-center mb-4" dir="rtl">
                                       {res.item.text}
                                   </p>
                                   <div className="flex justify-end gap-2 border-t border-gray-50 dark:border-dark-border pt-3">
@@ -272,8 +288,8 @@ const Duas: React.FC = () => {
                 <div className="inline-flex items-center justify-center p-3 bg-amber-50 dark:bg-amber-900/20 rounded-full mb-4 text-amber-600 dark:text-amber-400">
                     <BookOpenText size={32} />
                 </div>
-                <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-serif">حصن المسلم</h2>
-                <p className="text-gray-500 dark:text-gray-400 md:text-lg">
+                <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-arabicHead">حصن المسلم</h2>
+                <p className="text-gray-500 dark:text-gray-400 md:text-lg font-arabic">
                 أذكار اليوم والليلة وأدعية لكل الأحوال
                 </p>
             </div>
@@ -286,10 +302,10 @@ const Duas: React.FC = () => {
                         onClick={() => handleItemClick(category)}
                         className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md hover:border-primary-200 dark:hover:border-primary-900 transition-all group text-center flex flex-col items-center justify-center min-h-[140px]"
                     >
-                        <h3 className="font-bold text-xl text-gray-800 dark:text-gray-100 font-serif mb-2">
+                        <h3 className="font-bold text-xl text-gray-800 dark:text-gray-100 font-arabicHead mb-2">
                             {category.title}
                         </h3>
-                        <p className="text-xs text-gray-400 font-medium line-clamp-2">
+                        <p className="text-xs text-gray-400 font-medium line-clamp-2 font-arabic">
                             {category.description}
                         </p>
                     </button>
@@ -302,7 +318,7 @@ const Duas: React.FC = () => {
                         onClick={() => handleItemClick(category)}
                         className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md hover:border-primary-200 dark:hover:border-primary-900 transition-all group text-center flex flex-col items-center justify-center min-h-[140px]"
                     >
-                        <h3 className="font-bold text-xl text-gray-800 dark:text-gray-100 font-serif mb-2">
+                        <h3 className="font-bold text-xl text-gray-800 dark:text-gray-100 font-arabicHead mb-2">
                             {category.title}
                         </h3>
                         <span className="text-xs text-gray-400 font-medium bg-gray-50 dark:bg-dark-bg px-2 py-1 rounded-md">
@@ -324,43 +340,58 @@ const Duas: React.FC = () => {
                 >
                     <ArrowRight size={24} />
                 </button>
-                <h2 className="text-2xl font-bold font-serif text-gray-800 dark:text-white">
+                <h2 className="text-2xl font-bold font-arabicHead text-gray-800 dark:text-white">
                     أدعية {selectedCategory.title}
                 </h2>
             </div>
 
             {/* List */}
             <div className="space-y-4">
-                {selectedCategory.items.map((dua, index) => (
-                    <div key={index} className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border">
-                        <p className="font-serif text-2xl md:text-3xl leading-[3.5] text-gray-800 dark:text-gray-100 text-center mb-6" dir="rtl">
-                            {dua.text}
-                        </p>
-                        
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-gray-800">
-                            <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-dark-bg px-3 py-1 rounded-lg">
-                                {dua.source || 'حصن المسلم'}
-                            </span>
+                {selectedCategory.items.map((dua, index) => {
+                    // Generate ID based on category index and item index
+                    // We need to find the category index in the main array
+                    const catIndex = SITUATIONAL_DUAS.findIndex(c => c.id === selectedCategory.id);
+                    const duaId = generateSituationalId(catIndex, index);
+                    const isFav = favorites.includes(duaId);
+
+                    return (
+                        <div key={index} className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border">
+                            <p className="font-arabic text-2xl md:text-3xl leading-[3.5] text-gray-800 dark:text-gray-100 text-center mb-6" dir="rtl">
+                                {dua.text}
+                            </p>
                             
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={() => handleCopy(dua.text, index)}
-                                    className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-full transition-colors"
-                                    title="نسخ"
-                                >
-                                    {copiedIndex === index ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
-                                </button>
-                                <button 
-                                    onClick={() => handleShare(dua.text)}
-                                    className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-full transition-colors"
-                                    title="مشاركة"
-                                >
-                                    <Share2 size={20} />
-                                </button>
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-gray-800">
+                                <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-dark-bg px-3 py-1 rounded-lg font-arabic">
+                                    {dua.source || 'حصن المسلم'}
+                                </span>
+                                
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => handleToggleFavorite(duaId)}
+                                        className={`p-2 rounded-full transition-colors ${isFav ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-400 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
+                                        title={isFav ? "إزالة من المفضلة" : "إضافة للمفضلة"}
+                                    >
+                                        <Heart size={20} fill={isFav ? "currentColor" : "none"} />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleCopy(dua.text, index)}
+                                        className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-full transition-colors"
+                                        title="نسخ"
+                                    >
+                                        {copiedIndex === index ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
+                                    </button>
+                                    <button 
+                                        onClick={() => handleShare(dua.text)}
+                                        className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-full transition-colors"
+                                        title="مشاركة"
+                                    >
+                                        <Share2 size={20} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
       )}

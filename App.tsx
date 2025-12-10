@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import NotificationManager from './components/NotificationManager';
 // import OnboardingModal from './components/OnboardingModal'; // Onboarding disabled
 import SplashScreen from './components/SplashScreen'; // Import Splash Screen
+import ErrorBoundary from './components/ErrorBoundary'; // Import Error Boundary
 import { Loader2 } from 'lucide-react';
 import * as storage from './services/storage';
 
@@ -81,7 +82,7 @@ const App: React.FC = () => {
   );
 
   return (
-    <>
+    <ErrorBoundary>
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       
       <Router>
@@ -109,7 +110,7 @@ const App: React.FC = () => {
           </Suspense>
         </Layout>
       </Router>
-    </>
+    </ErrorBoundary>
   );
 };
 

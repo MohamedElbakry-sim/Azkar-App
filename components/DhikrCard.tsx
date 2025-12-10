@@ -283,7 +283,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             <div className="flex-1 flex flex-col justify-center items-center w-full">
                 {/* Source Label */}
                 {item.source && (
-                    <span className="text-white/80 font-arabic text-h2 mb-8 border-b border-white/20 pb-2 inline-block">
+                    <span className="text-white/80 font-arabicHead text-h2 mb-8 border-b border-white/20 pb-2 inline-block">
                         {item.source}
                     </span>
                 )}
@@ -303,7 +303,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                 {/* Benefit if short */}
                 {item.benefit && item.benefit.length < 100 && (
                     <div className="mt-12 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-                         <p className="text-white/90 text-h3 font-light">{item.benefit}</p>
+                         <p className="text-white/90 text-h3 font-light font-arabic">{item.benefit}</p>
                     </div>
                 )}
             </div>
@@ -313,7 +313,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                 <div className="flex items-center gap-5 bg-black/20 backdrop-blur-xl px-10 py-5 rounded-full border border-white/10 shadow-2xl">
                     <Logo size={100} className="text-white drop-shadow-md" />
                     <div className="flex flex-col gap-1 text-right">
-                        <span className="text-white/90 text-xl font-medium leading-none drop-shadow-sm">رفيقك اليومي في الذكر</span>
+                        <span className="text-white/90 text-xl font-medium leading-none drop-shadow-sm font-arabicHead">رفيقك اليومي في الذكر</span>
                     </div>
                 </div>
             </div>
@@ -401,7 +401,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
           </div>
           
           <div className="flex items-center gap-2">
-             <span className="text-caption font-medium text-gray-500 dark:text-dark-secondary bg-gray-100 dark:bg-dark-elevated px-2 py-1 rounded-lg">
+             <span className="text-caption font-medium text-gray-500 dark:text-dark-secondary bg-gray-100 dark:bg-dark-elevated px-2 py-1 rounded-lg font-arabic">
                {item.source || 'ذكر'}
              </span>
           </div>
@@ -421,7 +421,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
 
         {/* Benefit Toggle */}
         {showBenefit && item.benefit && (
-           <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800 text-body-sm text-blue-800 dark:text-blue-200 animate-fadeIn">
+           <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800 text-body-sm text-blue-800 dark:text-blue-200 animate-fadeIn font-arabic">
              <strong>الفضل:</strong> {item.benefit}
            </div>
         )}
@@ -429,7 +429,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         {/* Footer: Counter (Hidden in Readonly) */}
         {!readonly && (
           <div className="flex justify-between items-center border-t border-gray-100 dark:border-dark-border pt-4 mt-2">
-            <div className="flex items-center gap-2 text-body-sm text-gray-500 dark:text-dark-muted" aria-live="polite">
+            <div className="flex items-center gap-2 text-body-sm text-gray-500 dark:text-dark-muted font-english" aria-live="polite">
                <Repeat size={16} />
                <span>{count} / {currentTarget}</span>
             </div>
@@ -460,7 +460,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
               </button>
             </div>
 
-            <div className={`px-4 py-1.5 rounded-full text-caption font-bold transition-colors bg-gray-100 text-gray-600 dark:bg-dark-elevated dark:text-dark-text`}>
+            <div className={`px-4 py-1.5 rounded-full text-caption font-bold transition-colors bg-gray-100 text-gray-600 dark:bg-dark-elevated dark:text-dark-text font-arabic`}>
               {currentTarget - count > 0 ? `${currentTarget - count} متبقي` : 'اكتمل'}
             </div>
           </div>

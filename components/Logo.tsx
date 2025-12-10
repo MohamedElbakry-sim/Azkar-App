@@ -26,13 +26,13 @@ const Logo: React.FC<LogoProps> = ({ className = "", size = 40, color = "current
         </linearGradient>
       </defs>
       
-      {/* Arabic Text: Main Focus */}
+      {/* Arabic Text: Main Focus using Reem Kufi */}
       <text 
         x="50%" 
         y={showEnglish ? "45%" : "55%"} 
         dominantBaseline="middle" 
         textAnchor="middle" 
-        fontFamily="IBM Plex Sans Arabic, sans-serif" 
+        fontFamily="Reem Kufi, sans-serif" 
         fontWeight="700" 
         fontSize="42" 
         fill={color === 'currentColor' ? color : "url(#logoGradient)"}

@@ -230,11 +230,12 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({ history, daysCoun
     const [tooltip, setTooltip] = useState<TooltipData | null>(null);
     const [selectedDay, setSelectedDay] = useState<DetailModalData | null>(null);
 
-    const getCountForDate = (date: Date) => {
+    const getCountForDate = (date: Date): number => {
         const key = date.toISOString().split('T')[0];
         const dayData = history[key];
         if (!dayData) return 0;
-        return Object.values(dayData).reduce((a, b) => (b > 0 ? a + b : a), 0);
+        // Cast values to number[] explicitly to solve type inference issues
+        return (Object.values(dayData) as number[]).reduce((a, b) => (b > 0 ? a + b : a), 0);
     };
 
     const getColor = (count: number) => {
@@ -340,7 +341,8 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({ history, daysCoun
     }, [allCells, daysCount]);
 
     // Helper component for a single grid block
-    const HeatmapGridBlock = ({ dates, label }: { dates: Date[], label?: string }) => {
+    // explicitly typed as React.FC to allow props including 'key' when rendered in lists
+    const HeatmapGridBlock: React.FC<{ dates: Date[], label?: string }> = ({ dates, label }) => {
         const startDay = dates.length > 0 ? dates[0].getDay() : 0;
         const paddingArray = Array(startDay).fill(null);
 

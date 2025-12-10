@@ -4,10 +4,12 @@ import { BookOpen, Scroll, Loader2, Share2, Quote, Image as ImageIcon } from 'lu
 import { getDailyContent } from '../services/dailyContent';
 import { DailyContent } from '../types';
 import Logo from './Logo';
+import ErrorState from './ErrorState';
 
 const DailyWisdom: React.FC = () => {
   const [content, setContent] = useState<DailyContent | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   
   // Image Sharing State
   const [isSharing, setIsSharing] = useState<'verse' | 'hadith' | null>(null);
@@ -20,17 +22,21 @@ const DailyWisdom: React.FC = () => {
   
   const shareRef = useRef<HTMLDivElement>(null);
 
+  const fetchData = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const data = await getDailyContent();
+      setContent(data);
+    } catch (e) {
+      console.error(e);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getDailyContent();
-        setContent(data);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
 
@@ -137,7 +143,17 @@ const DailyWisdom: React.FC = () => {
     );
   }
 
-  if (!content) return null;
+  if (error || !content) {
+      return (
+          <div className="mb-12">
+            <ErrorState 
+                title="تعذر تحميل المحتوى"
+                message="واجهنا مشكلة في جلب آية وحديث اليوم. يرجى التحقق من اتصالك."
+                onRetry={fetchData}
+            />
+          </div>
+      );
+  }
 
   return (
     <div className="space-y-10 mb-12 animate-fadeIn">
@@ -164,7 +180,7 @@ const DailyWisdom: React.FC = () => {
                     {/* Header */}
                     <div className="mb-10 flex items-center gap-3 text-white/90 border-b border-white/20 pb-4 px-8">
                         {shareData.type === 'verse' ? <BookOpen size={40} /> : <Scroll size={40} />}
-                        <span className="text-4xl font-bold">
+                        <span className="text-4xl font-bold font-arabicHead">
                             {shareData.type === 'verse' ? 'آية اليوم' : 'حديث اليوم'}
                         </span>
                     </div>
@@ -180,10 +196,10 @@ const DailyWisdom: React.FC = () => {
                     {/* Source */}
                     <div className="mt-16 flex flex-col items-center gap-2">
                         <div className="bg-white/10 backdrop-blur-md rounded-full px-10 py-4 border border-white/20 shadow-lg">
-                            <span className="text-white text-3xl font-bold font-arabic">{shareData.source}</span>
+                            <span className="text-white text-3xl font-bold font-arabicHead">{shareData.source}</span>
                         </div>
                         {shareData.subSource && (
-                             <span className="text-white/70 text-2xl mt-2">{shareData.subSource}</span>
+                             <span className="text-white/70 text-2xl mt-2 font-arabic">{shareData.subSource}</span>
                         )}
                     </div>
                 </div>
@@ -193,7 +209,7 @@ const DailyWisdom: React.FC = () => {
                     <div className="flex items-center gap-5 bg-black/20 backdrop-blur-xl px-10 py-5 rounded-full border border-white/10 shadow-2xl">
                         <Logo size={100} className="text-white drop-shadow-md" />
                         <div className="flex flex-col gap-1 text-right">
-                            <span className="text-white/90 text-xl font-medium leading-none drop-shadow-sm">رفيقك اليومي في الذكر</span>
+                            <span className="text-white/90 text-xl font-medium leading-none drop-shadow-sm font-arabicHead">رفيقك اليومي في الذكر</span>
                         </div>
                     </div>
                 </div>
@@ -206,7 +222,7 @@ const DailyWisdom: React.FC = () => {
         <div className="bg-emerald-50/50 dark:bg-emerald-900/10 px-4 py-3 flex items-center justify-between border-b border-emerald-100 dark:border-emerald-900/30">
           <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
             <BookOpen size={20} />
-            <span className="font-bold text-sm md:text-base">آية اليوم</span>
+            <span className="font-bold text-sm md:text-base font-arabicHead">آية اليوم</span>
           </div>
           <div className="flex gap-1">
             <button 
@@ -234,13 +250,13 @@ const DailyWisdom: React.FC = () => {
             <p className="font-arabic text-h2 md:text-h1 leading-[2.5] text-gray-800 dark:text-gray-100 mb-4">
               {content.verse.text}
             </p>
-            <div className="inline-block px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 text-caption font-bold">
+            <div className="inline-block px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 text-caption font-bold font-arabic">
                سورة {content.verse.surah} • آية {content.verse.ayahNumber}
             </div>
           </div>
 
           {content.verse.tafsir && (
-            <p className="text-gray-500 dark:text-gray-400 text-body-sm leading-relaxed border-t border-emerald-50 dark:border-emerald-900/20 pt-3 mt-3">
+            <p className="text-gray-500 dark:text-gray-400 text-body-sm leading-relaxed border-t border-emerald-50 dark:border-emerald-900/20 pt-3 mt-3 font-arabic">
               <span className="font-bold text-emerald-600 dark:text-emerald-400 ml-1">التفسير:</span>
               {content.verse.tafsir}
             </p>
@@ -253,7 +269,7 @@ const DailyWisdom: React.FC = () => {
         <div className="bg-amber-50/50 dark:bg-amber-900/10 px-4 py-3 flex items-center justify-between border-b border-amber-100 dark:border-amber-900/30">
           <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
             <Scroll size={20} />
-            <span className="font-bold text-sm md:text-base">حديث اليوم</span>
+            <span className="font-bold text-sm md:text-base font-arabicHead">حديث اليوم</span>
           </div>
           <div className="flex gap-1">
             <button 
@@ -282,10 +298,10 @@ const DailyWisdom: React.FC = () => {
               "{content.hadith.text}"
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
-                <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 text-[10px] font-bold">
+                <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 text-[10px] font-bold font-arabic">
                     {content.hadith.source}
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-[10px] font-bold border border-green-100 dark:border-green-900/30">
+                <span className="px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-[10px] font-bold border border-green-100 dark:border-green-900/30 font-arabic">
                     {content.hadith.grade}
                 </span>
             </div>

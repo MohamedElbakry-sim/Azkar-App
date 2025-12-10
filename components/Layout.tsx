@@ -168,9 +168,9 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
           <div className="flex items-center gap-3 z-10">
             {!isHome && !isCategoryView ? (
               <button 
-                onClick={() => navigate(-1)} 
+                onClick={() => navigate('/')} 
                 className="p-2 -mr-2 text-gray-600 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-elevated rounded-full active:scale-95 transition-transform" 
-                aria-label="رجوع"
+                aria-label="الرئيسية"
               >
                 <ArrowRight size={24} />
               </button>
@@ -264,12 +264,12 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
              {/* Back button for desktop sub-pages */}
              {!isHome && (
               <button 
-                onClick={() => navigate(-1)} 
+                onClick={() => navigate('/')} 
                 className="flex items-center gap-2 px-4 py-2 text-btn text-gray-600 dark:text-dark-secondary hover:bg-gray-200 dark:hover:bg-dark-elevated rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-                aria-label="رجوع"
+                aria-label="الرئيسية"
               >
                 <ArrowRight size={18} />
-                <span>رجوع</span>
+                <span>الرئيسية</span>
               </button>
             )}
         </header>

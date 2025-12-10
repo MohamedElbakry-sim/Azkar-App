@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Compass, Clock, MapPin, Loader2, Calendar, Navigation, RefreshCw } from 'lucide-react';
 import * as AdhanLib from 'adhan';
 import * as storage from '../services/storage';
+import ErrorState from '../components/ErrorState';
 
 // Robustly resolve the adhan library object to handle CJS/ESM interop differences across CDNs
 const adhan = (AdhanLib as any).default || AdhanLib;
@@ -29,6 +30,49 @@ const PrayerTimes: React.FC = () => {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [calibrationNeeded, setCalibrationNeeded] = useState(false);
 
+  // Helper to retry location fetching
+  const fetchLocation = () => {
+    setLoading(true);
+    setError('');
+    
+    if (!navigator.geolocation) {
+        setError('عذراً، المتصفح لا يدعم تحديد الموقع الجغرافي.');
+        setLoading(false);
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          calculateTimes(latitude, longitude);
+          setLocationName(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+          setLoading(false);
+        },
+        (error) => {
+          let msg = "حدث خطأ غير معروف في تحديد الموقع.";
+          if (error.code === error.PERMISSION_DENIED) {
+            msg = "تم رفض إذن الوصول للموقع. يرجى تفعيل الموقع من إعدادات المتصفح للحصول على مواقيت دقيقة.";
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            msg = "تعذر الحصول على الموقع الحالي. تأكد من تفعيل GPS.";
+          } else if (error.code === error.TIMEOUT) {
+            msg = "انتهت مهلة تحديد الموقع. يرجى المحاولة مرة أخرى.";
+          }
+          
+          setError(msg);
+          
+          // Default to Mecca coordinates as fallback so user sees something
+          calculateTimes(21.4225, 39.8262);
+          setLocationName('مكة المكرمة (افتراضي)');
+          setLoading(false);
+        },
+        {
+          enableHighAccuracy: true, // Better accuracy for Qibla
+          timeout: 15000,
+          maximumAge: 0
+        }
+      );
+  };
+
   useEffect(() => {
     // Set Hijri Date with User Offset
     try {
@@ -46,41 +90,7 @@ const PrayerTimes: React.FC = () => {
       setHijriDate(new Date().toLocaleDateString('ar-SA'));
     }
 
-    if (!navigator.geolocation) {
-      setError('المتصفح لا يدعم تحديد الموقع');
-      setLoading(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        calculateTimes(latitude, longitude);
-        setLocationName(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
-        setLoading(false);
-      },
-      (error) => {
-        if (error.code === error.PERMISSION_DENIED) {
-          setError("لو سمحت، فعّل إذن الموقع من إعدادات المتصفح.");
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          setError("تعذر الحصول على الموقع. تأكد من تشغيل GPS أو جرّب من مكان مفتوح.");
-        } else if (error.code === error.TIMEOUT) {
-          setError("انتهت مهلة تحديد الموقع. حاول مرة أخرى.");
-        } else {
-          setError("حدث خطأ غير معروف في تحديد الموقع.");
-        }
-        
-        // Default to Mecca coordinates as fallback
-        calculateTimes(21.4225, 39.8262);
-        setLocationName('مكة المكرمة (افتراضي)');
-        setLoading(false);
-      },
-      {
-        enableHighAccuracy: true, // Better accuracy for Qibla
-        timeout: 20000,
-        maximumAge: 0
-      }
-    );
+    fetchLocation();
 
     // Cleanup compass listener
     return () => {
@@ -128,6 +138,7 @@ const PrayerTimes: React.FC = () => {
       })));
     } catch (e) {
       console.error(e);
+      // Fallback is generic here since we handle specific location errors above
       setError('حدث خطأ أثناء حساب المواقيت.');
     }
   };
@@ -197,10 +208,10 @@ const PrayerTimes: React.FC = () => {
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-10">
       <div className="text-center mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">مواقيت الصلاة</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2 font-arabicHead">مواقيت الصلاة</h2>
         
         {hijriDate && (
-          <div className="flex items-center justify-center gap-2 text-primary-600 dark:text-primary-400 font-medium mb-4 bg-primary-50 dark:bg-primary-900/20 py-2 px-4 rounded-full inline-flex">
+          <div className="flex items-center justify-center gap-2 text-primary-600 dark:text-primary-400 font-medium mb-4 bg-primary-50 dark:bg-primary-900/20 py-2 px-4 rounded-full inline-flex font-arabic">
             <Calendar size={18} />
             <span>{hijriDate}</span>
           </div>
@@ -213,19 +224,22 @@ const PrayerTimes: React.FC = () => {
         )}
 
         {!loading && !error && (
-            <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
+            <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 text-sm font-arabic">
                 <MapPin size={16} />
                 <span dir="ltr">{locationName}</span>
             </div>
         )}
-        
-        {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm mt-4 inline-flex items-center gap-2">
-                <Loader2 size={16} className="animate-spin" />
-                {error}
-            </div>
-        )}
       </div>
+
+      {error && (
+        <div className="mb-6">
+            <ErrorState 
+                title="تنبيه الموقع"
+                message={error}
+                onRetry={fetchLocation}
+            />
+        </div>
+      )}
 
       {!loading && (
       <>
@@ -238,15 +252,15 @@ const PrayerTimes: React.FC = () => {
                 flex justify-between items-center p-4 rounded-xl border transition-all duration-300
                 ${item.isNext 
                     ? 'bg-primary-500 text-white border-primary-600 shadow-lg scale-[1.02] z-10' 
-                    : 'bg-white dark:bg-dark-surface border-gray-100 dark:border-dark-border text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'}
+                    : 'bg-white dark:bg-dark-surface border-gray-100 dark:border-dark-border text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-elevated'}
                 `}
             >
                 <div className="flex items-center gap-3">
                 <Clock size={20} className={item.isNext ? 'text-white' : 'text-primary-500 dark:text-primary-400'} />
-                <span className="font-bold text-lg">{item.name}</span>
-                {item.isNext && <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">الصلاة القادمة</span>}
+                <span className="font-bold text-lg font-arabic">{item.name}</span>
+                {item.isNext && <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full font-arabic">الصلاة القادمة</span>}
                 </div>
-                <span className="font-mono text-xl font-bold tracking-wider">{item.time}</span>
+                <span className="font-mono text-xl font-bold tracking-wider font-english">{item.time}</span>
             </div>
             ))}
         </div>
@@ -254,14 +268,14 @@ const PrayerTimes: React.FC = () => {
         {/* Dynamic Qibla Compass */}
         <div className="mt-8 bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl border border-gray-100 dark:border-dark-border text-center shadow-sm relative overflow-hidden">
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold flex items-center gap-2 text-gray-800 dark:text-white">
+                <h3 className="text-xl font-bold flex items-center gap-2 text-gray-800 dark:text-white font-arabicHead">
                     <Compass size={24} className="text-primary-500" />
                     القبلة الذكية
                 </h3>
                 {isCompassActive && (
                     <button 
                         onClick={() => setCalibrationNeeded(!calibrationNeeded)}
-                        className="text-xs text-gray-400 hover:text-primary-500 flex items-center gap-1"
+                        className="text-xs text-gray-400 hover:text-primary-500 flex items-center gap-1 font-arabic"
                     >
                         <RefreshCw size={14} />
                         معايرة
@@ -271,15 +285,15 @@ const PrayerTimes: React.FC = () => {
             
             {!isCompassActive ? (
                 <div className="py-12 flex flex-col items-center">
-                    <div className="w-48 h-48 bg-gray-100 dark:bg-gray-800/50 rounded-full flex items-center justify-center mb-6 border-4 border-dashed border-gray-300 dark:border-gray-700">
+                    <div className="w-48 h-48 bg-gray-100 dark:bg-dark-elevated rounded-full flex items-center justify-center mb-6 border-4 border-dashed border-gray-300 dark:border-dark-border">
                         <Navigation size={48} className="text-gray-400" />
                     </div>
-                    <p className="text-gray-500 mb-6 max-w-xs text-sm">
+                    <p className="text-gray-500 mb-6 max-w-xs text-sm font-arabic">
                         لتفعيل البوصلة المتحركة، نحتاج إلى الوصول لمستشعرات الحركة في هاتفك.
                     </p>
                     <button 
                         onClick={startCompass}
-                        className="bg-primary-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20"
+                        className="bg-primary-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20 font-arabic"
                     >
                         تفعيل البوصلة
                     </button>
@@ -290,7 +304,7 @@ const PrayerTimes: React.FC = () => {
                     <div className="relative w-64 h-64 md:w-72 md:h-72">
                         
                         {/* Outer Static Ring */}
-                        <div className={`absolute inset-0 rounded-full border-4 transition-colors duration-500 ${isAligned ? 'border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)]' : 'border-gray-200 dark:border-gray-700'}`}></div>
+                        <div className={`absolute inset-0 rounded-full border-4 transition-colors duration-500 ${isAligned ? 'border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)]' : 'border-gray-200 dark:border-dark-border'}`}></div>
                         
                         {/* Alignment Arrow (Fixed at top) */}
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
@@ -299,14 +313,14 @@ const PrayerTimes: React.FC = () => {
 
                         {/* Rotating Compass Disc */}
                         <div 
-                            className="w-full h-full rounded-full bg-gray-50 dark:bg-gray-800 shadow-inner relative transition-transform duration-300 ease-out will-change-transform"
+                            className="w-full h-full rounded-full bg-gray-50 dark:bg-dark-elevated shadow-inner relative transition-transform duration-300 ease-out will-change-transform"
                             style={{ transform: `rotate(${-heading}deg)` }}
                         >
                             {/* Cardinal Points */}
-                            <div className="absolute top-4 left-1/2 -translate-x-1/2 text-red-500 font-bold">N</div>
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-gray-400 text-xs">S</div>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs">E</div>
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs">W</div>
+                            <div className="absolute top-4 left-1/2 -translate-x-1/2 text-red-500 font-bold font-english">N</div>
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-gray-400 text-xs font-english">S</div>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-english">E</div>
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-english">W</div>
 
                             {/* Ticks */}
                             {[0, 90, 180, 270].map(deg => (
@@ -330,7 +344,7 @@ const PrayerTimes: React.FC = () => {
                                 
                                 {/* The Icon */}
                                 <div className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center transform -rotate-[${qiblaAngle}deg]">
-                                    <div className={`transition-all duration-300 p-2 rounded-lg ${isAligned ? 'bg-emerald-500 text-white shadow-lg scale-110' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}>
+                                    <div className={`transition-all duration-300 p-2 rounded-lg ${isAligned ? 'bg-emerald-500 text-white shadow-lg scale-110' : 'bg-gray-200 dark:bg-dark-surface text-gray-500'}`}>
                                         <div className="w-6 h-6 bg-black rounded-sm border border-amber-400 relative">
                                             <div className="absolute top-1 w-full h-[1px] bg-amber-400"></div>
                                         </div>
@@ -344,10 +358,10 @@ const PrayerTimes: React.FC = () => {
                     </div>
 
                     <div className="mt-6 text-center">
-                        <p className={`text-lg font-bold transition-colors ${isAligned ? 'text-emerald-500' : 'text-gray-600 dark:text-gray-300'}`}>
+                        <p className={`text-lg font-bold transition-colors font-arabic ${isAligned ? 'text-emerald-500' : 'text-gray-600 dark:text-gray-300'}`}>
                             {isAligned ? 'أنت بمواجهة القبلة الآن' : 'قم بتدوير هاتفك'}
                         </p>
-                        <p className="text-xs text-gray-400 mt-1 font-mono" dir="ltr">
+                        <p className="text-xs text-gray-400 mt-1 font-mono font-english" dir="ltr">
                             Heading: {Math.round(heading)}° | Qibla: {Math.round(qiblaAngle)}°
                         </p>
                     </div>
@@ -355,7 +369,7 @@ const PrayerTimes: React.FC = () => {
             )}
             
             {calibrationNeeded && (
-                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-xs text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-xs text-blue-700 dark:text-blue-300 flex items-center gap-2 font-arabic">
                     <RefreshCw size={16} className="animate-spin" />
                     حرك هاتفك على شكل رقم 8 لمعايرة البوصلة إذا كانت الاتجاهات غير دقيقة.
                 </div>

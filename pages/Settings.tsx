@@ -141,7 +141,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           <Icon size={24} />
         </div>
         <div>
-          <h3 className={`font-bold text-body-lg ${danger ? 'text-red-500' : 'text-gray-800 dark:text-dark-text'}`}>{label}</h3>
+          <h3 className={`font-bold text-body-lg font-arabic ${danger ? 'text-red-500' : 'text-gray-800 dark:text-dark-text'}`}>{label}</h3>
           {description && <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">{description}</p>}
         </div>
       </div>
@@ -172,7 +172,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-10">
       <div className="mb-8">
-        <h1 className="text-h1 text-gray-800 dark:text-white mb-2">الإعدادات</h1>
+        <h1 className="text-h1 text-gray-800 dark:text-white mb-2 font-arabicHead">الإعدادات</h1>
         <p className="text-body-md text-gray-500 dark:text-dark-secondary">تخصيص تجربة التطبيق</p>
       </div>
 
@@ -185,7 +185,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                         <Bell size={24} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-body-lg text-gray-800 dark:text-dark-text">التنبيهات اليومية</h3>
+                        <h3 className="font-bold text-body-lg text-gray-800 dark:text-dark-text font-arabic">التنبيهات اليومية</h3>
                         <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">جدولة تذكيرات للأذكار</p>
                     </div>
                 </div>
@@ -266,7 +266,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                                     value={newReminderLabel}
                                     onChange={(e) => setNewReminderLabel(e.target.value)}
                                     placeholder="مثلاً: أذكار الصباح"
-                                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white text-body-sm"
+                                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white text-body-sm font-arabic"
                                  />
                              </div>
                              <div className="flex flex-col gap-1">
@@ -310,7 +310,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                             <span className="font-mono font-bold text-h4 text-primary-600 dark:text-primary-400 bg-white dark:bg-dark-bg px-2 py-1 rounded-lg border border-gray-100 dark:border-dark-border">
                                 {reminder.time}
                             </span>
-                            <span className="font-medium text-body-md text-gray-700 dark:text-dark-text">{reminder.label}</span>
+                            <span className="font-medium text-body-md text-gray-700 dark:text-dark-text font-arabic">{reminder.label}</span>
                          </div>
                          <div className="flex items-center gap-3">
                              <Toggle 
@@ -371,7 +371,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
               <Type size={24} />
             </div>
             <div>
-              <h3 className="font-bold text-body-lg text-gray-800 dark:text-dark-text">حجم الخط</h3>
+              <h3 className="font-bold text-body-lg text-gray-800 dark:text-dark-text font-arabic">حجم الخط</h3>
               <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">تغيير حجم خط الأذكار</p>
             </div>
           </div>
