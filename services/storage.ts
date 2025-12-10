@@ -15,6 +15,7 @@ const CUSTOM_DHIKR_KEY = 'nour_custom_dhikr_v1';
 const OVERRIDE_DHIKR_KEY = 'nour_override_dhikr_v1';
 const DELETED_DEFAULTS_KEY = 'nour_deleted_defaults_v1'; // New key for hidden defaults
 const MISSED_PRAYERS_KEY = 'nour_missed_prayers_v1'; // Key for Qada tracker
+const ALKAHF_PROMPT_KEY = 'nour_alkahf_prompt_date'; // Key for Friday reminder
 const QADA_HISTORY_ID = 9999; // Special ID to track Qada performance in history
 
 // --- Reminder Types ---
@@ -639,4 +640,28 @@ export const getHeatmapData = () => {
   });
   
   return data;
+};
+
+// --- Al-Kahf Friday Prompt Logic ---
+
+/**
+ * Checks if the user has already seen the Surah Al-Kahf prompt for the current Friday.
+ * @returns {boolean} True if seen today (if today is Friday).
+ */
+export const hasSeenAlKahfPrompt = (): boolean => {
+  try {
+    const today = getTodayKey();
+    const stored = localStorage.getItem(ALKAHF_PROMPT_KEY);
+    return stored === today;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Marks the Surah Al-Kahf prompt as seen for today.
+ */
+export const markAlKahfPromptSeen = () => {
+  const today = getTodayKey();
+  localStorage.setItem(ALKAHF_PROMPT_KEY, today);
 };

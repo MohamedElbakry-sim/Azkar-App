@@ -1,21 +1,64 @@
 
-import React, { useState } from 'react';
-import { SITUATIONAL_DUAS, CATEGORIES } from '../data';
-import { ArrowRight, Copy, Check, Share2, BookOpenText } from 'lucide-react';
-import { DuaCategory, Category } from '../types';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SITUATIONAL_DUAS, CATEGORIES, AZKAR_DATA } from '../data';
+import { ArrowRight, Copy, Check, Share2, BookOpenText, Search, X, AlertCircle } from 'lucide-react';
+import { DuaCategory, Category } from '../types';
+import * as storage from '../services/storage';
+import DhikrCard from '../components/DhikrCard';
+import { normalizeArabic } from '../utils';
 
+/**
+ * Duas (Hisn Al Muslim) Page Component.
+ * 
+ * This page serves as the central library for all Azkar and Duas.
+ * It features:
+ * 1. A global search bar to find categories or specific texts.
+ * 2. A grid view of all categories (Standard Time-based & Situational).
+ * 3. A detailed view for situational dua categories.
+ * 
+ * @component
+ * @returns {JSX.Element} The rendered Duas page.
+ */
 const Duas: React.FC = () => {
   const navigate = useNavigate();
+  
+  // -- State Management --
   const [selectedCategory, setSelectedCategory] = useState<DuaCategory | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [favorites, setFavorites] = useState<number[]>([]);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
+  // Load favorites for the DhikrCards in search results
+  useEffect(() => {
+    setFavorites(storage.getFavorites());
+  }, []);
+
+  /**
+   * Handles toggling the favorite status of a Dhikr item.
+   * @param {number} dhikrId - The unique ID of the Dhikr.
+   */
+  const handleToggleFavorite = (dhikrId: number) => {
+    const newFavs = storage.toggleFavoriteStorage(dhikrId);
+    setFavorites(newFavs);
+  };
+
+  /**
+   * Copies text to the clipboard and shows a temporary success state.
+   * @param {string} text - The text to copy.
+   * @param {number} index - The index of the item to show the checkmark on.
+   */
   const handleCopy = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
+  /**
+   * Uses the Web Share API to share text, falling back to clipboard copy.
+   * @param {string} text - The text to share.
+   */
   const handleShare = async (text: string) => {
     if (navigator.share) {
       try {
@@ -32,23 +75,196 @@ const Duas: React.FC = () => {
     }
   };
 
-  // Helper to unify handling standard Azkar Categories (Nav) vs Situational Duas (Inline)
+  /**
+   * Handles navigation when a category card is clicked.
+   * If it's a Standard Category (e.g., Morning Azkar), navigates to its dedicated page.
+   * If it's a Situational Category (e.g., Travel), opens it inline.
+   * @param {DuaCategory | Category} item - The category object.
+   */
   const handleItemClick = (item: DuaCategory | Category) => {
-      // Check if it's a standard category (has 'id' like 'sabah', 'masaa', etc.)
+      // Check if it's a standard category (has 'theme' property)
       if ('theme' in item) {
-          // It's a standard category, navigate
           navigate(`/category/${item.id}`);
       } else {
-          // It's a situational dua category, show inline
           setSelectedCategory(item as DuaCategory);
       }
   };
 
+  /**
+   * Memoized Search Logic.
+   * Filters Categories and Individual Items based on the search query.
+   * Uses a scoring system to prioritize exact matches.
+   */
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return null;
+
+    const normalizedQuery = normalizeArabic(searchQuery.toLowerCase());
+    const queryWords = normalizedQuery.split(/\s+/).filter(w => w.length > 0);
+
+    // 1. Filter Categories (Titles matching)
+    const matchedCategories = [...CATEGORIES, ...SITUATIONAL_DUAS].filter(cat => {
+        const normTitle = normalizeArabic(cat.title);
+        return normTitle.includes(normalizedQuery);
+    });
+
+    // 2. Filter Standard Azkar (from AZKAR_DATA)
+    const matchedAzkar = AZKAR_DATA
+      .map(item => {
+          let score = 0;
+          const normalizedText = normalizeArabic(item.text);
+          const normalizedSource = item.source ? normalizeArabic(item.source) : '';
+
+          if (normalizedText.includes(normalizedQuery)) score += 100;
+          if (normalizedSource.includes(normalizedQuery)) score += 80;
+
+          let matchedWordsCount = 0;
+          queryWords.forEach(word => {
+            if (normalizedText.includes(word)) { score += 20; matchedWordsCount++; }
+            if (normalizedSource.includes(word)) { score += 15; matchedWordsCount++; }
+          });
+
+          if (matchedWordsCount === queryWords.length && queryWords.length > 0) score += 50;
+
+          return { item, score };
+      })
+      .filter(r => r.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(r => r.item);
+
+    // 3. Filter Situational Duas (Flattened)
+    const matchedSituational: { item: any, category: string }[] = [];
+    SITUATIONAL_DUAS.forEach(cat => {
+        cat.items.forEach(dua => {
+            const normText = normalizeArabic(dua.text);
+            if (normText.includes(normalizedQuery)) {
+                matchedSituational.push({ item: dua, category: cat.title });
+            }
+        });
+    });
+
+    return {
+        categories: matchedCategories,
+        azkar: matchedAzkar,
+        situational: matchedSituational
+    };
+  }, [searchQuery]);
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-10">
       
-      {!selectedCategory ? (
-        // --- Categories Grid View ---
+      {/* Sticky Search Bar */}
+      <div className="sticky top-0 z-30 pt-2 pb-1 -mx-4 px-4 md:mx-0 md:px-0 bg-gray-50/95 dark:bg-dark-bg/95 backdrop-blur-md transition-all duration-300">
+        <div className="max-w-2xl mx-auto">
+          <div className="relative mb-3">
+            <label htmlFor="duas-search" className="sr-only">ابحث في حصن المسلم</label>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              id="duas-search"
+              type="text"
+              className="block w-full p-4 pr-11 text-base rounded-2xl border-none bg-white dark:bg-dark-surface shadow-sm focus:ring-2 focus:ring-primary-400 placeholder-gray-400 dark:text-white transition-shadow"
+              placeholder="ابحث عن ذكر، دعاء، أو شعور..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none"
+                aria-label="مسح البحث"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* --- Search Results View --- */}
+      {searchQuery && searchResults ? (
+          <div className="space-y-8 animate-fadeIn">
+              {/* 1. Matched Categories */}
+              {searchResults.categories.length > 0 && (
+                  <div>
+                      <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-4 px-2">الأقسام</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          {searchResults.categories.map((cat: any) => (
+                              <button
+                                  key={cat.id}
+                                  onClick={() => handleItemClick(cat)}
+                                  className="bg-white dark:bg-dark-surface p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm hover:border-primary-300 transition-colors text-center"
+                              >
+                                  <span className="font-bold text-gray-800 dark:text-gray-100">{cat.title}</span>
+                              </button>
+                          ))}
+                      </div>
+                  </div>
+              )}
+
+              {/* 2. Matched Standard Azkar */}
+              {searchResults.azkar.length > 0 && (
+                  <div>
+                      <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-4 px-2">الأذكار ({searchResults.azkar.length})</h3>
+                      <div className="space-y-4">
+                          {searchResults.azkar.slice(0, 10).map(item => (
+                              <DhikrCard
+                                  key={item.id}
+                                  item={item}
+                                  isFavorite={favorites.includes(item.id)}
+                                  initialCount={0}
+                                  onToggleFavorite={handleToggleFavorite}
+                                  highlightQuery={searchQuery}
+                              />
+                          ))}
+                          {searchResults.azkar.length > 10 && (
+                              <p className="text-center text-sm text-gray-400 mt-2">عرض أول 10 نتائج</p>
+                          )}
+                      </div>
+                  </div>
+              )}
+
+              {/* 3. Matched Situational Duas */}
+              {searchResults.situational.length > 0 && (
+                  <div>
+                      <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-4 px-2">أدعية متنوعة</h3>
+                      <div className="space-y-4">
+                          {searchResults.situational.map((res, idx) => (
+                              <div key={idx} className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border">
+                                  <div className="flex items-center gap-2 mb-3">
+                                      <span className="text-xs bg-gray-100 dark:bg-dark-bg px-2 py-1 rounded text-gray-500">{res.category}</span>
+                                  </div>
+                                  <p className="font-serif text-xl leading-[3] text-gray-800 dark:text-gray-100 text-center mb-4" dir="rtl">
+                                      {res.item.text}
+                                  </p>
+                                  <div className="flex justify-end gap-2 border-t border-gray-50 dark:border-dark-border pt-3">
+                                      <button 
+                                          onClick={() => handleCopy(res.item.text, 9000 + idx)}
+                                          className="text-gray-400 hover:text-primary-500"
+                                      >
+                                          {copiedIndex === 9000 + idx ? <Check size={18} /> : <Copy size={18} />}
+                                      </button>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+              )}
+
+              {/* No Results State */}
+              {searchResults.categories.length === 0 && searchResults.azkar.length === 0 && searchResults.situational.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <div className="bg-gray-100 dark:bg-dark-surface p-6 rounded-full mb-4">
+                          <AlertCircle size={48} className="text-gray-400" />
+                      </div>
+                      <p className="text-lg font-bold text-gray-600 dark:text-gray-300">لا توجد نتائج مطابقة لـ "{searchQuery}"</p>
+                  </div>
+              )}
+          </div>
+      ) : !selectedCategory ? (
+        // --- Categories Grid View (Default) ---
         <div className="animate-fadeIn">
             <div className="text-center py-6 md:py-10">
                 <div className="inline-flex items-center justify-center p-3 bg-amber-50 dark:bg-amber-900/20 rounded-full mb-4 text-amber-600 dark:text-amber-400">
@@ -102,6 +318,7 @@ const Duas: React.FC = () => {
                 <button 
                     onClick={() => setSelectedCategory(null)}
                     className="p-2 rounded-full bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    aria-label="العودة للقائمة"
                 >
                     <ArrowRight size={24} />
                 </button>

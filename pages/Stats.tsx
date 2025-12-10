@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { Flame, CheckCircle, BarChart3, ListTodo, X, Calendar, ChevronDown, RefreshCw } from 'lucide-react';
+import { Flame, CheckCircle, BarChart3, ListTodo, X, Calendar, ChevronDown, RefreshCw, Info } from 'lucide-react';
 import * as storage from '../services/storage';
 import { AZKAR_DATA, CATEGORIES } from '../data';
 import { ProgressState } from '../types';
+import Tooltip from '../components/Tooltip';
 
 /**
  * Stats Page Component.
@@ -92,20 +94,27 @@ const Stats: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <h3 className="text-lg md:text-xl font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                 سجل الاستمرارية
+                <Tooltip text="مربعات ملونة تمثل أيامك. اللون الأغمق يعني عدداً أكبر من الأذكار.">
+                    <div className="text-gray-400 hover:text-primary-500 cursor-help transition-colors">
+                        <Info size={18} />
+                    </div>
+                </Tooltip>
             </h3>
             
             {/* Customization Controls */}
             <div className="flex items-center gap-3">
                 {/* Range Selector */}
                 <div className="relative" ref={dropdownRef}>
-                    <button 
-                        onClick={() => setIsRangeDropdownOpen(!isRangeDropdownOpen)}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                    >
-                        <Calendar size={14} />
-                        {timeRange === 7 ? 'أسبوع' : timeRange === 30 ? 'شهر' : '3 أشهر'}
-                        <ChevronDown size={12} className={`transition-transform ${isRangeDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
+                    <Tooltip text="تغيير الفترة الزمنية للعرض">
+                        <button 
+                            onClick={() => setIsRangeDropdownOpen(!isRangeDropdownOpen)}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                        >
+                            <Calendar size={14} />
+                            {timeRange === 7 ? 'أسبوع' : timeRange === 30 ? 'شهر' : '3 أشهر'}
+                            <ChevronDown size={12} className={`transition-transform ${isRangeDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                    </Tooltip>
                     
                     {isRangeDropdownOpen && (
                         <div className="absolute left-0 top-full mt-2 w-32 bg-white dark:bg-dark-surface rounded-xl shadow-xl border border-gray-100 dark:border-dark-border z-20 overflow-hidden animate-fadeIn">
@@ -128,17 +137,20 @@ const Stats: React.FC = () => {
                 {/* Theme Selector */}
                 <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 gap-1">
                     {(['emerald', 'blue', 'flame'] as const).map(color => (
-                        <button
-                            key={color}
-                            onClick={() => setThemeColor(color)}
-                            className={`w-5 h-5 rounded-md transition-all ${
-                                color === 'emerald' ? 'bg-emerald-500' : 
-                                color === 'blue' ? 'bg-blue-500' : 
-                                'bg-gradient-to-br from-yellow-400 to-red-500' // Flame Icon
-                            } ${themeColor === color ? 'ring-2 ring-offset-1 ring-gray-400 dark:ring-gray-500 scale-110' : 'opacity-50 hover:opacity-100'}`}
-                            aria-label={`Theme ${color}`}
-                            title={color === 'flame' ? 'لهب' : color}
-                        />
+                        <Tooltip 
+                            key={color} 
+                            text={color === 'emerald' ? 'النمط الأخضر' : color === 'blue' ? 'النمط الأزرق' : 'نمط اللهب'}
+                        >
+                            <button
+                                onClick={() => setThemeColor(color)}
+                                className={`w-5 h-5 rounded-md transition-all ${
+                                    color === 'emerald' ? 'bg-emerald-500' : 
+                                    color === 'blue' ? 'bg-blue-500' : 
+                                    'bg-gradient-to-br from-yellow-400 to-red-500' // Flame Icon
+                                } ${themeColor === color ? 'ring-2 ring-offset-1 ring-gray-400 dark:ring-gray-500 scale-110' : 'opacity-50 hover:opacity-100'}`}
+                                aria-label={`Theme ${color}`}
+                            />
+                        </Tooltip>
                     ))}
                 </div>
             </div>
