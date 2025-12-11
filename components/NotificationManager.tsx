@@ -1,8 +1,11 @@
+
 import React, { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as storage from '../services/storage';
 
 const NotificationManager: React.FC = () => {
   const lastCheckedMinute = useRef<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Check permission on mount
@@ -44,12 +47,13 @@ const NotificationManager: React.FC = () => {
                         dir: 'rtl',
                         vibrate: vibratePattern,
                         silent: !settings.soundEnabled,
+                        data: { targetPath: reminder.targetPath } // Pass data for SW to handle if needed
                     } as any);
                 });
             } else {
                 // Fallback to standard Notification API
                 // Note: 'vibrate' property in new Notification() is supported mainly on Android Chrome
-                new Notification('تذكير من نور', {
+                const n = new Notification('تذكير من نور', {
                     body: reminder.label,
                     icon: '/pwa-192x192.png',
                     tag: `nour-reminder-${reminder.id}`,
@@ -58,6 +62,16 @@ const NotificationManager: React.FC = () => {
                     vibrate: vibratePattern,
                     silent: !settings.soundEnabled,
                 } as any);
+
+                // Handle Click to Navigate
+                n.onclick = (e) => {
+                    e.preventDefault();
+                    window.focus();
+                    if (reminder.targetPath) {
+                        navigate(reminder.targetPath);
+                    }
+                    n.close();
+                };
             }
           } catch (e) {
             console.error("Failed to show notification", e);
@@ -70,7 +84,7 @@ const NotificationManager: React.FC = () => {
     const intervalId = setInterval(checkReminders, 20000);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [navigate]);
 
   return null; // Headless component
 };

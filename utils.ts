@@ -52,3 +52,8 @@ export const getHighlightRegex = (query: string): RegExp | null => {
 
   return new RegExp(`(${pattern})`, 'gi');
 };
+
+// Converts English digits to Arabic-Indic digits (123 -> ١٢٣)
+export const toArabicNumerals = (n: number): string => {
+  return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
+};

@@ -90,3 +90,51 @@ export interface DuaCategory {
   color: string;
   items: SituationalDua[];
 }
+
+// --- Quran Types ---
+
+export interface SurahMeta {
+  number: number;
+  name: string; // Arabic Name (e.g., الفاتحة)
+  englishName: string; // (e.g., Al-Fatiha)
+  englishNameTranslation: string; // (e.g., The Opening)
+  numberOfAyahs: number;
+  revelationType: string; // Meccan or Medinan
+}
+
+export interface Ayah {
+  number: number;
+  text: string;
+  translation?: string; // English Translation
+  tafsir?: string;      // Arabic Tafsir
+  numberInSurah: number;
+  juz: number;
+  manzil: number;
+  page: number;
+  ruku: number;
+  hizbQuarter: number;
+  sajda: boolean;
+}
+
+export interface SurahData {
+  number: number;
+  name: string;
+  englishName: string;
+  englishNameTranslation: string;
+  revelationType: string;
+  numberOfAyahs: number;
+  ayahs: Ayah[];
+}
+
+export interface SearchResult {
+  number: number; // Global Ayah ID
+  text: string;
+  surah: {
+    number: number;
+    name: string;
+    englishName: string;
+    englishNameTranslation: string;
+    revelationType: string;
+  };
+  numberInSurah: number;
+}

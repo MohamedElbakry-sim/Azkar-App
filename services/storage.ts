@@ -28,6 +28,7 @@ export interface Reminder {
   label: string;
   time: string; // 24h format "HH:mm"
   enabled: boolean;
+  targetPath?: string; // Optional path to navigate to when clicked
 }
 
 // --- Notification Settings Types ---

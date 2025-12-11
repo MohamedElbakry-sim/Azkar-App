@@ -4,19 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Rayyan | ريان</title>
-    <meta name="description" content="تطبيق ريان - أذكار الصباح والمساء وتسبيح إلكتروني" />
+    <meta name="description" content="تطبيق ريان - أذكار الصباح والمساء وتسبيح إلكتروني وقرآن كريم" />
     <meta name="theme-color" content="#1ABC9C" />
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     
-    <!-- Favicon (Crisp SVG 'Rayyan' Word) -->
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%231ABC9C'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-family='serif' font-weight='bold' font-size='170' fill='white'%3Eريان%3C/text%3E%3C/svg%3E" />
     
-    <!-- Fonts: Noto Naskh Arabic (Body), Reem Kufi (Headings), Inter (English) -->
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -31,8 +31,9 @@
             fontFamily: {
               arabic: ['"Noto Naskh Arabic"', 'serif'],
               arabicHead: ['"Reem Kufi"', 'sans-serif'],
+              quran: ['"Amiri"', 'serif'],
               english: ['Inter', 'sans-serif'],
-              sans: ['"Noto Naskh Arabic"', 'serif'], // Default sans to Arabic body font
+              sans: ['"Noto Naskh Arabic"', 'serif'],
             },
             fontSize: {
               // Heading Scale
@@ -51,36 +52,31 @@
               'caption': ['12px', { lineHeight: '1.5', fontWeight: '400' }],
             },
             colors: {
-              // Brand Gradient Colors
               primary: {
                 50: '#E8F8F5',
                 100: '#D1F2EB',
                 200: '#A3E4D7',
                 300: '#76D7C4',
-                400: '#2ECC71', // End Gradient
-                500: '#1ABC9C', // Start Gradient
-                600: '#16A085', // Mid Gradient
+                400: '#2ECC71',
+                500: '#1ABC9C',
+                600: '#16A085',
                 700: '#148F77',
                 800: '#117864',
                 900: '#0E6251',
                 950: '#0B5345',
               },
-              // Discord-Style Dark Mode Palette
               dark: {
-                bg: '#1A1B1E',        // Main App Background
-                panel: '#202124',     // Sidebar, Header, Inputs
-                surface: '#26272A',   // Cards, Modals
-                elevated: '#2E2F33',  // Dropdowns, Hover states
-                
-                border: '#323338',    // Subtle borders
-                borderStrong: '#3D3E43', // Strong borders/Dividers
-                
-                text: '#F2F2F3',      // Primary Text
-                secondary: '#C4C6C9', // Secondary Text
-                muted: '#8E9097',     // Muted/Placeholder
-                disabled: '#5C5E63'   // Disabled state
+                bg: '#1A1B1E',
+                panel: '#202124',
+                surface: '#26272A',
+                elevated: '#2E2F33',
+                border: '#323338',
+                borderStrong: '#3D3E43',
+                text: '#F2F2F3',
+                secondary: '#C4C6C9',
+                muted: '#8E9097',
+                disabled: '#5C5E63'
               },
-              // Gold Highlights
               gold: {
                 400: '#F4C06A',
                 500: '#F1C40F',
@@ -121,26 +117,23 @@
       }
     </script>
     <style>
-      /* Global Typography */
       body {
         font-family: 'Noto Naskh Arabic', serif;
       }
-      
       h1, h2, h3, h4, .font-heading {
         font-family: 'Reem Kufi', sans-serif;
       }
-      
+      .font-quran {
+        font-family: 'Amiri', serif;
+      }
       .font-english {
         font-family: 'Inter', sans-serif;
       }
-
-      /* Custom scrollbar matching Discord style */
       ::-webkit-scrollbar { width: 8px; }
       ::-webkit-scrollbar-track { background: #202124; }
       ::-webkit-scrollbar-thumb { background-color: #16A085; border-radius: 4px; }
       .dark ::-webkit-scrollbar-track { background: #202124; }
       .dark ::-webkit-scrollbar-thumb { background-color: #1A1B1E; border: 2px solid #202124; }
-      
       button { touch-action: manipulation; }
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

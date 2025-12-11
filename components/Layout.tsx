@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
-import { Home, Heart, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Sparkles, Mail, Menu, X, ListTodo, BookOpenText } from 'lucide-react';
+import { Home, Heart, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Mail, Menu, X, ListTodo, BookOpenText, Book } from 'lucide-react';
 import { CATEGORIES } from '../data';
 import Logo from './Logo';
 
@@ -86,7 +87,10 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   const isHome = location.pathname === '/';
   
   // Hide navigation elements when inside a category for immersive reading
+  // Also hide for Quran Reader
   const isCategoryView = location.pathname.startsWith('/category/');
+  const isQuranReader = location.pathname.startsWith('/quran/');
+  const isImmersive = isCategoryView || isQuranReader;
 
   // Determine page title based on route
   let pageTitle = 'ريان';
@@ -105,6 +109,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
 
   const navItems = [
     { path: '/', icon: <Home size={22} />, label: 'الرئيسية' },
+    { path: '/quran', icon: <Book size={22} />, label: 'القرآن الكريم' },
     { path: '/prayers', icon: <Clock size={22} />, label: 'مواقيت الصلاة' },
     { path: '/tasbeeh', icon: <TasbeehIcon size={22} />, label: 'السبحة' },
     { path: '/names', icon: <AllahIcon size={24} />, label: 'أسماء الله الحسني' },
@@ -120,7 +125,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
     <div className="min-h-screen flex bg-gray-50 dark:bg-dark-bg transition-colors duration-300 font-arabic">
       
       {/* Desktop Sidebar Navigation */}
-      {!isCategoryView && (
+      {!isImmersive && (
         <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-white dark:bg-dark-panel border-l border-gray-100 dark:border-dark-border z-50 transition-colors shadow-sm">
           <div className="p-6 flex items-center gap-3 border-b border-gray-100 dark:border-dark-border">
             <div className="p-1">
@@ -166,7 +171,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
         <header className="md:hidden sticky top-0 z-40 bg-white/90 dark:bg-dark-panel/90 backdrop-blur-md border-b border-gray-100 dark:border-dark-border px-4 py-3 flex items-center justify-between transition-colors shadow-sm relative">
           {/* Left Side: Navigation/Back */}
           <div className="flex items-center gap-3 z-10">
-            {!isHome && !isCategoryView ? (
+            {!isHome && !isImmersive ? (
               <button 
                 onClick={() => navigate('/')} 
                 className="p-2 -mr-2 text-gray-600 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-elevated rounded-full active:scale-95 transition-transform" 
@@ -247,7 +252,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
 
                     <div className="p-5 border-t border-gray-100 dark:border-dark-border">
                         <div className="flex items-center justify-center gap-2 text-caption text-gray-400 dark:text-dark-muted font-english">
-                             <span>Version 1.4.0</span>
+                             <span>Version 1.5.0</span>
                         </div>
                     </div>
                 </div>
@@ -276,7 +281,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
 
         <main className="flex-1 p-4 md:p-8 w-full">
           {/* Animated Page Transition Wrapper */}
-          <div className="animate-slideUp w-full">
+          <div className="animate-slideUp w-full h-full">
             {children}
           </div>
         </main>

@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate } from 'lucide-react';
+import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book } from 'lucide-react';
 import * as storage from '../services/storage';
+import { CATEGORIES } from '../data';
 
 interface SettingsProps {
   darkMode: boolean;
@@ -17,6 +18,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   const [isAddingReminder, setIsAddingReminder] = useState(false);
   const [newReminderTime, setNewReminderTime] = useState('');
   const [newReminderLabel, setNewReminderLabel] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
 
   // Notification Settings State
   const [notifSettings, setNotifSettings] = useState<storage.NotificationSettings>({
@@ -87,7 +89,8 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
         id: Date.now().toString(),
         time: newReminderTime,
         label: newReminderLabel,
-        enabled: true
+        enabled: true,
+        targetPath: selectedCategory ? `/category/${selectedCategory}` : undefined
     };
     
     storage.addReminder(newReminder);
@@ -95,6 +98,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     setIsAddingReminder(false);
     setNewReminderTime('');
     setNewReminderLabel('');
+    setSelectedCategory('');
   };
 
   const handleDeleteReminder = (id: string) => {
@@ -258,7 +262,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
              {isAddingReminder && (
                  <div className="bg-gray-50 dark:bg-dark-panel rounded-xl p-4 mb-4 animate-slideUp border border-gray-100 dark:border-dark-border">
                      <div className="flex flex-col gap-3">
-                         <div className="grid grid-cols-2 gap-3">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                              <div className="flex flex-col gap-1">
                                  <label className="text-caption font-bold text-gray-500">اسم التذكير</label>
                                  <input 
@@ -277,6 +281,27 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                                     onChange={(e) => setNewReminderTime(e.target.value)}
                                     className="px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white text-body-sm"
                                  />
+                             </div>
+                             
+                             <div className="flex flex-col gap-1 md:col-span-2">
+                                 <label className="text-caption font-bold text-gray-500">ربط بقسم (اختياري)</label>
+                                 <select 
+                                    value={selectedCategory}
+                                    onChange={(e) => {
+                                        setSelectedCategory(e.target.value);
+                                        // Auto-fill label if empty
+                                        if(!newReminderLabel && e.target.value) {
+                                            const cat = CATEGORIES.find(c => c.id === e.target.value);
+                                            if(cat) setNewReminderLabel(cat.title);
+                                        }
+                                    }}
+                                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white text-body-sm font-arabic"
+                                 >
+                                     <option value="">عام (بدون رابط)</option>
+                                     {CATEGORIES.map(cat => (
+                                         <option key={cat.id} value={cat.id}>{cat.title}</option>
+                                     ))}
+                                 </select>
                              </div>
                          </div>
                          <div className="flex gap-2 mt-2">
@@ -310,7 +335,15 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                             <span className="font-mono font-bold text-h4 text-primary-600 dark:text-primary-400 bg-white dark:bg-dark-bg px-2 py-1 rounded-lg border border-gray-100 dark:border-dark-border">
                                 {reminder.time}
                             </span>
-                            <span className="font-medium text-body-md text-gray-700 dark:text-dark-text font-arabic">{reminder.label}</span>
+                            <div className="flex flex-col">
+                                <span className="font-medium text-body-md text-gray-700 dark:text-dark-text font-arabic">{reminder.label}</span>
+                                {reminder.targetPath && (
+                                    <span className="text-[10px] text-primary-500 flex items-center gap-1">
+                                        <Book size={10} />
+                                        مرتبط بالقسم
+                                    </span>
+                                )}
+                            </div>
                          </div>
                          <div className="flex items-center gap-3">
                              <Toggle 
