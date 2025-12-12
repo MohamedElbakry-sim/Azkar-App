@@ -1,6 +1,7 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpenText, ArrowLeft, Book, Bookmark } from 'lucide-react';
+import { BookOpenText, ArrowLeft, Book, Bookmark, Radio } from 'lucide-react';
 import DailyWisdom from '../components/DailyWisdom';
 import RandomNameCard from '../components/RandomNameCard';
 import DailySahabi from '../components/DailySahabi';
@@ -19,7 +20,7 @@ const Home: React.FC = () => {
 
   const handleContinueReading = () => {
     if (bookmark) {
-      navigate(`/quran/${bookmark.surahNumber}`, { state: { scrollToAyah: bookmark.ayahNumber }});
+      navigate(`/quran/read/${bookmark.surahNumber}`, { state: { scrollToAyah: bookmark.ayahNumber }});
     } else {
         navigate('/quran');
     }
@@ -87,10 +88,30 @@ const Home: React.FC = () => {
               </div>
           </button>
 
+          {/* Radio Navigation Card */}
+          <button
+              onClick={() => navigate('/radio')}
+              className="group relative w-full bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md transition-all duration-300 text-right focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-[0.98] flex items-center justify-between gap-3 overflow-hidden"
+          >
+              <div className="flex items-center gap-4 relative z-10">
+                  <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
+                      <Radio size={32} />
+                  </div>
+                  <div>
+                      <h2 className="text-xl font-bold font-arabicHead text-gray-800 dark:text-white mb-1">
+                          الإذاعة
+                      </h2>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm font-arabic">
+                          بث مباشر 24/7
+                      </p>
+                  </div>
+              </div>
+          </button>
+
           {/* Hisn Al Muslim Main Navigation Card */}
           <button
               onClick={() => navigate('/duas')}
-              className="group relative w-full bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md transition-all duration-300 text-right focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-[0.98] flex items-center justify-between gap-3 overflow-hidden"
+              className="group relative w-full bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md transition-all duration-300 text-right focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-[0.98] flex items-center justify-between gap-3 overflow-hidden md:col-span-2"
           >
               <div className="flex items-center gap-4 relative z-10">
                   <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
@@ -101,7 +122,7 @@ const Home: React.FC = () => {
                           حصن المسلم
                       </h2>
                       <p className="text-gray-500 dark:text-gray-400 text-sm font-arabic">
-                          أذكار وأدعية
+                          أذكار وأدعية لكل المواقف
                       </p>
                   </div>
               </div>

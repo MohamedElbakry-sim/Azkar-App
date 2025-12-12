@@ -1,10 +1,10 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
-import { Home, Heart, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Mail, Menu, X, ListTodo, BookOpenText, Book } from 'lucide-react';
+import { Home, Heart, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Mail, Menu, X, ListTodo, BookOpenText, Book, Radio, Play, Pause, Square } from 'lucide-react';
 import { CATEGORIES } from '../data';
 import Logo from './Logo';
+import { useRadio } from '../contexts/RadioContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -86,6 +86,10 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isHome = location.pathname === '/';
   
+  // Radio Context for Mini Player
+  const { currentStation, isPlaying, togglePlay, stop, isBuffering } = useRadio();
+  const showMiniPlayer = currentStation && location.pathname !== '/radio';
+
   // Hide navigation elements when inside a category for immersive reading
   // Also hide for Quran Reader
   const isCategoryView = location.pathname.startsWith('/category/');
@@ -110,6 +114,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   const navItems = [
     { path: '/', icon: <Home size={22} />, label: 'الرئيسية' },
     { path: '/quran', icon: <Book size={22} />, label: 'القرآن الكريم' },
+    { path: '/radio', icon: <Radio size={22} />, label: 'الإذاعة' },
     { path: '/prayers', icon: <Clock size={22} />, label: 'مواقيت الصلاة' },
     { path: '/tasbeeh', icon: <TasbeehIcon size={22} />, label: 'السبحة' },
     { path: '/names', icon: <AllahIcon size={24} />, label: 'أسماء الله الحسني' },
@@ -279,12 +284,62 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
             )}
         </header>
 
-        <main className="flex-1 p-4 md:p-8 w-full">
+        <main className="flex-1 p-4 md:p-8 w-full pb-28 md:pb-10">
           {/* Animated Page Transition Wrapper */}
           <div className="animate-slideUp w-full h-full">
             {children}
           </div>
         </main>
+
+        {/* Mini Player Bar (Global) */}
+        {showMiniPlayer && (
+            <div className="fixed bottom-4 left-4 right-4 md:left-auto md:w-96 md:right-8 z-50 animate-slideUp">
+                <div 
+                    onClick={() => navigate('/radio')}
+                    className="bg-white/90 dark:bg-dark-panel/90 backdrop-blur-lg border border-gray-200 dark:border-dark-border rounded-2xl p-3 shadow-2xl flex items-center justify-between cursor-pointer hover:bg-white dark:hover:bg-dark-surface transition-colors"
+                >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 text-white">
+                            {isPlaying ? (
+                                <div className="flex gap-0.5 h-4 items-end">
+                                    <div className="w-1 bg-white animate-pulse" style={{ height: '60%', animationDelay: '0s' }}></div>
+                                    <div className="w-1 bg-white animate-pulse" style={{ height: '100%', animationDelay: '0.2s' }}></div>
+                                    <div className="w-1 bg-white animate-pulse" style={{ height: '40%', animationDelay: '0.4s' }}></div>
+                                </div>
+                            ) : (
+                                <Radio size={20} />
+                            )}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">إذاعة القرآن</span>
+                            <span className="font-bold text-gray-800 dark:text-white truncate font-arabicHead">{currentStation.name}</span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                            className="p-2 bg-gray-100 dark:bg-dark-elevated rounded-full hover:bg-gray-200 dark:hover:bg-dark-bg transition-colors"
+                        >
+                            {isBuffering ? (
+                                <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                            ) : isPlaying ? (
+                                <Pause size={20} className="text-gray-800 dark:text-white" fill="currentColor" />
+                            ) : (
+                                <Play size={20} className="text-gray-800 dark:text-white ml-0.5" fill="currentColor" />
+                            )}
+                        </button>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); stop(); }}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                        >
+                            <Square size={18} fill="currentColor" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
       </div>
     </div>
   );

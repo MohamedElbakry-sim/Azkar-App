@@ -65,7 +65,7 @@ const FALLBACK_VERSES: QuranVerse[] = [
   }
 ];
 
-// --- Verified Authentic Hadiths ---
+// --- Primary Verified Authentic Hadiths ---
 const FALLBACK_HADITHS: Hadith[] = [
   {
     text: "إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى",
@@ -129,6 +129,58 @@ const FALLBACK_HADITHS: Hadith[] = [
   }
 ];
 
+// --- Secondary Authentic Hadiths (Curated for Variety) ---
+const SECONDARY_HADITHS: Hadith[] = [
+  {
+    text: "الدِّينُ النَّصِيحَةُ، قُلْنَا: لِمَنْ؟ قَالَ: لِلَّهِ وَلِكِتَابِهِ وَلِرَسُولِهِ وَلِأَئِمَّةِ الْمُسْلِمِينَ وَعَامَّتِهِمْ",
+    source: "صحيح مسلم",
+    grade: "صحيح",
+    explanation: "الدين يقوم على الإخلاص والصدق في التعامل مع الله وكتابه ورسوله، وتقديم النصح للمسلمين أئمتهم وعامتهم."
+  },
+  {
+    text: "لَا تَغْضَبْ",
+    source: "صحيح البخاري",
+    grade: "صحيح",
+    explanation: "وصية نبوية جامعة، لأن الغضب مفتاح كل شر، وضبط النفس عند الغضب دليل قوة."
+  },
+  {
+    text: "احْفَظِ اللَّهَ يَحْفَظْكَ، احْفَظِ اللَّهَ تَجِدْهُ تُجَاهَكَ",
+    source: "سنن الترمذي",
+    grade: "صحيح",
+    explanation: "من حفظ حدود الله وأوامره في الرخاء، حفظه الله وأعانه في الشدة."
+  },
+  {
+    text: "مَا نَقَصَتْ صَدَقَةٌ مِنْ مَالٍ، وَمَا زَادَ اللَّهُ عَبْدًا بِعَفْوٍ إِلَّا عِزًّا",
+    source: "صحيح مسلم",
+    grade: "صحيح",
+    explanation: "الصدقة تبارك المال ولا تنقصه، والعفو عن الناس يرفع قدر صاحبه ويعزه."
+  },
+  {
+    text: "الْبِرُّ حُسْنُ الْخُلُقِ، وَالْإِثْمُ مَا حَاكَ فِي صَدْرِكَ وَكَرِهْتَ أَنْ يَطَّلِعَ عَلَيْهِ النَّاسُ",
+    source: "صحيح مسلم",
+    grade: "صحيح",
+    explanation: "مقياس الخير هو الأخلاق الحسنة، ومقياس الإثم هو ما تردد في النفس وخفت أن يراه الناس."
+  },
+  {
+    text: "مَنْ سَلَكَ طَرِيقًا يَلْتَمِسُ فِيهِ عِلْمًا سَهَّلَ اللَّهُ لَهُ بِهِ طَرِيقًا إِلَى الْجَنَّةِ",
+    source: "صحيح مسلم",
+    grade: "صحيح",
+    explanation: "طلب العلم الشرعي النافع من أعظم الطرق الموصلة لرضوان الله والجنة."
+  },
+  {
+    text: "لَا يُؤْمِنُ أَحَدُكُمْ حَتَّى أَكُونَ أَحَبَّ إِلَيْهِ مِنْ وَالِدِهِ وَوَلَدِهِ وَالنَّاسِ أَجْمَعِينَ",
+    source: "صحيح البخاري",
+    grade: "صحيح",
+    explanation: "كمال الإيمان بتقديم محبة النبي ﷺ وطاعته على كل البشر."
+  },
+  {
+    text: "كُلُّكُمْ رَاعٍ وَكُلُّكُمْ مَسْئُولٌ عَنْ رَعِيَّتِهِ",
+    source: "صحيح البخاري",
+    grade: "صحيح",
+    explanation: "تحمل المسؤولية واجب على كل فرد بحسب موقعه، سواء في الأسرة أو العمل أو المجتمع."
+  }
+];
+
 // --- Helpers ---
 
 // Generate a random index based on array length
@@ -177,11 +229,17 @@ const fetchDailyVerse = async (): Promise<QuranVerse> => {
 };
 
 const fetchDailyHadith = async (): Promise<Hadith> => {
-    // To ensure 100% authenticity and reliability as requested, 
-    // we will strictly use our curated list of verified Sahih Hadiths 
-    // instead of relying on external APIs that might return unverified content.
-    const index = getRandomIndex(FALLBACK_HADITHS.length);
-    return Promise.resolve(FALLBACK_HADITHS[index]);
+    // Determine source to use (Primary vs Secondary) for variety
+    // Using a simple 50/50 split or random selection
+    const useSecondary = Math.random() > 0.5;
+    const sourceArray = useSecondary ? SECONDARY_HADITHS : FALLBACK_HADITHS;
+    
+    // Pick a random Hadith from the selected source
+    const index = getRandomIndex(sourceArray.length);
+    
+    // We can simulate an async delay here if we want to mimic a real fetch,
+    // but resolving immediately is fine.
+    return Promise.resolve(sourceArray[index]);
 };
 
 // --- Main Service ---

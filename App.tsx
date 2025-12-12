@@ -8,6 +8,7 @@ import SplashScreen from './components/SplashScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Loader2 } from 'lucide-react';
 import * as storage from './services/storage';
+import { RadioProvider } from './contexts/RadioContext';
 
 // Lazy load secondary pages
 const CategoryView = React.lazy(() => import('./pages/CategoryView'));
@@ -21,8 +22,9 @@ const Contact = React.lazy(() => import('./pages/Contact'));
 const MissedPrayers = React.lazy(() => import('./pages/MissedPrayers'));
 const Duas = React.lazy(() => import('./pages/Duas'));
 const QuranIndex = React.lazy(() => import('./pages/QuranIndex')); 
-const SurahDetail = React.lazy(() => import('./pages/SurahDetail')); // New
+const SurahDetail = React.lazy(() => import('./pages/SurahDetail')); 
 const QuranReader = React.lazy(() => import('./pages/QuranReader')); 
+const Radio = React.lazy(() => import('./pages/Radio'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 const App: React.FC = () => {
@@ -66,31 +68,34 @@ const App: React.FC = () => {
     <ErrorBoundary>
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       
-      <Router>
-        <NotificationManager />
-        
-        <Layout darkMode={darkMode} toggleTheme={toggleTheme}>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/category/:id" element={<CategoryView />} />
-              <Route path="/quran" element={<QuranIndex />} />
-              <Route path="/quran/detail/:id" element={<SurahDetail />} />
-              <Route path="/quran/read/:surahId" element={<QuranReader />} />
-              <Route path="/prayers" element={<PrayerTimes />} />
-              <Route path="/tasbeeh" element={<Tasbeeh />} />
-              <Route path="/names" element={<NamesOfAllah />} />
-              <Route path="/qada" element={<MissedPrayers />} />
-              <Route path="/duas" element={<Duas />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/stats" element={<Stats />} />
-              <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </Layout>
-      </Router>
+      <RadioProvider>
+        <Router>
+            <NotificationManager />
+            
+            <Layout darkMode={darkMode} toggleTheme={toggleTheme}>
+            <Suspense fallback={<PageLoader />}>
+                <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/category/:id" element={<CategoryView />} />
+                <Route path="/quran" element={<QuranIndex />} />
+                <Route path="/quran/detail/:id" element={<SurahDetail />} />
+                <Route path="/quran/read/:surahId" element={<QuranReader />} />
+                <Route path="/radio" element={<Radio />} />
+                <Route path="/prayers" element={<PrayerTimes />} />
+                <Route path="/tasbeeh" element={<Tasbeeh />} />
+                <Route path="/names" element={<NamesOfAllah />} />
+                <Route path="/qada" element={<MissedPrayers />} />
+                <Route path="/duas" element={<Duas />} />
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/stats" element={<Stats />} />
+                <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="*" element={<NotFound />} />
+                </Routes>
+            </Suspense>
+            </Layout>
+        </Router>
+      </RadioProvider>
     </ErrorBoundary>
   );
 };

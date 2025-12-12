@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { BookOpen, Scroll, Loader2, Share2, Quote, Image as ImageIcon } from 'lucide-react';
+import { BookOpen, Scroll, Loader2, Share2, Quote, Image as ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { getDailyContent } from '../services/dailyContent';
 import { DailyContent } from '../types';
 import Logo from './Logo';
@@ -19,6 +19,9 @@ const DailyWisdom: React.FC = () => {
     source: string;
     subSource?: string;
   } | null>(null);
+  
+  // UI State for Explanation
+  const [expandExplanation, setExpandExplanation] = useState(false);
   
   const shareRef = useRef<HTMLDivElement>(null);
 
@@ -295,7 +298,6 @@ const DailyWisdom: React.FC = () => {
           <Quote size={32} className="absolute top-4 right-4 text-amber-100 dark:text-amber-900/40 opacity-50" />
           
           <div className="mb-4 relative z-10">
-            {/* Modified: Use font-arabic, smaller text, normal weight */}
             <p className="font-arabic text-xl md:text-2xl font-normal leading-[2.2] text-gray-800 dark:text-gray-100 mb-4">
               "{content.hadith.text}"
             </p>
@@ -308,6 +310,27 @@ const DailyWisdom: React.FC = () => {
                 </span>
             </div>
           </div>
+
+          {/* Enhanced Collapsible Explanation Section */}
+          {content.hadith.explanation && (
+            <div className="mt-6 border-t border-amber-50 dark:border-amber-900/20 pt-4">
+                <button
+                    onClick={() => setExpandExplanation(!expandExplanation)}
+                    className="flex items-center justify-center gap-2 w-full text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 py-2 rounded-lg transition-colors font-arabic"
+                >
+                    {expandExplanation ? 'إخفاء الشرح' : 'عرض شرح الحديث'}
+                    {expandExplanation ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+                
+                <div 
+                    className={`overflow-hidden transition-all duration-500 ease-in-out ${expandExplanation ? 'max-h-96 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}
+                >
+                    <div className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-xl text-gray-600 dark:text-gray-300 text-sm leading-loose border border-amber-100 dark:border-amber-900/30 text-justify font-arabic">
+                        {content.hadith.explanation}
+                    </div>
+                </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

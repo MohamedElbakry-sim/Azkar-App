@@ -1,4 +1,5 @@
 
+
 export interface Dhikr {
   id: number;
   category: CategoryId;
@@ -147,3 +148,12 @@ export interface Reciter {
 }
 
 export type ReadingMode = 'text' | 'page';
+
+// --- Radio Types ---
+
+export interface RadioStation {
+  id: number;
+  name: string;
+  url: string;
+  img?: string;
+}
