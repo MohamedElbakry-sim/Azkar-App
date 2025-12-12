@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { BookOpen, X, Check } from 'lucide-react';
 import * as storage from '../services/storage';
 
@@ -29,8 +30,8 @@ const AlKahfAlert: React.FC = () => {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 backdrop-blur-md animate-fadeIn transition-all duration-500">
+  return createPortal(
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 backdrop-blur-md animate-fadeIn transition-all duration-500 bg-black/20">
       <div className="bg-white dark:bg-dark-surface w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-popIn border border-emerald-100 dark:border-emerald-900/30 relative">
         
         {/* Background Pattern */}
@@ -72,7 +73,8 @@ const AlKahfAlert: React.FC = () => {
             </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
