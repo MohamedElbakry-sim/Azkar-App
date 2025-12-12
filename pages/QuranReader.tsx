@@ -57,6 +57,13 @@ const QuranReader: React.FC = () => {
   const [repeatCount, setRepeatCount] = useState(0); // 0 = no repeat
   const [currentRepeat, setCurrentRepeat] = useState(0);
   const [hideText, setHideText] = useState(false);
+
+  // Swipe Gestures State
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const touchEndY = useRef<number | null>(null);
+  const minSwipeDistance = 50;
   
   // --- Data Processing ---
   
@@ -345,6 +352,43 @@ const QuranReader: React.FC = () => {
       setHighlightTerm(''); // Clear any search highlighting when manually selecting
   };
 
+  // --- Swipe Handlers ---
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchStartY.current = e.targetTouches[0].clientY;
+    touchEndX.current = null;
+    touchEndY.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+    touchEndY.current = e.targetTouches[0].clientY;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current || !touchStartY.current || !touchEndY.current) return;
+    
+    const xDistance = touchStartX.current - touchEndX.current;
+    const yDistance = touchStartY.current - touchEndY.current;
+    
+    // Ensure horizontal swipe is dominant (X diff > Y diff)
+    if (Math.abs(yDistance) > Math.abs(xDistance)) return;
+
+    if (Math.abs(xDistance) < minSwipeDistance) return;
+
+    if (xDistance > 0) {
+       // Swipe Left -> Next Surah
+       if (surahNumber < 114) {
+           navigate(`/quran/read/${surahNumber + 1}`);
+       }
+    } else {
+       // Swipe Right -> Prev Surah
+       if (surahNumber > 1) {
+           navigate(`/quran/read/${surahNumber - 1}`);
+       }
+    }
+  };
+
   if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg"><Loader2 className="animate-spin text-emerald-500" size={40} /></div>;
   if (!surah) return <ErrorState onRetry={() => window.location.reload()} />;
 
@@ -402,6 +446,9 @@ const QuranReader: React.FC = () => {
         <div 
             className="flex-1 relative w-full h-full flex flex-col"
             onClick={() => setUiVisible(!uiVisible)}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
         >
             <div className="flex-1 overflow-y-auto px-4 md:px-8 py-20 animate-fadeIn scroll-smooth">
                 <div className="max-w-3xl mx-auto text-justify leading-[3]" dir="rtl">
