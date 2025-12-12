@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, Suspense } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -21,8 +20,9 @@ const NamesOfAllah = React.lazy(() => import('./pages/NamesOfAllah'));
 const Contact = React.lazy(() => import('./pages/Contact'));
 const MissedPrayers = React.lazy(() => import('./pages/MissedPrayers'));
 const Duas = React.lazy(() => import('./pages/Duas'));
-const QuranIndex = React.lazy(() => import('./pages/QuranIndex')); // New
-const QuranReader = React.lazy(() => import('./pages/QuranReader')); // New
+const QuranIndex = React.lazy(() => import('./pages/QuranIndex')); 
+const SurahDetail = React.lazy(() => import('./pages/SurahDetail')); // New
+const QuranReader = React.lazy(() => import('./pages/QuranReader')); 
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 const App: React.FC = () => {
@@ -50,17 +50,6 @@ const App: React.FC = () => {
     }
   }, [darkMode]);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem('nour_theme')) {
-        setDarkMode(e.matches);
-      }
-    };
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
-
   const toggleTheme = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
@@ -86,7 +75,8 @@ const App: React.FC = () => {
               <Route path="/" element={<Home />} />
               <Route path="/category/:id" element={<CategoryView />} />
               <Route path="/quran" element={<QuranIndex />} />
-              <Route path="/quran/:surahId" element={<QuranReader />} />
+              <Route path="/quran/detail/:id" element={<SurahDetail />} />
+              <Route path="/quran/read/:surahId" element={<QuranReader />} />
               <Route path="/prayers" element={<PrayerTimes />} />
               <Route path="/tasbeeh" element={<Tasbeeh />} />
               <Route path="/names" element={<NamesOfAllah />} />

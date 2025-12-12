@@ -30,7 +30,7 @@ const AlKahfAlert: React.FC = () => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 backdrop-blur-md animate-fadeIn transition-all duration-500">
       <div className="bg-white dark:bg-dark-surface w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-popIn border border-emerald-100 dark:border-emerald-900/30 relative">
         
         {/* Background Pattern */}
