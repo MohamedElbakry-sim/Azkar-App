@@ -247,7 +247,8 @@ const DailyWisdom: React.FC = () => {
           <Quote size={32} className="absolute top-4 right-4 text-emerald-100 dark:text-emerald-900/40 opacity-50" />
           
           <div className="mb-4 relative z-10">
-            <p className="font-arabic text-h2 md:text-h1 leading-[2.5] text-gray-800 dark:text-gray-100 mb-4">
+            {/* Modified: Use font-quran (Amiri), smaller text, normal weight */}
+            <p className="font-quran text-2xl md:text-3xl font-normal leading-[2.5] text-gray-800 dark:text-gray-100 mb-4">
               {content.verse.text}
             </p>
             <div className="inline-block px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 text-caption font-bold font-arabic">
@@ -294,7 +295,8 @@ const DailyWisdom: React.FC = () => {
           <Quote size={32} className="absolute top-4 right-4 text-amber-100 dark:text-amber-900/40 opacity-50" />
           
           <div className="mb-4 relative z-10">
-            <p className="font-arabic text-h2 md:text-h1 leading-[2.5] text-gray-800 dark:text-gray-100 mb-4">
+            {/* Modified: Use font-arabic, smaller text, normal weight */}
+            <p className="font-arabic text-xl md:text-2xl font-normal leading-[2.2] text-gray-800 dark:text-gray-100 mb-4">
               "{content.hadith.text}"
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">

@@ -473,7 +473,8 @@ const QuranReader: React.FC = () => {
                                     style={{ fontSize: `${fontSize}px` }}
                                 >
                                     <span dangerouslySetInnerHTML={{ __html: tajweedMode ? applyTajweed(text) : text }} />
-                                    <span className="text-emerald-600 dark:text-emerald-400 text-[0.6em] mx-1 font-arabicNumbers inline-block">
+                                    {/* Updated: explicitly use font-quran for the ornate badge symbols */}
+                                    <span className="text-emerald-600 dark:text-emerald-400 text-[0.6em] mx-1 font-quran inline-block">
                                         ﴿{toArabicNumerals(ayah.numberInSurah)}﴾
                                     </span>
                                 </span>

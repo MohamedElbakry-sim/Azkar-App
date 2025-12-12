@@ -240,13 +240,14 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
     );
   };
 
+  // Adjusted sizes: made slightly smaller and removed default boldness in caller
   const getFontSizeClass = () => {
     switch (fontSize) {
-      case 'small': return 'text-h3 md:text-h2';
-      case 'medium': return 'text-h2 md:text-h1';
-      case 'large': return 'text-[30px] md:text-[36px]';
-      case 'xlarge': return 'text-[34px] md:text-[42px]';
-      default: return 'text-h2 md:text-h1';
+      case 'small': return 'text-xl md:text-2xl';
+      case 'medium': return 'text-2xl md:text-3xl';
+      case 'large': return 'text-3xl md:text-4xl';
+      case 'xlarge': return 'text-4xl md:text-5xl';
+      default: return 'text-2xl md:text-3xl';
     }
   };
 
@@ -414,7 +415,8 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                     {BASMALA}
                 </div>
             )}
-            <p className={`font-arabic leading-[2.5] text-gray-800 dark:text-dark-text mb-4 transition-all duration-300 ${getFontSizeClass()}`}>
+            {/* Modified classes: Removed font-bold, set to font-medium, adjusted leading */}
+            <p className={`font-arabic font-medium leading-[2.5] text-gray-800 dark:text-dark-text mb-4 transition-all duration-300 ${getFontSizeClass()}`}>
                 {renderHighlightedText(displayText, highlightQuery)}
             </p>
         </div>

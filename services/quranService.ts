@@ -15,15 +15,14 @@ export interface Bookmark {
 
 export const DEFAULT_RECITER_ID = 'alafasy';
 
+// Updated list: Removed Mujawwad and unstable streams.
+// Only kept highly reliable 64kbps/128kbps Murattal streams.
 export const RECITERS: Reciter[] = [
   { id: 'alafasy', name: 'مشاري العفاسي', subpath: 'Alafasy_128kbps' },
-  { id: 'abdulbasit', name: 'عبد الباسط عبد الصمد (مجود)', subpath: 'Abdul_Basit_Mujawwad_128kbps' },
-  { id: 'sudais', name: 'عبد الرحمن السديس', subpath: 'Abdurrahmaan_As-Sudais_64kbps' }, // Switched to 64kbps for reliability
-  { id: 'shuraym', name: 'سعود الشريم', subpath: 'Saood_ash-Shuraym_128kbps' },
-  { id: 'maher', name: 'ماهر المعيقلي', subpath: 'MaherAlMuaiqly_64kbps' }, // Switched to 64kbps for reliability
   { id: 'husary', name: 'محمود خليل الحصري', subpath: 'Husary_128kbps' },
-  { id: 'minshawi', name: 'محمد صديق المنشاوي', subpath: 'Minshawy_Mujawwad_192kbps' },
-  { id: 'ajamy', name: 'أحمد بن علي العجمي', subpath: 'Ahmed_ibn_Ali_al-Ajamy_128kbps' },
+  { id: 'sudais', name: 'عبد الرحمن السديس', subpath: 'Abdurrahmaan_As-Sudais_64kbps' },
+  { id: 'shuraym', name: 'سعود الشريم', subpath: 'Saood_ash-Shuraym_128kbps' },
+  { id: 'maher', name: 'ماهر المعيقلي', subpath: 'MaherAlMuaiqly_64kbps' },
   { id: 'ghamadi', name: 'سعد الغامدي', subpath: 'Ghamadi_40kbps' },
 ];
 
@@ -60,15 +59,6 @@ export const getSurah = async (surahNumber: number): Promise<SurahData> => {
 
     const mergedAyahs: Ayah[] = uthmaniData.ayahs.map((ayah: any, index: number) => {
         // Parse words from quran-wordbyword-2 (format often space separated or needs custom parsing depending on API version)
-        // Note: The API returns text. For this specific edition, it typically returns "Word1|Translation1 Word2|Translation2" or similar.
-        // However, standard API calls might just return the whole text. 
-        // For 'quran-wordbyword-2', it returns a structure. If simple text, we split by space for basic matching.
-        
-        const wordRaw = wordByWordData?.ayahs[index]?.text || "";
-        // Basic parser for "ArabicWord|ID" or similar if API returns structure, 
-        // but often quran-wordbyword returns simple Arabic words matched to translation.
-        // Let's create a synthetic word breakdown based on the Uthmani text for now to ensure reliability if the specific edition format varies.
-        
         const words: Word[] = ayah.text.split(' ').map((w: string) => ({
             text: w,
             translation: '', // Placeholder as getting exact word mapping from this specific endpoint is complex
