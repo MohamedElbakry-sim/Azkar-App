@@ -26,38 +26,20 @@ const Logo: React.FC<LogoProps> = ({ className = "", size = 40, color = "current
         </linearGradient>
       </defs>
       
-      {/* Arabic Text: Main Focus */}
+      {/* Arabic Text: Updated to Tajawal ExtraBold/Black for modern look */}
       <text 
         x="50%" 
         y={showEnglish ? "45%" : "55%"} 
         dominantBaseline="middle" 
         textAnchor="middle" 
-        fontFamily="Amiri, serif" 
-        fontWeight="700" 
-        fontSize="42" 
+        fontFamily="Tajawal, sans-serif" 
+        fontWeight="800" 
+        fontSize="44" 
         fill={color === 'currentColor' ? color : "url(#logoGradient)"}
         style={{ filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.05))' }}
       >
-        ريان
+        رَيَّان
       </text>
-
-      {/* English Text: Subtitle style */}
-      {showEnglish && (
-        <text 
-          x="50%" 
-          y="85%" 
-          dominantBaseline="middle" 
-          textAnchor="middle" 
-          fontFamily="Cairo, sans-serif" 
-          fontWeight="600" 
-          fontSize="10" 
-          letterSpacing="0.4em"
-          fill={color}
-          opacity="0.8"
-        >
-          RAYYAN
-        </text>
-      )}
     </svg>
   );
 };

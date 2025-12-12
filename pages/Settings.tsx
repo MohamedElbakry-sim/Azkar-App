@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
-import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, AlertTriangle } from 'lucide-react';
 import * as storage from '../services/storage';
+import { CATEGORIES } from '../data';
 
 interface SettingsProps {
   darkMode: boolean;
@@ -17,12 +18,15 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   const [isAddingReminder, setIsAddingReminder] = useState(false);
   const [newReminderTime, setNewReminderTime] = useState('');
   const [newReminderLabel, setNewReminderLabel] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
 
   // Notification Settings State
   const [notifSettings, setNotifSettings] = useState<storage.NotificationSettings>({
     soundEnabled: true,
     vibrationType: 'default'
   });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setFontSize(storage.getFontSize());
@@ -59,6 +63,50 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     }
   };
 
+  const handleExport = () => {
+    const data = storage.exportUserData();
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const date = new Date().toISOString().split('T')[0];
+    link.download = `rayyan-backup-${date}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportClick = () => {
+    if (fileInputRef.current) {
+        fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const content = event.target?.result as string;
+        if (content) {
+            if (confirm('هل أنت متأكد من استعادة النسخة الاحتياطية؟ سيتم استبدال البيانات الحالية.')) {
+                const success = storage.importUserData(content);
+                if (success) {
+                    alert('تم استعادة البيانات بنجاح! سيتم إعادة تحميل التطبيق.');
+                    window.location.reload();
+                } else {
+                    alert('فشل استعادة البيانات. الملف غير صالح.');
+                }
+            }
+        }
+    };
+    reader.readAsText(file);
+    // Reset input
+    e.target.value = '';
+  };
+
   // --- Reminder Handlers ---
 
   const requestNotificationPermission = async () => {
@@ -87,7 +135,8 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
         id: Date.now().toString(),
         time: newReminderTime,
         label: newReminderLabel,
-        enabled: true
+        enabled: true,
+        targetPath: selectedCategory ? `/category/${selectedCategory}` : undefined
     };
     
     storage.addReminder(newReminder);
@@ -95,6 +144,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     setIsAddingReminder(false);
     setNewReminderTime('');
     setNewReminderLabel('');
+    setSelectedCategory('');
   };
 
   const handleDeleteReminder = (id: string) => {
@@ -114,11 +164,11 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
 
   const getPreviewFontSizeClass = () => {
     switch (fontSize) {
-      case 'small': return 'text-xl md:text-2xl';
-      case 'medium': return 'text-2xl md:text-3xl';
-      case 'large': return 'text-3xl md:text-4xl';
-      case 'xlarge': return 'text-4xl md:text-5xl';
-      default: return 'text-2xl md:text-3xl';
+      case 'small': return 'text-h3 md:text-h2';
+      case 'medium': return 'text-h2 md:text-h1';
+      case 'large': return 'text-[30px] md:text-[36px]';
+      case 'xlarge': return 'text-[34px] md:text-[42px]';
+      default: return 'text-h2 md:text-h1';
     }
   };
 
@@ -137,12 +187,12 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   }) => (
     <div className="flex items-center justify-between p-4 bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
       <div className="flex items-center gap-4">
-        <div className={`p-3 rounded-full ${danger ? 'bg-red-50 dark:bg-red-900/20 text-red-500' : 'bg-gray-100 dark:bg-dark-bg text-gray-600 dark:text-gray-300'}`}>
+        <div className={`p-3 rounded-full ${danger ? 'bg-red-50 dark:bg-red-900/20 text-red-500' : 'bg-gray-100 dark:bg-dark-panel text-gray-600 dark:text-dark-secondary'}`}>
           <Icon size={24} />
         </div>
         <div>
-          <h3 className={`font-bold ${danger ? 'text-red-500' : 'text-gray-800 dark:text-gray-100'}`}>{label}</h3>
-          {description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{description}</p>}
+          <h3 className={`font-bold text-body-lg font-arabic ${danger ? 'text-red-500' : 'text-gray-800 dark:text-dark-text'}`}>{label}</h3>
+          {description && <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">{description}</p>}
         </div>
       </div>
       <div>{action}</div>
@@ -157,7 +207,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
       aria-label={label}
       className={`
         relative w-14 h-8 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
-        ${checked ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-700'}
+        ${checked ? 'bg-gradient-to-r from-primary-500 to-primary-600' : 'bg-gray-300 dark:bg-gray-600'}
       `}
     >
       <div 
@@ -172,8 +222,8 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-10">
       <div className="mb-8">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">الإعدادات</h2>
-        <p className="text-gray-500 dark:text-gray-400">تخصيص تجربة التطبيق</p>
+        <h1 className="text-h1 text-gray-800 dark:text-white mb-2 font-arabicHead">الإعدادات</h1>
+        <p className="text-body-md text-gray-500 dark:text-dark-secondary">تخصيص تجربة التطبيق</p>
       </div>
 
       <div className="space-y-4">
@@ -181,18 +231,18 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
         <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-full bg-gray-100 dark:bg-dark-bg text-gray-600 dark:text-gray-300">
+                    <div className="p-3 rounded-full bg-gray-100 dark:bg-dark-panel text-gray-600 dark:text-dark-secondary">
                         <Bell size={24} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-gray-800 dark:text-gray-100">التنبيهات اليومية</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">جدولة تذكيرات للأذكار</p>
+                        <h3 className="font-bold text-body-lg text-gray-800 dark:text-dark-text font-arabic">التنبيهات اليومية</h3>
+                        <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">جدولة تذكيرات للأذكار</p>
                     </div>
                 </div>
                 {!isAddingReminder && (
                     <button 
                         onClick={() => setIsAddingReminder(true)}
-                        className="flex items-center gap-1 text-sm bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 px-3 py-2 rounded-xl font-bold hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors"
+                        className="flex items-center gap-1 text-btn bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 px-3 py-2 rounded-xl font-bold hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors"
                     >
                         <Plus size={16} />
                         إضافة
@@ -201,13 +251,13 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
              </div>
 
              {/* Reminder Customization (Sound & Vibration) */}
-             <div className="mb-6 p-4 bg-gray-50 dark:bg-dark-bg/50 rounded-xl border border-gray-100 dark:border-dark-border/50">
-                <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">تخصيص التنبيهات</h4>
+             <div className="mb-6 p-4 bg-gray-50 dark:bg-dark-panel rounded-xl border border-gray-100 dark:border-dark-border">
+                <h4 className="text-caption font-bold text-gray-500 dark:text-dark-muted uppercase tracking-wider mb-3">تخصيص التنبيهات</h4>
                 
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                         <Volume2 size={18} className="text-gray-400" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">صوت التنبيه (النظام)</span>
+                        <span className="text-body-sm font-medium text-gray-700 dark:text-gray-200">صوت التنبيه (النظام)</span>
                     </div>
                     <Toggle 
                         checked={notifSettings.soundEnabled} 
@@ -219,7 +269,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3 mb-1">
                         <Vibrate size={18} className="text-gray-400" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">نمط الاهتزاز</span>
+                        <span className="text-body-sm font-medium text-gray-700 dark:text-gray-200">نمط الاهتزاز</span>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                         {(['default', 'short', 'long', 'pulse', 'none'] as storage.VibrationType[]).map((type) => {
@@ -241,10 +291,10 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                                         }
                                     }}
                                     className={`
-                                        px-2 py-2 text-xs font-bold rounded-lg transition-colors
+                                        px-2 py-2 text-caption font-bold rounded-lg transition-colors border
                                         ${notifSettings.vibrationType === type 
-                                            ? 'bg-primary-500 text-white shadow-sm' 
-                                            : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-dark-border hover:bg-gray-100 dark:hover:bg-gray-700'}
+                                            ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-sm border-transparent' 
+                                            : 'bg-white dark:bg-dark-elevated text-gray-600 dark:text-dark-secondary border-gray-200 dark:border-dark-border hover:bg-gray-100 dark:hover:bg-dark-surface'}
                                     `}
                                 >
                                     {labels[type]}
@@ -256,40 +306,61 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
              </div>
 
              {isAddingReminder && (
-                 <div className="bg-gray-50 dark:bg-dark-bg/50 rounded-xl p-4 mb-4 animate-slideUp">
+                 <div className="bg-gray-50 dark:bg-dark-panel rounded-xl p-4 mb-4 animate-slideUp border border-gray-100 dark:border-dark-border">
                      <div className="flex flex-col gap-3">
-                         <div className="grid grid-cols-2 gap-3">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                              <div className="flex flex-col gap-1">
-                                 <label className="text-xs font-bold text-gray-500">اسم التذكير</label>
+                                 <label className="text-caption font-bold text-gray-500">اسم التذكير</label>
                                  <input 
                                     type="text" 
                                     value={newReminderLabel}
                                     onChange={(e) => setNewReminderLabel(e.target.value)}
                                     placeholder="مثلاً: أذكار الصباح"
-                                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white text-sm"
+                                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white text-body-sm font-arabic"
                                  />
                              </div>
                              <div className="flex flex-col gap-1">
-                                 <label className="text-xs font-bold text-gray-500">الوقت</label>
+                                 <label className="text-caption font-bold text-gray-500">الوقت</label>
                                  <input 
                                     type="time" 
                                     value={newReminderTime}
                                     onChange={(e) => setNewReminderTime(e.target.value)}
-                                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white text-sm"
+                                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white text-body-sm"
                                  />
+                             </div>
+                             
+                             <div className="flex flex-col gap-1 md:col-span-2">
+                                 <label className="text-caption font-bold text-gray-500">ربط بقسم (اختياري)</label>
+                                 <select 
+                                    value={selectedCategory}
+                                    onChange={(e) => {
+                                        setSelectedCategory(e.target.value);
+                                        // Auto-fill label if empty
+                                        if(!newReminderLabel && e.target.value) {
+                                            const cat = CATEGORIES.find(c => c.id === e.target.value);
+                                            if(cat) setNewReminderLabel(cat.title);
+                                        }
+                                    }}
+                                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white text-body-sm font-arabic"
+                                 >
+                                     <option value="">عام (بدون رابط)</option>
+                                     {CATEGORIES.map(cat => (
+                                         <option key={cat.id} value={cat.id}>{cat.title}</option>
+                                     ))}
+                                 </select>
                              </div>
                          </div>
                          <div className="flex gap-2 mt-2">
                              <button 
                                 onClick={() => setIsAddingReminder(false)}
-                                className="flex-1 py-2 text-sm font-bold text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                className="flex-1 py-2 text-btn font-bold text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-elevated rounded-lg transition-colors"
                              >
                                  إلغاء
                              </button>
                              <button 
                                 onClick={handleAddReminder}
                                 disabled={!newReminderTime || !newReminderLabel}
-                                className="flex-1 py-2 text-sm font-bold bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50"
+                                className="flex-1 py-2 text-btn font-bold bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50"
                              >
                                  حفظ
                              </button>
@@ -300,17 +371,25 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
 
              <div className="space-y-3">
                  {reminders.length === 0 && !isAddingReminder && (
-                     <div className="text-center py-4 text-gray-400 text-sm">
+                     <div className="text-center py-4 text-gray-400 text-body-sm">
                          لا توجد تنبيهات محفوظة
                      </div>
                  )}
                  {reminders.map(reminder => (
-                     <div key={reminder.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-bg rounded-xl border border-gray-100 dark:border-dark-border/50">
+                     <div key={reminder.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-panel rounded-xl border border-gray-100 dark:border-dark-border">
                          <div className="flex items-center gap-3">
-                            <span className="font-mono font-bold text-lg text-primary-600 dark:text-primary-400 bg-white dark:bg-dark-surface px-2 py-1 rounded-lg border border-gray-100 dark:border-dark-border">
+                            <span className="font-mono font-bold text-h4 text-primary-600 dark:text-primary-400 bg-white dark:bg-dark-bg px-2 py-1 rounded-lg border border-gray-100 dark:border-dark-border">
                                 {reminder.time}
                             </span>
-                            <span className="font-medium text-gray-700 dark:text-gray-200">{reminder.label}</span>
+                            <div className="flex flex-col">
+                                <span className="font-medium text-body-md text-gray-700 dark:text-dark-text font-arabic">{reminder.label}</span>
+                                {reminder.targetPath && (
+                                    <span className="text-[10px] text-primary-500 flex items-center gap-1">
+                                        <Book size={10} />
+                                        مرتبط بالقسم
+                                    </span>
+                                )}
+                            </div>
                          </div>
                          <div className="flex items-center gap-3">
                              <Toggle 
@@ -330,24 +409,65 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
              </div>
         </div>
 
+        {/* Data Management Section (Backup/Restore) */}
+        <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
+            <div className="flex items-center gap-4 mb-4">
+                <div className="p-3 rounded-full bg-gray-100 dark:bg-dark-panel text-gray-600 dark:text-dark-secondary">
+                    <Download size={24} />
+                </div>
+                <div>
+                    <h3 className="font-bold text-body-lg text-gray-800 dark:text-dark-text font-arabic">إدارة البيانات</h3>
+                    <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">نسخ واستعادة بياناتك</p>
+                </div>
+            </div>
+
+            <div className="flex gap-3">
+                <button 
+                    onClick={handleExport}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-200 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-dark-surface transition-colors"
+                >
+                    <Download size={18} />
+                    تصدير نسخة
+                </button>
+                <button 
+                    onClick={handleImportClick}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-200 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-dark-surface transition-colors"
+                >
+                    <Upload size={18} />
+                    استعادة نسخة
+                </button>
+                <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept=".json"
+                    onChange={handleFileChange}
+                />
+            </div>
+            <div className="mt-3 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/10 p-2 rounded-lg">
+                <AlertTriangle size={14} />
+                <span>النسخة تشمل: السجل، المفضلة، الإعدادات، والعدادات المخصصة.</span>
+            </div>
+        </div>
+
         {/* Hijri Date Offset */}
         <SettingsItem
           icon={Calendar}
           label="تعديل التاريخ الهجري"
           description={`ضبط التاريخ يدوياً (${hijriOffset > 0 ? '+' : ''}${hijriOffset} يوم)`}
           action={
-            <div className="flex items-center gap-3 bg-gray-100 dark:bg-dark-bg rounded-lg p-1">
+            <div className="flex items-center gap-3 bg-gray-100 dark:bg-dark-panel rounded-lg p-1">
               <button 
                 onClick={() => changeHijriOffset(-1)}
-                className="p-1 hover:bg-white dark:hover:bg-dark-surface rounded-md shadow-sm transition-all text-gray-600 dark:text-gray-300"
+                className="p-1 hover:bg-white dark:hover:bg-dark-elevated rounded-md shadow-sm transition-all text-gray-600 dark:text-gray-300"
                 aria-label="إنقاص يوم"
               >
                 <Minus size={16} />
               </button>
-              <span className="text-sm font-bold w-4 text-center text-gray-800 dark:text-white">{hijriOffset}</span>
+              <span className="text-body-sm font-bold w-4 text-center text-gray-800 dark:text-white">{hijriOffset}</span>
               <button 
                 onClick={() => changeHijriOffset(1)}
-                className="p-1 hover:bg-white dark:hover:bg-dark-surface rounded-md shadow-sm transition-all text-gray-600 dark:text-gray-300"
+                className="p-1 hover:bg-white dark:hover:bg-dark-elevated rounded-md shadow-sm transition-all text-gray-600 dark:text-gray-300"
                 aria-label="زيادة يوم"
               >
                 <Plus size={16} />
@@ -367,16 +487,16 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
         {/* Font Size Settings */}
         <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
           <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 rounded-full bg-gray-100 dark:bg-dark-bg text-gray-600 dark:text-gray-300">
+            <div className="p-3 rounded-full bg-gray-100 dark:bg-dark-panel text-gray-600 dark:text-dark-secondary">
               <Type size={24} />
             </div>
             <div>
-              <h3 className="font-bold text-gray-800 dark:text-gray-100">حجم الخط</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">تغيير حجم خط الأذكار</p>
+              <h3 className="font-bold text-body-lg text-gray-800 dark:text-dark-text font-arabic">حجم الخط</h3>
+              <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">تغيير حجم خط الأذكار</p>
             </div>
           </div>
           
-          <div className="flex bg-gray-100 dark:bg-dark-bg rounded-xl p-1 gap-1 mb-4">
+          <div className="flex bg-gray-100 dark:bg-dark-panel rounded-xl p-1 gap-1 mb-4">
             {(['small', 'medium', 'large', 'xlarge'] as storage.FontSize[]).map((size) => {
                const labels: Record<string, string> = { small: 'صغير', medium: 'متوسط', large: 'كبير', xlarge: 'ضخم' };
                return (
@@ -384,10 +504,10 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                    key={size}
                    onClick={() => changeFontSize(size)}
                    className={`
-                     flex-1 py-2 rounded-lg text-sm font-bold transition-all
+                     flex-1 py-2 rounded-lg text-btn font-bold transition-all
                      ${fontSize === size 
-                       ? 'bg-white dark:bg-dark-surface text-primary-600 dark:text-primary-400 shadow-sm ring-1 ring-gray-200 dark:ring-dark-border' 
-                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}
+                       ? 'bg-white dark:bg-dark-elevated text-primary-600 dark:text-primary-400 shadow-sm ring-1 ring-gray-200 dark:ring-dark-border' 
+                       : 'text-gray-500 dark:text-dark-muted hover:text-gray-700 dark:hover:text-dark-text'}
                    `}
                  >
                    {labels[size]}
@@ -397,15 +517,15 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           </div>
 
           {/* Font Preview Box */}
-          <div className="p-6 bg-gray-50 dark:bg-dark-bg rounded-xl border border-dashed border-gray-200 dark:border-dark-border text-center transition-all">
-             <p className={`font-serif text-gray-800 dark:text-gray-100 leading-loose transition-all duration-300 ${getPreviewFontSizeClass()}`}>
+          <div className="p-6 bg-gray-50 dark:bg-dark-panel rounded-xl border border-dashed border-gray-200 dark:border-dark-border text-center transition-all">
+             <p className={`font-arabic text-gray-800 dark:text-dark-text leading-loose transition-all duration-300 ${getPreviewFontSizeClass()}`}>
                بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
              </p>
-             <p className="text-xs text-gray-400 mt-2">معاينة النص</p>
+             <p className="text-caption text-gray-400 mt-2">معاينة النص</p>
           </div>
         </div>
 
-        <div className="my-8 border-t border-gray-200 dark:border-gray-700"></div>
+        <div className="my-8 border-t border-gray-200 dark:border-dark-border"></div>
 
         {/* Clear Data */}
         <SettingsItem 
@@ -416,7 +536,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           action={
             <button 
               onClick={clearData}
-              className="px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-400"
+              className="px-4 py-2 text-btn font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-400"
               aria-label="حذف جميع البيانات"
             >
               حذف
@@ -426,8 +546,8 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
       </div>
 
       <div className="mt-12 text-center">
-         <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
-           Rayyan App v1.4.0
+         <p className="text-caption text-gray-400 dark:text-dark-muted font-english">
+           Rayyan App v1.5.0
          </p>
       </div>
     </div>

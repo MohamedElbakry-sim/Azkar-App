@@ -1,283 +1,115 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CATEGORIES, AZKAR_DATA } from '../data';
-import { Search, X, AlertCircle, ArrowLeft, SunMedium, Moon, CloudMoon, Sunrise, BookHeart } from 'lucide-react';
-import DhikrCard from '../components/DhikrCard';
+import { BookOpen, ArrowLeft, ArrowUpRight } from 'lucide-react';
 import DailyWisdom from '../components/DailyWisdom';
 import RandomNameCard from '../components/RandomNameCard';
 import DailySahabi from '../components/DailySahabi';
 import SmartAzkarSuggestion from '../components/SmartAzkarSuggestion';
-import * as storage from '../services/storage';
-import { normalizeArabic } from '../utils';
+import AlKahfAlert from '../components/AlKahfAlert';
+import * as quranService from '../services/quranService';
+import { QURAN_META } from '../data/quranMeta';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [favorites, setFavorites] = useState<number[]>(storage.getFavorites());
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [bookmark, setBookmark] = useState<quranService.Bookmark | null>(null);
 
-  // Advanced Search Logic with Memoization
-  const filteredAzkar = useMemo(() => {
-    if (searchQuery.trim().length === 0) return [];
+  useEffect(() => {
+    setBookmark(quranService.getBookmark());
+  }, []);
 
-    const normalizedQuery = normalizeArabic(searchQuery.toLowerCase());
-    const queryWords = normalizedQuery.split(/\s+/).filter(w => w.length > 0);
-
-    return AZKAR_DATA
-      .filter(item => activeCategory ? item.category === activeCategory : true)
-      .map(item => {
-          let score = 0;
-          const normalizedText = normalizeArabic(item.text);
-          const normalizedBenefit = item.benefit ? normalizeArabic(item.benefit) : '';
-          const normalizedSource = item.source ? normalizeArabic(item.source) : '';
-
-          // 1. Exact Phrase Match (Highest Priority)
-          if (normalizedText.includes(normalizedQuery)) score += 100;
-          if (normalizedSource.includes(normalizedQuery)) score += 80;
-
-          // 2. Word Scoring
-          let matchedWordsCount = 0;
-          queryWords.forEach(word => {
-            let wordMatch = false;
-            // Text Match
-            if (normalizedText.includes(word)) {
-              score += 20;
-              wordMatch = true;
-            }
-            // Source Match
-            if (normalizedSource.includes(word)) {
-              score += 15;
-              wordMatch = true;
-            }
-            // Benefit Match (Lower priority)
-            if (normalizedBenefit.includes(word)) {
-              score += 5;
-              wordMatch = true;
-            }
-
-            if (wordMatch) matchedWordsCount++;
-          });
-
-          // 3. Completeness Bonus (If all typed words exist somewhere in the item)
-          if (matchedWordsCount === queryWords.length && queryWords.length > 0) {
-            score += 50;
-          }
-
-          return { item, score };
-      })
-      .filter(result => result.score > 0) // Remove items with 0 score
-      .sort((a, b) => b.score - a.score) // Sort highest score first
-      .map(result => result.item)
-      .slice(0, 50); // Limit results for performance
-  }, [searchQuery, activeCategory]);
-
-  const handleToggleFavorite = (dhikrId: number) => {
-    const newFavs = storage.toggleFavoriteStorage(dhikrId);
-    setFavorites(newFavs);
-  };
-
-  const displayedCategories = activeCategory 
-    ? CATEGORIES.filter(c => c.id === activeCategory)
-    : CATEGORIES;
-
-  // Logic to show filters: if search is focused, or there is text, or a category is selected
-  const showFilters = isSearchFocused || searchQuery.length > 0 || activeCategory !== null;
-
-  // Helper to get theme text colors
-  const getThemeTextColor = (theme: string) => {
-    switch (theme) {
-      case 'orange': return 'text-orange-600 dark:text-orange-400 group-hover:text-orange-700 dark:group-hover:text-orange-300';
-      case 'indigo': return 'text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300';
-      case 'slate': return 'text-slate-600 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300';
-      case 'yellow': return 'text-yellow-600 dark:text-yellow-400 group-hover:text-yellow-700 dark:group-hover:text-yellow-300';
-      case 'emerald': return 'text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-300';
-      default: return 'text-gray-800 dark:text-gray-100';
-    }
-  };
-
-  const getThemeBgColor = (theme: string) => {
-    switch (theme) {
-      case 'orange': return 'bg-orange-100 dark:bg-orange-900/20';
-      case 'indigo': return 'bg-indigo-100 dark:bg-indigo-900/20';
-      case 'slate': return 'bg-slate-100 dark:bg-slate-800/50';
-      case 'yellow': return 'bg-yellow-100 dark:bg-yellow-900/20';
-      case 'emerald': return 'bg-emerald-100 dark:bg-emerald-900/20';
-      default: return 'bg-gray-100 dark:bg-gray-800';
-    }
-  };
-
-  const getCategoryIcon = (id: string, theme: string) => {
-    const colorClass = getThemeTextColor(theme);
-    const size = 28;
-    switch (id) {
-      case 'sabah': return <SunMedium size={size} className={colorClass} />;
-      case 'masaa': return <Moon size={size} className={colorClass} />;
-      case 'sleep': return <CloudMoon size={size} className={colorClass} />;
-      case 'waking': return <Sunrise size={size} className={colorClass} />;
-      case 'prayer': return <BookHeart size={size} className={colorClass} />;
-      default: return <SunMedium size={size} className={colorClass} />;
+  const handleContinueReading = () => {
+    if (bookmark) {
+      navigate(`/quran/read/${bookmark.surahNumber}`, { state: { scrollToAyah: bookmark.ayahNumber }});
+    } else {
+        navigate('/quran');
     }
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      <div className="text-center py-6 md:py-10">
-        <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-serif">اختر الأذكار التي تريد قراءتها الآن</h2>
-      </div>
-
-      {/* Search Bar */}
-      <div className="relative max-w-xl mx-auto mb-4">
-        <label htmlFor="search-input" className="sr-only">ابحث عن ذكر</label>
-        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400" />
+    <div className="space-y-8 animate-fadeIn pb-8">
+      <AlKahfAlert />
+      
+      {/* Welcome Header */}
+      <div className="flex justify-between items-end px-2 pt-4">
+        <div>
+            <h1 className="text-display font-bold text-gray-900 dark:text-white font-arabicHead mb-1">
+            السلام عليكم
+            </h1>
+            <p className="text-body text-gray-500 dark:text-dark-muted font-arabic">
+            طبت وطاب يومك بذكر الله
+            </p>
         </div>
-        <input
-          id="search-input"
-          type="text"
-          className="block w-full p-4 pr-11 text-base rounded-2xl border-none bg-white dark:bg-dark-surface shadow-sm focus:ring-2 focus:ring-primary-400 placeholder-gray-400 dark:text-white transition-shadow"
-          placeholder="ابحث عن ذكر، دعاء، أو كلمة..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onFocus={() => setIsSearchFocused(true)}
-          onBlur={() => {
-            // Delay hide to allow click on filter chips to register
-            setTimeout(() => setIsSearchFocused(false), 200);
-          }}
-        />
-        {searchQuery && (
-          <button 
-            onClick={() => setSearchQuery('')}
-            className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none focus:text-primary-500"
-            aria-label="مسح البحث"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        )}
+        
+        {/* Date Badge */}
+        <div className="hidden md:block bg-white dark:bg-dark-surface px-4 py-2 rounded-xl border border-gray-100 dark:border-dark-border shadow-sm text-small font-bold text-gray-600 dark:text-gray-300">
+            {new Intl.DateTimeFormat('ar-SA-u-ca-islamic', { day: 'numeric', month: 'long' }).format(new Date())}
+        </div>
       </div>
 
-      {/* Filter Chips - Only visible when interacting with search */}
-      <div 
-        className={`max-w-xl mx-auto transition-all duration-300 overflow-hidden ease-in-out ${showFilters ? 'max-h-20 opacity-100 mb-8' : 'max-h-0 opacity-0 mb-0'}`}
-      >
-        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar px-1">
-          <button
-            onClick={() => setActiveCategory(null)}
-            className={`
-              px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200
-              ${activeCategory === null 
-                ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20' 
-                : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-dark-border'}
-            `}
-          >
-            الكل
-          </button>
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id === activeCategory ? null : cat.id)}
-              className={`
-                px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200
-                ${activeCategory === cat.id 
-                  ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20' 
-                  : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-dark-border'}
-              `}
+      {/* Primary Actions Grid */}
+      <div className="space-y-6">
+          {/* Smart Suggestion (Morning/Evening Azkar) */}
+          <SmartAzkarSuggestion />
+
+          {/* Continue Reading Widget */}
+          {bookmark ? (
+            <div 
+                onClick={handleContinueReading}
+                className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-card cursor-pointer group hover:border-emerald-200 dark:hover:border-emerald-900 transition-all relative overflow-hidden"
             >
-              {cat.title}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Smart Suggestion (Only show when not searching) */}
-      {!searchQuery && !activeCategory && <SmartAzkarSuggestion />}
-
-      {/* Search Results or Categories */}
-      {searchQuery ? (
-        <div className="space-y-4" role="region" aria-label="نتائج البحث">
-          <div className="flex items-center justify-between">
-             <h3 className="text-lg font-bold text-gray-600 dark:text-gray-300" aria-live="polite">
-               {filteredAzkar.length > 0 ? `نتائج البحث (${filteredAzkar.length})` : 'لا توجد نتائج'}
-             </h3>
-             {filteredAzkar.length > 0 && (
-               <span className="text-xs text-gray-400">تظهر أفضل النتائج</span>
-             )}
-          </div>
-          
-          {filteredAzkar.length > 0 ? (
-            <div className="space-y-6">
-              {filteredAzkar.map(item => (
-                <DhikrCard
-                  key={item.id}
-                  item={item}
-                  isFavorite={favorites.includes(item.id)}
-                  initialCount={0}
-                  onToggleFavorite={handleToggleFavorite}
-                  highlightQuery={searchQuery}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center animate-fadeIn">
-              <div className="bg-gray-100 dark:bg-dark-surface p-6 rounded-full mb-4">
-                 <AlertCircle size={48} className="text-gray-400" />
-              </div>
-              <p className="text-lg font-bold text-gray-600 dark:text-gray-300">لا توجد نتائج مطابقة لـ "{searchQuery}"</p>
-              {activeCategory && <p className="text-primary-500 mt-1 text-sm font-medium">في قسم: {CATEGORIES.find(c => c.id === activeCategory)?.title}</p>}
-              <p className="text-gray-400 mt-2 text-sm">حاول البحث باستخدام كلمات مختلفة أو تأكد من الكتابة الصحيحة</p>
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="mt-6 px-6 py-2 text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                مسح البحث
-              </button>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {displayedCategories.map((cat) => {
-            return (
-              <button
-                key={cat.id}
-                onClick={() => navigate(`/category/${cat.id}`)}
-                className="group relative bg-white dark:bg-dark-surface p-5 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md transition-all duration-300 text-right focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-[0.98] flex items-center gap-5 min-h-[110px]"
-                aria-label={`قسم ${cat.title}`}
-              >
-                {/* Icon Container */}
-                <div className={`p-4 rounded-2xl ${getThemeBgColor(cat.theme)} transition-colors`}>
-                    {getCategoryIcon(cat.id, cat.theme)}
-                </div>
-
-                <div className="flex-1 flex items-center justify-between">
-                    <div>
-                        <h3 className={`text-xl font-bold font-serif mb-1 transition-colors ${getThemeTextColor(cat.theme)}`}>
-                            {cat.title}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                            {cat.description}
-                        </p>
+                <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                            <BookOpen size={24} />
+                        </div>
+                        <div>
+                            <span className="text-caption font-bold text-gray-400 uppercase tracking-wider mb-1 block">متابعة القراءة</span>
+                            <h2 className="text-h2 font-bold text-gray-800 dark:text-white font-arabicHead">
+                                سورة {QURAN_META[bookmark.surahNumber - 1].name}
+                            </h2>
+                            <p className="text-small text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
+                                الآية {bookmark.ayahNumber}
+                            </p>
+                        </div>
                     </div>
-                    
-                    <div className="pl-1 text-gray-300 dark:text-gray-600 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors">
+                    <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-dark-bg flex items-center justify-center text-gray-400 group-hover:bg-emerald-500 group-hover:text-white transition-all">
                         <ArrowLeft size={20} className="rtl:rotate-0" />
                     </div>
                 </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          ) : (
+             <button
+                onClick={() => navigate('/quran')}
+                className="w-full bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-card flex items-center justify-between group hover:border-emerald-200 dark:hover:border-emerald-900 transition-all"
+            >
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gray-100 dark:bg-dark-bg rounded-2xl flex items-center justify-center text-gray-500 dark:text-gray-400">
+                        <BookOpen size={24} />
+                    </div>
+                    <div className="text-right">
+                        <h2 className="text-h2 font-bold text-gray-800 dark:text-white font-arabicHead">القرآن الكريم</h2>
+                        <p className="text-small text-gray-500 dark:text-dark-muted">ابدأ وردك اليومي</p>
+                    </div>
+                </div>
+                <ArrowUpRight size={20} className="text-gray-400" />
+            </button>
+          )}
+      </div>
 
-      {/* Widgets (Only if no search and no specific category selected) */}
-      {!searchQuery && !activeCategory && (
-        <div className="max-w-2xl mx-auto mt-16 mb-12 space-y-10 md:space-y-10">
-            <RandomNameCard />
-            <DailyWisdom />
-            <DailySahabi />
-        </div>
-      )}
+      {/* Daily Content Feed */}
+      <div className="grid grid-cols-1 gap-6">
+          <div className="space-y-6">
+             <h3 className="text-h2 font-bold text-gray-900 dark:text-white px-2">قطوف اليوم</h3>
+             <DailyWisdom />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <RandomNameCard />
+             <DailySahabi />
+          </div>
+      </div>
     </div>
   );
 };

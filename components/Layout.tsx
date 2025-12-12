@@ -1,8 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
-import { Home, Heart, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Sparkles, Mail, Menu, X, ListTodo, BookOpenText } from 'lucide-react';
-import { CATEGORIES } from '../data';
+
+import React, { useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Home, Book, Clock, Menu, Sun, Moon, ArrowRight, LayoutGrid } from 'lucide-react';
 import Logo from './Logo';
+import { useRadio } from '../contexts/RadioContext';
+
+// Custom Icons
+export const PrayerIcon = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2L4 7V17L12 22L20 17V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
+  </svg>
+);
+
+export const AthkarIcon = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2"/>
+    <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+export const TasbeehIcon = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2"/>
+    <circle cx="12" cy="4" r="2" stroke="currentColor" strokeWidth="2" fill="currentColor"/>
+    <path d="M12 6V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+
+export const AllahIcon = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 3V21M8 7C8 7 10 5 12 5C14 5 16 7 16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M12 10C12 10 16 10 17 14C18 18 12 21 12 21C12 21 6 18 7 14C8 10 12 10 12 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,265 +41,178 @@ interface LayoutProps {
   toggleTheme: () => void;
 }
 
-// Custom Tasbeeh Icon to resemble prayer beads
-export const TasbeehIcon = ({ size = 24, className = "" }: {size?: number, className?: string}) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    xmlns="http://www.w3.org/2000/svg" 
-    className={className}
-  >
-    {/* The Beads Loop (Dashed Circle) */}
-    <circle 
-      cx="12" 
-      cy="13" 
-      r="8" 
-      stroke="currentColor" 
-      strokeWidth="2.5" 
-      strokeDasharray="1 3.5" 
-      strokeLinecap="round" 
-    />
-    {/* The Imam/Tassel Top */}
-    <path 
-      d="M12 5V2" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-    />
-    <path 
-      d="M9.5 2H14.5" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-    />
-  </svg>
-);
-
-// Custom Icon for Names of Allah (Calligraphy style using Text)
-export const AllahIcon = ({ size = 24, className = "" }: {size?: number, className?: string}) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    xmlns="http://www.w3.org/2000/svg" 
-    className={className}
-  >
-     <text 
-       x="12" 
-       y="19" 
-       textAnchor="middle" 
-       fontSize="19" 
-       fontFamily="Amiri, serif" 
-       fontWeight="bold" 
-       fill="currentColor"
-     >
-       الله
-     </text>
-  </svg>
-);
-
 const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const isHome = location.pathname === '/';
-  
-  // Hide navigation elements when inside a category for immersive reading
-  const isCategoryView = location.pathname.startsWith('/category/');
+  const { currentStation, isPlaying, togglePlay, stop, isBuffering } = useRadio();
+  const showMiniPlayer = currentStation && location.pathname !== '/radio';
 
-  // Determine page title based on route
-  let pageTitle = 'ريان';
-  const categoryMatch = matchPath('/category/:id', location.pathname);
-  if (categoryMatch) {
-    const currentCategory = CATEGORIES.find(c => c.id === categoryMatch.params.id);
-    if (currentCategory) {
-      pageTitle = currentCategory.title;
-    }
-  }
+  // Check if we are in Reading Mode (Quran Reader)
+  const isReadingMode = location.pathname.includes('/quran/read');
 
-  // Close mobile menu when route changes
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
+  // Helper to determine if we are in a detail view (to show back button on mobile)
+  // Exclude isReadingMode because it handles its own UI
+  const isDetailView = !isReadingMode && (
+                       location.pathname.startsWith('/quran/detail') || // Fixed: detail, not read
+                       location.pathname.startsWith('/category/') ||
+                       location.pathname === '/settings');
 
-  const navItems = [
+  const navTabs = [
     { path: '/', icon: <Home size={22} />, label: 'الرئيسية' },
-    { path: '/prayers', icon: <Clock size={22} />, label: 'مواقيت الصلاة' },
-    { path: '/tasbeeh', icon: <TasbeehIcon size={22} />, label: 'السبحة' },
-    { path: '/names', icon: <AllahIcon size={24} />, label: 'أسماء الله الحسني' },
-    { path: '/duas', icon: <BookOpenText size={22} />, label: 'حصن المسلم' }, // New
-    { path: '/qada', icon: <ListTodo size={22} />, label: 'الصلوات الفائتة' }, // New
-    { path: '/stats', icon: <BarChart2 size={22} />, label: 'إحصائيات' },
-    { path: '/favorites', icon: <Heart size={22} />, label: 'المفضلة' },
-    { path: '/settings', icon: <Settings size={22} />, label: 'إعدادات' },
-    { path: '/contact', icon: <Mail size={22} />, label: 'تواصل معنا' },
+    { path: '/quran', icon: <Book size={22} />, label: 'القرآن' },
+    { path: '/athkar', icon: <AthkarIcon size={22} />, label: 'الأذكار' },
+    { path: '/prayers', icon: <PrayerIcon size={22} />, label: 'الصلاة' },
+    { path: '/more', icon: <Menu size={22} />, label: 'المزيد' },
   ];
 
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-dark-bg transition-colors duration-300">
+    <div className="min-h-screen flex bg-[#F9FAFB] dark:bg-dark-bg transition-colors duration-200 font-arabic text-body text-gray-900 dark:text-dark-text">
       
-      {/* Desktop Sidebar Navigation */}
-      {!isCategoryView && (
-        <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-white dark:bg-dark-surface border-l border-gray-100 dark:border-dark-border z-50 transition-colors shadow-sm">
-          <div className="p-6 flex items-center gap-3 border-b border-gray-100 dark:border-dark-border">
-            <div className="p-1">
-               <Logo size={60} className="text-primary-600 dark:text-primary-500" />
-            </div>
-          </div>
-          
-          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) => `
-                  flex items-center gap-3 p-3 rounded-xl transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500
-                  ${isActive 
-                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' 
-                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-bg hover:text-gray-900 dark:hover:text-gray-200'}
-                `}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </NavLink>
-            ))}
-          </nav>
-
-          <div className="p-4 border-t border-gray-100 dark:border-dark-border">
-            <button 
-              onClick={toggleTheme}
-              className="flex items-center gap-3 w-full p-3 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-bg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-              aria-label={darkMode ? 'التبديل إلى الوضع النهاري' : 'التبديل إلى الوضع الليلي'}
-            >
-                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-                <span className="font-medium">{darkMode ? 'الوضع النهاري' : 'الوضع الليلي'}</span>
-            </button>
-          </div>
-        </aside>
-      )}
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen relative max-w-full">
+      {/* --- DESKTOP SIDEBAR --- */}
+      <aside className="hidden md:flex flex-col w-72 h-screen sticky top-0 bg-white dark:bg-dark-panel border-l border-gray-100 dark:border-dark-border z-50">
+        {/* Logo Area */}
+        <div className="p-8 flex items-center gap-3">
+           <Logo size={40} className="text-primary-600 dark:text-primary-500" />
+        </div>
         
-        {/* Mobile Header */}
-        <header className="md:hidden sticky top-0 z-40 bg-white/90 dark:bg-dark-surface/90 backdrop-blur-md border-b border-gray-100 dark:border-dark-border px-4 py-3 flex items-center justify-between transition-colors shadow-sm relative">
-          {/* Left Side: Navigation/Back */}
-          <div className="flex items-center gap-3 z-10">
-            {!isHome && !isCategoryView ? (
-              <button onClick={() => navigate('/')} className="p-2 -mr-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full active:scale-95 transition-transform" aria-label="رجوع">
-                <ArrowRight size={24} />
-              </button>
-            ) : (
-               // Hamburger Menu Button
-               <button 
-                onClick={() => setIsMobileMenuOpen(true)}
-                className="p-2 -mr-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full active:scale-95 transition-transform"
-                aria-label="القائمة"
-               >
-                 <Menu size={24} />
-               </button>
-            )}
-          </div>
-          
-          {/* Center: Logo (Absolute) */}
-          {(isHome || isCategoryView) && (
-              <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                  <Logo size={50} className="text-primary-600 dark:text-primary-500" />
-              </div>
-          )}
-          
-          {/* Right Side: Actions */}
-          <div className="flex items-center gap-1 z-10">
-            <button 
-              onClick={toggleTheme}
-              className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              aria-label={darkMode ? 'التبديل إلى الوضع النهاري' : 'التبديل إلى الوضع الليلي'}
+        {/* Nav Links */}
+        <nav className="flex-1 px-4 space-y-2 py-4">
+          {navTabs.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => `
+                flex items-center gap-4 p-4 rounded-xl transition-all duration-200 font-bold
+                ${isActive 
+                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 shadow-sm' 
+                  : 'text-gray-500 dark:text-dark-muted hover:bg-gray-50 dark:hover:bg-dark-surface hover:text-gray-900 dark:hover:text-dark-text'}
+              `}
             >
-              {darkMode ? <Sun size={22} /> : <Moon size={22} />}
-            </button>
+              {item.icon}
+              <span className="text-lg">{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Theme Toggle */}
+        <div className="p-6 border-t border-gray-100 dark:border-dark-border">
+          <button 
+            onClick={toggleTheme}
+            className="flex items-center gap-3 w-full p-4 rounded-xl bg-gray-50 dark:bg-dark-surface text-gray-600 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors"
+          >
+              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+              <span className="font-bold">{darkMode ? 'الوضع النهاري' : 'الوضع الليلي'}</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* --- MAIN CONTENT --- */}
+      <div className={`flex-1 flex flex-col min-h-screen relative max-w-full ${isReadingMode ? 'h-screen overflow-hidden pb-0' : 'pb-24 md:pb-0'}`}>
+        
+        {/* Mobile Header (Only on Detail Views or specific pages if needed) */}
+        {isDetailView && (
+            <header className="md:hidden sticky top-0 z-40 bg-white/80 dark:bg-dark-panel/80 backdrop-blur-md border-b border-gray-100 dark:border-dark-border px-4 py-3 flex items-center justify-between">
+                <button 
+                    onClick={() => navigate(-1)} 
+                    className="p-2 -mr-2 text-gray-600 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-elevated rounded-full"
+                >
+                    <ArrowRight size={24} />
+                </button>
+                <div className="font-bold text-lg">ريان</div>
+                <div className="w-8"></div> {/* Spacer */}
+            </header>
+        )}
+
+        {/* Desktop Header - Hide in reading mode */}
+        {!isReadingMode && (
+            <header className="hidden md:flex sticky top-0 z-40 bg-[#F9FAFB]/90 dark:bg-dark-bg/90 backdrop-blur px-8 py-6 justify-between items-center border-b border-transparent">
+                {/* Contextual Title could go here */}
+                <div className="text-gray-400 dark:text-dark-muted font-medium text-sm">
+                {new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+            </header>
+        )}
+
+        {/* Adjust Main Container: Remove padding and max-width if reading mode */}
+        <main className={`flex-1 w-full mx-auto ${isReadingMode ? 'p-0 max-w-full h-full' : 'p-4 md:p-8 max-w-5xl'}`}>
+          <div className="animate-fadeIn w-full h-full">
+            {children}
           </div>
-        </header>
+        </main>
 
-        {/* Mobile Navigation Drawer (Hamburger Menu) */}
-        {isMobileMenuOpen && (
-            <div className="md:hidden fixed inset-0 z-50 flex">
-                {/* Backdrop */}
-                <div 
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fadeIn"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                ></div>
-
-                {/* Drawer Content */}
-                <div className="relative w-4/5 max-w-[300px] h-full bg-white dark:bg-dark-surface shadow-2xl flex flex-col animate-slideRight">
-                    <div className="p-5 flex items-center justify-between border-b border-gray-100 dark:border-dark-border">
-                        <div className="flex items-center gap-3">
-                            <Logo size={60} className="text-primary-600 dark:text-primary-500" />
-                        </div>
-                        <button 
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full"
-                        >
-                            <X size={24} />
-                        </button>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                        {navItems.map((item) => (
-                            <NavLink
-                                key={item.path}
-                                to={item.path}
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className={({ isActive }) => `
-                                flex items-center gap-4 p-4 rounded-xl transition-all duration-200 font-medium text-lg
+        {/* --- MOBILE BOTTOM TAB BAR - Hide in reading mode --- */}
+        {!isReadingMode && (
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-panel border-t border-gray-100 dark:border-dark-border z-50 safe-area-bottom shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+                <div className="flex items-center justify-around">
+                    {navTabs.map((item) => (
+                        <NavLink
+                            key={item.path}
+                            to={item.path}
+                            className={({ isActive }) => `
+                                flex flex-col items-center justify-center py-3 px-2 w-full transition-all duration-200
                                 ${isActive 
-                                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' 
-                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-bg'}
-                                `}
-                            >
-                                {item.icon}
-                                <span>{item.label}</span>
-                            </NavLink>
-                        ))}
-                    </div>
+                                    ? 'text-primary-600 dark:text-primary-500' 
+                                    : 'text-gray-400 dark:text-dark-muted hover:text-gray-600 dark:hover:text-gray-400'}
+                            `}
+                        >
+                            {({ isActive }) => (
+                                <>
+                                    <div className={`mb-1 transition-transform ${isActive ? 'scale-110' : 'scale-100'}`}>
+                                        {item.icon}
+                                    </div>
+                                    <span className={`text-[10px] font-bold ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                                        {item.label}
+                                    </span>
+                                </>
+                            )}
+                        </NavLink>
+                    ))}
+                </div>
+            </nav>
+        )}
 
-                    <div className="p-5 border-t border-gray-100 dark:border-dark-border">
-                        <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-                             <span>الإصدار 1.4.0</span>
+        {/* --- MINI PLAYER (Global) - Hide in reading mode --- */}
+        {showMiniPlayer && !isReadingMode && (
+            <div className="fixed bottom-20 left-4 right-4 md:bottom-6 md:left-auto md:w-96 md:right-8 z-40 animate-slideUp">
+                <div className="bg-white/95 dark:bg-dark-surface/95 backdrop-blur-xl border border-gray-200 dark:border-dark-border rounded-2xl p-3 shadow-2xl flex items-center justify-between">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/20 rounded-lg flex items-center justify-center text-primary-600 dark:text-primary-400 flex-shrink-0">
+                             {/* Visualizer bars */}
+                             <div className="flex gap-0.5 h-3 items-end">
+                                <div className={`w-1 bg-current rounded-sm ${isPlaying ? 'animate-[pulse_0.6s_ease-in-out_infinite]' : 'h-1'}`}></div>
+                                <div className={`w-1 bg-current rounded-sm ${isPlaying ? 'animate-[pulse_0.8s_ease-in-out_infinite]' : 'h-2'}`}></div>
+                                <div className={`w-1 bg-current rounded-sm ${isPlaying ? 'animate-[pulse_0.5s_ease-in-out_infinite]' : 'h-1.5'}`}></div>
+                             </div>
                         </div>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider">Radio</span>
+                            <span className="font-bold text-sm text-gray-800 dark:text-white truncate">{currentStation.name}</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-dark-elevated text-gray-800 dark:text-white"
+                        >
+                            {isBuffering ? (
+                                <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                            ) : isPlaying ? (
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></svg>
+                            ) : (
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3L19 12L5 21V3Z" /></svg>
+                            )}
+                        </button>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); stop(); }}
+                            className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /></svg>
+                        </button>
                     </div>
                 </div>
             </div>
         )}
 
-        {/* Desktop Header Spacer / Title Bar */}
-        <header className="hidden md:flex sticky top-0 z-40 bg-gray-50/90 dark:bg-dark-bg/90 backdrop-blur px-8 py-6 justify-between items-center">
-            {/* Page title depending on category */}
-            <div className="text-sm text-gray-400 dark:text-gray-500 font-medium">
-               {!isHome && pageTitle}
-            </div>
-            
-             {/* Back button for desktop sub-pages */}
-             {!isHome && (
-              <button 
-                onClick={() => navigate('/')} 
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-surface rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-                aria-label="رجوع للصفحة الرئيسية"
-              >
-                <ArrowRight size={18} />
-                <span>الرئيسية</span>
-              </button>
-            )}
-        </header>
-
-        <main className="flex-1 p-4 md:p-8 w-full">
-          {/* Animated Page Transition Wrapper */}
-          <div key={location.pathname} className="animate-slideUp w-full">
-            {children}
-          </div>
-        </main>
       </div>
     </div>
   );

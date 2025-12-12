@@ -117,17 +117,65 @@ export const searchGlobal = async (query: string): Promise<SearchResult[]> => {
   }
 };
 
-export const saveBookmark = (bookmark: Bookmark) => {
-  localStorage.setItem(BOOKMARK_KEY, JSON.stringify(bookmark));
-};
+// --- Bookmarking Logic ---
 
-export const getBookmark = (): Bookmark | null => {
+export const getBookmarks = (): Bookmark[] => {
   try {
     const stored = localStorage.getItem(BOOKMARK_KEY);
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return [];
+    
+    const parsed = JSON.parse(stored);
+    
+    // Migration: If it's a single object (old format), wrap in array
+    if (!Array.isArray(parsed) && parsed.surahNumber) {
+        const migrated = [parsed];
+        localStorage.setItem(BOOKMARK_KEY, JSON.stringify(migrated));
+        return migrated;
+    }
+    
+    return Array.isArray(parsed) ? parsed.sort((a, b) => b.timestamp - a.timestamp) : [];
   } catch {
-    return null;
+    return [];
   }
+};
+
+export const addBookmark = (bookmark: Bookmark) => {
+    const bookmarks = getBookmarks();
+    // Check if exists (same surah & ayah)
+    const existingIndex = bookmarks.findIndex(b => b.surahNumber === bookmark.surahNumber && b.ayahNumber === bookmark.ayahNumber);
+    
+    let newBookmarks;
+    if (existingIndex >= 0) {
+        // Move to top if exists, update timestamp
+        const existing = bookmarks[existingIndex];
+        newBookmarks = [
+            { ...existing, timestamp: Date.now(), note: bookmark.note || existing.note }, 
+            ...bookmarks.filter((_, i) => i !== existingIndex)
+        ];
+    } else {
+        newBookmarks = [bookmark, ...bookmarks].slice(0, 50); // Limit to 50
+    }
+    
+    localStorage.setItem(BOOKMARK_KEY, JSON.stringify(newBookmarks));
+    return newBookmarks;
+};
+
+export const removeBookmark = (surah: number, ayah: number) => {
+    const bookmarks = getBookmarks();
+    const filtered = bookmarks.filter(b => !(b.surahNumber === surah && b.ayahNumber === ayah));
+    localStorage.setItem(BOOKMARK_KEY, JSON.stringify(filtered));
+    return filtered;
+};
+
+// Backward compatibility / Convenience for "Last Read"
+export const getBookmark = (): Bookmark | null => {
+  const bookmarks = getBookmarks();
+  return bookmarks.length > 0 ? bookmarks[0] : null;
+};
+
+// Also support old signature for legacy code, but route to addBookmark
+export const saveBookmark = (bookmark: Bookmark) => {
+  addBookmark(bookmark);
 };
 
 export const getPreferredReciter = (): string => {

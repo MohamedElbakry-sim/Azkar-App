@@ -31,18 +31,26 @@ export const RadioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Initialize Audio Object once
   useEffect(() => {
     const audio = new Audio();
-    audio.crossOrigin = "anonymous";
+    // Removed crossOrigin="anonymous" to prevent CORS errors on streams that don't send Access-Control-Allow-Origin
+    // We don't need Web Audio API analysis for the simple CSS visualizer we use.
     audio.preload = "none";
     
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
     const handleWaiting = () => setIsBuffering(true);
     const handleCanPlay = () => setIsBuffering(false);
-    const handleError = (e: any) => {
-        console.error("Global Audio Error:", e);
+    
+    const handleError = (e: Event) => {
+        const target = e.target as HTMLAudioElement;
+        const error = target.error;
+        console.error("Global Audio Error:", error ? `Code: ${error.code}, Message: ${error.message}` : "Unknown Error");
+        
+        // Don't set error state if it was just an abort (code 20) which happens on stop/switch
+        if (error && error.code !== 20) { 
+            setHasError(true);
+        }
         setIsBuffering(false);
         setIsPlaying(false);
-        setHasError(true);
     };
 
     audio.addEventListener('play', handlePlay);
@@ -60,7 +68,8 @@ export const RadioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         audio.removeEventListener('playing', handleCanPlay);
         audio.removeEventListener('error', handleError);
         audio.pause();
-        audio.src = "";
+        audio.removeAttribute('src');
+        audio.load();
     };
   }, []);
 
@@ -96,6 +105,7 @@ export const RadioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         console.error("Play Station Error:", err);
         setHasError(true);
         setIsPlaying(false);
+        setIsBuffering(false);
     }
   };
 
@@ -105,20 +115,26 @@ export const RadioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (isPlaying) {
         audioRef.current.pause();
     } else {
-        audioRef.current.play().catch(e => {
-            console.error("Resume Error:", e);
-            setHasError(true);
-        });
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(e => {
+                console.error("Resume Error:", e);
+                setHasError(true);
+            });
+        }
     }
   };
 
   const stop = () => {
     if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.src = "";
+        audioRef.current.removeAttribute('src'); // Safer than src=""
+        audioRef.current.load();
     }
     setCurrentStation(null);
     setIsPlaying(false);
+    setIsBuffering(false);
+    setHasError(false);
   };
 
   const setVolume = (vol: number) => {

@@ -1,22 +1,23 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Rayyan | ريان</title>
-    <meta name="description" content="تطبيق ريان - أذكار الصباح والمساء وتسبيح إلكتروني" />
-    <meta name="theme-color" content="#1ABC9C" />
+    <meta name="description" content="تطبيق ريان - أذكار الصباح والمساء وتسبيح إلكتروني وقرآن كريم" />
+    <meta name="theme-color" content="#10B981" />
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     
-    <!-- Favicon (Crisp SVG 'Ra') -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='120' fill='%231ABC9C'/%3E%3Ctext x='50%25' y='50%25' dy='.1em' dominant-baseline='middle' text-anchor='middle' font-family='serif' font-weight='bold' font-size='300' fill='white'%3Eر%3C/text%3E%3C/svg%3E" />
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%2310B981'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='170' fill='white'%3Eريان%3C/text%3E%3C/svg%3E" />
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;500;600;700&family=Reem+Kufi:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
     
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -29,65 +30,54 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Cairo', 'sans-serif'],
-              serif: ['Amiri', 'serif'],
-              kufi: ['Reem Kufi', 'sans-serif'],
+              arabic: ['"Tajawal"', 'sans-serif'],
+              arabicHead: ['"Tajawal"', 'sans-serif'],
+              quran: ['"Amiri"', 'serif'],
+              english: ['Inter', 'sans-serif'],
+              sans: ['"Tajawal"', 'Inter', 'sans-serif'],
+            },
+            fontSize: {
+              // Premium Typography System
+              'display': ['32px', { lineHeight: '1.3', fontWeight: '800', letterSpacing: '-0.02em' }],
+              'h1': ['24px', { lineHeight: '1.35', fontWeight: '800' }],
+              'h2': ['20px', { lineHeight: '1.4', fontWeight: '700' }],
+              'body': ['16px', { lineHeight: '1.6', fontWeight: '400' }],
+              'small': ['14px', { lineHeight: '1.5', fontWeight: '400' }],
+              'caption': ['12px', { lineHeight: '1.4', fontWeight: '400' }],
             },
             colors: {
-              // Primary Palette: "Jannah Green" (Emerald to Deep Teal)
               primary: {
-                50: '#E8F8F5',
-                100: '#D1F2EB',
-                200: '#A3E4D7',
-                300: '#76D7C4',
-                400: '#2ECC71', // Start Gradient
-                500: '#1ABC9C', // Mid Gradient (Main Brand)
-                600: '#16A085', // End Gradient
-                700: '#148F77',
-                800: '#117864',
-                900: '#0E6251',
-                950: '#0B5345',
+                50: '#ECFDF5',
+                100: '#D1FAE5',
+                200: '#A7F3D0',
+                300: '#6EE7B7',
+                400: '#34D399',
+                500: '#10B981', // Emerald 500 (Main Accent)
+                600: '#059669',
+                700: '#047857',
+                800: '#065F46',
+                900: '#064E3B',
               },
-              // Secondary Palette: "Midnight Prayer" (Slate Blue to Deep Navy)
-              secondary: {
-                50: '#EBEDEF',
-                100: '#D6DBDF',
-                200: '#AEB6BF',
-                300: '#85929E',
-                400: '#5D6D7E', // Start Gradient
-                500: '#34495E', // End Gradient
-                600: '#2E4053',
-                700: '#283747',
-                800: '#212F3C',
-                900: '#1B2631',
-              },
-              // Accent Palette: "Golden Nour" (Yellow to Gold)
-              accent: {
-                50: '#FEF9E7',
-                100: '#FCF3CF',
-                200: '#F9E79F',
-                300: '#F7DC6F',
-                400: '#F1C40F', // Start Gradient
-                500: '#F39C12', // End Gradient
-                600: '#D68910',
-                700: '#B9770E',
-                800: '#9C640C',
-                900: '#7E5109',
-              },
-              // Custom Dark Mode Palette (Dim / Dark Gray)
+              // Discord-inspired Dark Palette
               dark: {
-                bg: '#18181b',      // Zinc 900
-                surface: '#27272a', // Zinc 800
-                border: '#3f3f46',  // Zinc 700
-                text: '#f4f4f5',    // Zinc 100
-                muted: '#a1a1aa'    // Zinc 400
+                bg: '#1A1A1A',        // Deepest Background
+                panel: '#202225',     // Sidebar/Nav
+                surface: '#2F3136',   // Cards/Modals
+                elevated: '#36393F',  // Hover states/Inputs
+                border: '#40444B',    // Borders
+                text: '#DCDDDE',      // Primary Text
+                muted: '#72767D',     // Secondary Text
               }
             },
+            boxShadow: {
+              'soft': '0 2px 10px rgba(0,0,0,0.03)',
+              'card': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+              'glow': '0 0 20px rgba(16, 185, 129, 0.2)',
+            },
             animation: {
-              'fadeIn': 'fadeIn 0.5s ease-out forwards',
-              'slideUp': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-              'slideRight': 'slideRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-              'popIn': 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+              'fadeIn': 'fadeIn 0.4s ease-out forwards',
+              'slideUp': 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              'scaleIn': 'scaleIn 0.2s ease-out forwards',
             },
             keyframes: {
               fadeIn: {
@@ -95,16 +85,12 @@
                 '100%': { opacity: '1' },
               },
               slideUp: {
-                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '0%': { opacity: '0', transform: 'translateY(15px)' },
                 '100%': { opacity: '1', transform: 'translateY(0)' },
               },
-              slideRight: {
-                '0%': { opacity: '0', transform: 'translateX(100%)' },
-                '100%': { opacity: '1', transform: 'translateX(0)' },
-              },
-              popIn: {
-                '0%': { opacity: '0', transform: 'scale(0.5)' },
-                '100%': { opacity: '1', transform: 'scale(1)' },
+              scaleIn: {
+                '0%': { transform: 'scale(0.95)' },
+                '100%': { transform: 'scale(1)' },
               }
             }
           }
@@ -112,15 +98,28 @@
       }
     </script>
     <style>
-      /* Custom scrollbar */
+      body {
+        font-family: 'Tajawal', 'Inter', sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .font-quran {
+        font-family: 'Amiri', serif;
+        line-height: 2.4;
+      }
+      /* Custom Scrollbar for Desktop */
       ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
-      .dark ::-webkit-scrollbar-thumb { background-color: #3f3f46; }
+      ::-webkit-scrollbar-thumb { background-color: #E5E7EB; border-radius: 20px; }
+      .dark ::-webkit-scrollbar-thumb { background-color: #2F3136; }
       
-      button { touch-action: manipulation; }
+      /* Hide scrollbar for clean UI where needed */
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      
+      /* Safe Area for Mobile Bottom Nav */
+      .safe-area-bottom {
+        padding-bottom: env(safe-area-inset-bottom, 20px);
+      }
     </style>
   <script type="importmap">
 {
@@ -129,16 +128,15 @@
     "react": "https://aistudiocdn.com/react@^19.2.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
     "react-dom": "https://aistudiocdn.com/react-dom@^19.2.1",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.10.1",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^6.28.0",
     "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
     "adhan": "https://cdn.jsdelivr.net/npm/adhan@4.4.1/+esm",
     "@vercel/node": "https://aistudiocdn.com/@vercel/node@^5.5.15"
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-gradient-to-b from-white to-[#F8F9F9] dark:from-dark-bg dark:to-black min-h-screen text-gray-900 dark:text-dark-text transition-colors duration-300 bg-fixed">
+  <body class="bg-[#F9FAFB] dark:bg-dark-bg min-h-screen text-gray-900 dark:text-dark-text transition-colors duration-200">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
