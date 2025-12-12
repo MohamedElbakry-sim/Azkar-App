@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
-import { Home, Heart, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Mail, Menu, X, ListTodo, BookOpenText, Book, Radio, Play, Pause, Square } from 'lucide-react';
+import { Home, Heart, Moon, Sun, ArrowRight, BarChart2, Settings, Clock, Sparkles, Mail, Menu, X, ListTodo, BookOpenText } from 'lucide-react';
 import { CATEGORIES } from '../data';
 import Logo from './Logo';
-import { useRadio } from '../contexts/RadioContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,9 +10,7 @@ interface LayoutProps {
   toggleTheme: () => void;
 }
 
-/**
- * Custom SVG component for the Tasbeeh/Rosary icon.
- */
+// Custom Tasbeeh Icon to resemble prayer beads
 export const TasbeehIcon = ({ size = 24, className = "" }: {size?: number, className?: string}) => (
   <svg 
     width={size} 
@@ -50,9 +46,7 @@ export const TasbeehIcon = ({ size = 24, className = "" }: {size?: number, class
   </svg>
 );
 
-/**
- * Custom SVG component for the Allah (God) name calligraphy icon.
- */
+// Custom Icon for Names of Allah (Calligraphy style using Text)
 export const AllahIcon = ({ size = 24, className = "" }: {size?: number, className?: string}) => (
   <svg 
     width={size} 
@@ -67,7 +61,7 @@ export const AllahIcon = ({ size = 24, className = "" }: {size?: number, classNa
        y="19" 
        textAnchor="middle" 
        fontSize="19" 
-       fontFamily="IBM Plex Sans Arabic, sans-serif" 
+       fontFamily="Amiri, serif" 
        fontWeight="bold" 
        fill="currentColor"
      >
@@ -76,25 +70,14 @@ export const AllahIcon = ({ size = 24, className = "" }: {size?: number, classNa
   </svg>
 );
 
-/**
- * Main Layout component wrapper for the application.
- * Handles responsive navigation (sidebar/hamburger), theming, and layout structure.
- */
 const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isHome = location.pathname === '/';
   
-  // Radio Context for Mini Player
-  const { currentStation, isPlaying, togglePlay, stop, isBuffering } = useRadio();
-  const showMiniPlayer = currentStation && location.pathname !== '/radio';
-
   // Hide navigation elements when inside a category for immersive reading
-  // Also hide for Quran Reader
   const isCategoryView = location.pathname.startsWith('/category/');
-  const isQuranReader = location.pathname.startsWith('/quran/');
-  const isImmersive = isCategoryView || isQuranReader;
 
   // Determine page title based on route
   let pageTitle = 'ريان';
@@ -113,13 +96,11 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
 
   const navItems = [
     { path: '/', icon: <Home size={22} />, label: 'الرئيسية' },
-    { path: '/quran', icon: <Book size={22} />, label: 'القرآن الكريم' },
-    { path: '/radio', icon: <Radio size={22} />, label: 'الإذاعة' },
     { path: '/prayers', icon: <Clock size={22} />, label: 'مواقيت الصلاة' },
     { path: '/tasbeeh', icon: <TasbeehIcon size={22} />, label: 'السبحة' },
     { path: '/names', icon: <AllahIcon size={24} />, label: 'أسماء الله الحسني' },
-    { path: '/duas', icon: <BookOpenText size={22} />, label: 'حصن المسلم' },
-    { path: '/qada', icon: <ListTodo size={22} />, label: 'الصلوات الفائتة' },
+    { path: '/duas', icon: <BookOpenText size={22} />, label: 'حصن المسلم' }, // New
+    { path: '/qada', icon: <ListTodo size={22} />, label: 'الصلوات الفائتة' }, // New
     { path: '/stats', icon: <BarChart2 size={22} />, label: 'إحصائيات' },
     { path: '/favorites', icon: <Heart size={22} />, label: 'المفضلة' },
     { path: '/settings', icon: <Settings size={22} />, label: 'إعدادات' },
@@ -127,27 +108,27 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   ];
 
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-dark-bg transition-colors duration-300 font-arabic">
+    <div className="min-h-screen flex bg-gray-50 dark:bg-dark-bg transition-colors duration-300">
       
       {/* Desktop Sidebar Navigation */}
-      {!isImmersive && (
-        <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-white dark:bg-dark-panel border-l border-gray-100 dark:border-dark-border z-50 transition-colors shadow-sm">
+      {!isCategoryView && (
+        <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-white dark:bg-dark-surface border-l border-gray-100 dark:border-dark-border z-50 transition-colors shadow-sm">
           <div className="p-6 flex items-center gap-3 border-b border-gray-100 dark:border-dark-border">
             <div className="p-1">
                <Logo size={60} className="text-primary-600 dark:text-primary-500" />
             </div>
           </div>
           
-          <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) => `
-                  flex items-center gap-3 p-3 rounded-xl transition-all duration-200 text-btn focus:outline-none focus:ring-2 focus:ring-primary-500
+                  flex items-center gap-3 p-3 rounded-xl transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500
                   ${isActive 
-                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-dark-text border-r-2 border-primary-500' 
-                    : 'text-gray-500 dark:text-dark-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated hover:text-gray-900 dark:hover:text-dark-text'}
+                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' 
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-bg hover:text-gray-900 dark:hover:text-gray-200'}
                 `}
               >
                 {item.icon}
@@ -159,11 +140,11 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
           <div className="p-4 border-t border-gray-100 dark:border-dark-border">
             <button 
               onClick={toggleTheme}
-              className="flex items-center gap-3 w-full p-3 rounded-xl text-gray-500 dark:text-dark-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 text-btn"
+              className="flex items-center gap-3 w-full p-3 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-bg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
               aria-label={darkMode ? 'التبديل إلى الوضع النهاري' : 'التبديل إلى الوضع الليلي'}
             >
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-                <span>{darkMode ? 'الوضع النهاري' : 'الوضع الليلي'}</span>
+                <span className="font-medium">{darkMode ? 'الوضع النهاري' : 'الوضع الليلي'}</span>
             </button>
           </div>
         </aside>
@@ -173,22 +154,18 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
       <div className="flex-1 flex flex-col min-h-screen relative max-w-full">
         
         {/* Mobile Header */}
-        <header className="md:hidden sticky top-0 z-40 bg-white/90 dark:bg-dark-panel/90 backdrop-blur-md border-b border-gray-100 dark:border-dark-border px-4 py-3 flex items-center justify-between transition-colors shadow-sm relative">
+        <header className="md:hidden sticky top-0 z-40 bg-white/90 dark:bg-dark-surface/90 backdrop-blur-md border-b border-gray-100 dark:border-dark-border px-4 py-3 flex items-center justify-between transition-colors shadow-sm relative">
           {/* Left Side: Navigation/Back */}
           <div className="flex items-center gap-3 z-10">
-            {!isHome && !isImmersive ? (
-              <button 
-                onClick={() => navigate('/')} 
-                className="p-2 -mr-2 text-gray-600 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-elevated rounded-full active:scale-95 transition-transform" 
-                aria-label="الرئيسية"
-              >
+            {!isHome && !isCategoryView ? (
+              <button onClick={() => navigate('/')} className="p-2 -mr-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full active:scale-95 transition-transform" aria-label="رجوع">
                 <ArrowRight size={24} />
               </button>
             ) : (
                // Hamburger Menu Button
                <button 
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="p-2 -mr-2 text-gray-600 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-elevated rounded-full active:scale-95 transition-transform"
+                className="p-2 -mr-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full active:scale-95 transition-transform"
                 aria-label="القائمة"
                >
                  <Menu size={24} />
@@ -197,15 +174,17 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
           </div>
           
           {/* Center: Logo (Absolute) */}
-          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-              <Logo size={50} className="text-primary-600 dark:text-primary-500" />
-          </div>
+          {(isHome || isCategoryView) && (
+              <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                  <Logo size={50} className="text-primary-600 dark:text-primary-500" />
+              </div>
+          )}
           
           {/* Right Side: Actions */}
           <div className="flex items-center gap-1 z-10">
             <button 
               onClick={toggleTheme}
-              className="p-2 rounded-full text-gray-500 dark:text-dark-secondary hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500"
               aria-label={darkMode ? 'التبديل إلى الوضع النهاري' : 'التبديل إلى الوضع الليلي'}
             >
               {darkMode ? <Sun size={22} /> : <Moon size={22} />}
@@ -223,14 +202,14 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                 ></div>
 
                 {/* Drawer Content */}
-                <div className="relative w-4/5 max-w-[300px] h-full bg-white dark:bg-dark-panel shadow-2xl flex flex-col animate-slideRight border-l border-gray-200 dark:border-dark-border">
+                <div className="relative w-4/5 max-w-[300px] h-full bg-white dark:bg-dark-surface shadow-2xl flex flex-col animate-slideRight">
                     <div className="p-5 flex items-center justify-between border-b border-gray-100 dark:border-dark-border">
                         <div className="flex items-center gap-3">
                             <Logo size={60} className="text-primary-600 dark:text-primary-500" />
                         </div>
                         <button 
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-elevated rounded-full dark:text-dark-secondary"
+                            className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full"
                         >
                             <X size={24} />
                         </button>
@@ -243,10 +222,10 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                                 to={item.path}
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className={({ isActive }) => `
-                                flex items-center gap-4 p-4 rounded-xl transition-all duration-200 text-h4
+                                flex items-center gap-4 p-4 rounded-xl transition-all duration-200 font-medium text-lg
                                 ${isActive 
-                                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-dark-text' 
-                                    : 'text-gray-600 dark:text-dark-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated'}
+                                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' 
+                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-bg'}
                                 `}
                             >
                                 {item.icon}
@@ -256,8 +235,8 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                     </div>
 
                     <div className="p-5 border-t border-gray-100 dark:border-dark-border">
-                        <div className="flex items-center justify-center gap-2 text-caption text-gray-400 dark:text-dark-muted font-english">
-                             <span>Version 1.5.0</span>
+                        <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+                             <span>الإصدار 1.4.0</span>
                         </div>
                     </div>
                 </div>
@@ -267,7 +246,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
         {/* Desktop Header Spacer / Title Bar */}
         <header className="hidden md:flex sticky top-0 z-40 bg-gray-50/90 dark:bg-dark-bg/90 backdrop-blur px-8 py-6 justify-between items-center">
             {/* Page title depending on category */}
-            <div className="text-body-sm text-gray-400 dark:text-dark-muted font-medium">
+            <div className="text-sm text-gray-400 dark:text-gray-500 font-medium">
                {!isHome && pageTitle}
             </div>
             
@@ -275,8 +254,8 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
              {!isHome && (
               <button 
                 onClick={() => navigate('/')} 
-                className="flex items-center gap-2 px-4 py-2 text-btn text-gray-600 dark:text-dark-secondary hover:bg-gray-200 dark:hover:bg-dark-elevated rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-                aria-label="الرئيسية"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-surface rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+                aria-label="رجوع للصفحة الرئيسية"
               >
                 <ArrowRight size={18} />
                 <span>الرئيسية</span>
@@ -284,62 +263,12 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
             )}
         </header>
 
-        <main className="flex-1 p-4 md:p-8 w-full pb-28 md:pb-10">
+        <main className="flex-1 p-4 md:p-8 w-full">
           {/* Animated Page Transition Wrapper */}
-          <div className="animate-slideUp w-full h-full">
+          <div key={location.pathname} className="animate-slideUp w-full">
             {children}
           </div>
         </main>
-
-        {/* Mini Player Bar (Global) */}
-        {showMiniPlayer && (
-            <div className="fixed bottom-4 left-4 right-4 md:left-auto md:w-96 md:right-8 z-50 animate-slideUp">
-                <div 
-                    onClick={() => navigate('/radio')}
-                    className="bg-white/90 dark:bg-dark-panel/90 backdrop-blur-lg border border-gray-200 dark:border-dark-border rounded-2xl p-3 shadow-2xl flex items-center justify-between cursor-pointer hover:bg-white dark:hover:bg-dark-surface transition-colors"
-                >
-                    <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 text-white">
-                            {isPlaying ? (
-                                <div className="flex gap-0.5 h-4 items-end">
-                                    <div className="w-1 bg-white animate-pulse" style={{ height: '60%', animationDelay: '0s' }}></div>
-                                    <div className="w-1 bg-white animate-pulse" style={{ height: '100%', animationDelay: '0.2s' }}></div>
-                                    <div className="w-1 bg-white animate-pulse" style={{ height: '40%', animationDelay: '0.4s' }}></div>
-                                </div>
-                            ) : (
-                                <Radio size={20} />
-                            )}
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">إذاعة القرآن</span>
-                            <span className="font-bold text-gray-800 dark:text-white truncate font-arabicHead">{currentStation.name}</span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-                            className="p-2 bg-gray-100 dark:bg-dark-elevated rounded-full hover:bg-gray-200 dark:hover:bg-dark-bg transition-colors"
-                        >
-                            {isBuffering ? (
-                                <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                            ) : isPlaying ? (
-                                <Pause size={20} className="text-gray-800 dark:text-white" fill="currentColor" />
-                            ) : (
-                                <Play size={20} className="text-gray-800 dark:text-white ml-0.5" fill="currentColor" />
-                            )}
-                        </button>
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); stop(); }}
-                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
-                        >
-                            <Square size={18} fill="currentColor" />
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
-
       </div>
     </div>
   );

@@ -43,8 +43,8 @@ const NamesOfAllah: React.FC = () => {
         <div className="inline-flex items-center justify-center p-3 bg-amber-50 dark:bg-amber-900/20 rounded-full mb-4 text-amber-600 dark:text-amber-400">
            <AllahIcon size={40} />
         </div>
-        <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-arabicHead">أسماء الله الحسنى</h2>
-        <p className="text-gray-500 dark:text-gray-400 md:text-lg max-w-2xl mx-auto font-arabic">
+        <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-serif">أسماء الله الحسنى</h2>
+        <p className="text-gray-500 dark:text-gray-400 md:text-lg max-w-2xl mx-auto">
           "وَلِلَّهِ الْأَسْمَاءُ الْحُسْنَى فَادْعُوهُ بِهَا"
         </p>
       </div>
@@ -58,7 +58,7 @@ const NamesOfAllah: React.FC = () => {
         <input
           id="names-search"
           type="text"
-          className="block w-full p-4 pr-11 text-base rounded-2xl border-none bg-white dark:bg-dark-surface shadow-sm focus:ring-2 focus:ring-amber-400 placeholder-gray-400 dark:text-white transition-shadow font-arabic"
+          className="block w-full p-4 pr-11 text-base rounded-2xl border-none bg-white dark:bg-dark-surface shadow-sm focus:ring-2 focus:ring-amber-400 placeholder-gray-400 dark:text-white transition-shadow"
           placeholder="ابحث عن اسم، معنى، أو نطق..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -87,13 +87,13 @@ const NamesOfAllah: React.FC = () => {
             <div className="relative z-10 w-full">
                 <span className="absolute top-0 right-0 text-xs font-mono text-gray-300 dark:text-gray-600">#{item.id}</span>
                 
-                <h3 className="font-arabicHead text-3xl md:text-4xl text-amber-600 dark:text-amber-400 mb-3 mt-2">{item.arabic}</h3>
+                <h3 className="font-serif text-3xl md:text-4xl text-amber-600 dark:text-amber-400 mb-3 mt-2">{item.arabic}</h3>
                 
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 font-english">{item.transliteration}</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{item.transliteration}</p>
                 
                 <div className="w-8 h-0.5 bg-gray-100 dark:bg-gray-700 mx-auto mb-3"></div>
                 
-                <p className="text-sm text-gray-600 dark:text-gray-300 leading-loose font-arabic">
+                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                     {item.meaning}
                 </p>
             </div>

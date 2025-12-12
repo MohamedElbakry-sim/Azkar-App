@@ -40,7 +40,7 @@ const MissedPrayersPage: React.FC = () => {
         ) : (
             <div className="flex items-center justify-center gap-2 mb-8 p-3 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl font-bold">
                 <RefreshCw size={20} />
-                <span>لا توجد فوائت مسجلة</span>
+                <span>الحمد لله، لا توجد فوائت مسجلة</span>
             </div>
         )}
 

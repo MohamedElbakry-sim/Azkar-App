@@ -1,23 +1,22 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Rayyan | ريان</title>
-    <meta name="description" content="تطبيق ريان - أذكار الصباح والمساء وتسبيح إلكتروني وقرآن كريم" />
+    <meta name="description" content="تطبيق ريان - أذكار الصباح والمساء وتسبيح إلكتروني" />
     <meta name="theme-color" content="#1ABC9C" />
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%231ABC9C'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='170' fill='white'%3Eريان%3C/text%3E%3C/svg%3E" />
+    <!-- Favicon (Crisp SVG 'Ra') -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='120' fill='%231ABC9C'/%3E%3Ctext x='50%25' y='50%25' dy='.1em' dominant-baseline='middle' text-anchor='middle' font-family='serif' font-weight='bold' font-size='300' fill='white'%3Eر%3C/text%3E%3C/svg%3E" />
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;500;600;700&family=Reem+Kufi:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -30,69 +29,59 @@
         theme: {
           extend: {
             fontFamily: {
-              // Primary Arabic Font
-              arabic: ['"Tajawal"', 'sans-serif'],
-              // Headings
-              arabicHead: ['"Tajawal"', 'sans-serif'],
-              // Quran Text - Reverted to Amiri for authentic look and badge support
-              quran: ['"Amiri"', 'serif'],
-              // English / UI
-              english: ['Inter', 'sans-serif'],
-              // Default
-              sans: ['"Tajawal"', 'Inter', 'sans-serif'],
-            },
-            fontSize: {
-              // Responsive Heading Scale using clamp()
-              'h1': ['clamp(28px, 5vw, 36px)', { lineHeight: '1.3', fontWeight: '800', letterSpacing: '-0.02em' }],
-              'h2': ['clamp(24px, 4vw, 28px)', { lineHeight: '1.35', fontWeight: '700' }],
-              'h3': ['clamp(20px, 3vw, 22px)', { lineHeight: '1.4', fontWeight: '700' }],
-              'h4': ['clamp(18px, 2.5vw, 20px)', { lineHeight: '1.4', fontWeight: '600' }],
-              
-              // Body Scale
-              'body-lg': ['clamp(16px, 2vw, 18px)', { lineHeight: '1.7', fontWeight: '500' }],
-              'body-md': ['clamp(14px, 1.5vw, 16px)', { lineHeight: '1.6', fontWeight: '400' }],
-              'body-sm': ['clamp(12px, 1.2vw, 14px)', { lineHeight: '1.6', fontWeight: '400' }],
-              
-              // UI Elements
-              'btn': ['clamp(14px, 1.5vw, 16px)', { lineHeight: '1.2', fontWeight: '600', letterSpacing: '0.5px' }],
-              'caption': ['12px', { lineHeight: '1.4', fontWeight: '400' }],
+              sans: ['Cairo', 'sans-serif'],
+              serif: ['Amiri', 'serif'],
+              kufi: ['Reem Kufi', 'sans-serif'],
             },
             colors: {
+              // Primary Palette: "Jannah Green" (Emerald to Deep Teal)
               primary: {
                 50: '#E8F8F5',
                 100: '#D1F2EB',
                 200: '#A3E4D7',
                 300: '#76D7C4',
-                400: '#2ECC71',
-                500: '#1ABC9C',
-                600: '#16A085',
+                400: '#2ECC71', // Start Gradient
+                500: '#1ABC9C', // Mid Gradient (Main Brand)
+                600: '#16A085', // End Gradient
                 700: '#148F77',
                 800: '#117864',
                 900: '#0E6251',
                 950: '#0B5345',
               },
-              dark: {
-                bg: '#1A1B1E',
-                panel: '#202124',
-                surface: '#26272A',
-                elevated: '#2E2F33',
-                border: '#323338',
-                borderStrong: '#3D3E43',
-                text: '#F2F2F3',
-                secondary: '#C4C6C9',
-                muted: '#8E9097',
-                disabled: '#5C5E63'
+              // Secondary Palette: "Midnight Prayer" (Slate Blue to Deep Navy)
+              secondary: {
+                50: '#EBEDEF',
+                100: '#D6DBDF',
+                200: '#AEB6BF',
+                300: '#85929E',
+                400: '#5D6D7E', // Start Gradient
+                500: '#34495E', // End Gradient
+                600: '#2E4053',
+                700: '#283747',
+                800: '#212F3C',
+                900: '#1B2631',
               },
-              gold: {
-                400: '#F4C06A',
-                500: '#F1C40F',
+              // Accent Palette: "Golden Nour" (Yellow to Gold)
+              accent: {
+                50: '#FEF9E7',
+                100: '#FCF3CF',
+                200: '#F9E79F',
+                300: '#F7DC6F',
+                400: '#F1C40F', // Start Gradient
+                500: '#F39C12', // End Gradient
                 600: '#D68910',
+                700: '#B9770E',
+                800: '#9C640C',
+                900: '#7E5109',
+              },
+              // Custom Dark Mode Palette (Dim / Dark Gray)
+              dark: {
+                bg: '#18181b',      // Zinc 900
+                surface: '#27272a', // Zinc 800
+                border: '#3f3f46',  // Zinc 700
+                text: '#f4f4f5',    // Zinc 100
+                muted: '#a1a1aa'    // Zinc 400
               }
-            },
-            boxShadow: {
-              'soft': '0 1px 2px rgba(0,0,0,0.25)',
-              'deep': '0 4px 12px rgba(0,0,0,0.35)',
-              'glow': '0 0 15px rgba(26, 188, 156, 0.3)',
             },
             animation: {
               'fadeIn': 'fadeIn 0.5s ease-out forwards',
@@ -123,34 +112,15 @@
       }
     </script>
     <style>
-      body {
-        font-family: 'Tajawal', 'Inter', sans-serif;
-      }
-      h1, h2, h3, h4, .font-heading, .font-arabicHead {
-        font-family: 'Tajawal', sans-serif;
-      }
-      .font-quran {
-        font-family: 'Amiri', serif;
-        line-height: 2.2;
-      }
-      .font-english {
-        font-family: 'Inter', sans-serif;
-      }
-      ::-webkit-scrollbar { width: 8px; }
-      ::-webkit-scrollbar-track { background: #202124; }
-      ::-webkit-scrollbar-thumb { background-color: #16A085; border-radius: 4px; }
-      .dark ::-webkit-scrollbar-track { background: #202124; }
-      .dark ::-webkit-scrollbar-thumb { background-color: #1A1B1E; border: 2px solid #202124; }
+      /* Custom scrollbar */
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+      .dark ::-webkit-scrollbar-thumb { background-color: #3f3f46; }
+      
       button { touch-action: manipulation; }
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-      /* Tajweed Colors */
-      .tajweed-ghunnah { color: #F59E0B; } /* Orange - Ghunnah */
-      .tajweed-idgham { color: #E11D48; } /* Red - Idgham */
-      .tajweed-qalqalah { color: #3B82F6; } /* Blue - Qalqalah */
-      .tajweed-iqlab { color: #10B981; } /* Green - Iqlab */
-      .tajweed-madd { color: #8B5CF6; } /* Purple - Madd */
     </style>
   <script type="importmap">
 {
@@ -159,15 +129,16 @@
     "react": "https://aistudiocdn.com/react@^19.2.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
     "react-dom": "https://aistudiocdn.com/react-dom@^19.2.1",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^6.28.0",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.10.1",
     "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
     "adhan": "https://cdn.jsdelivr.net/npm/adhan@4.4.1/+esm",
     "@vercel/node": "https://aistudiocdn.com/@vercel/node@^5.5.15"
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-gradient-to-b from-white to-[#F8F9F9] dark:bg-none dark:bg-dark-bg min-h-screen text-gray-900 dark:text-dark-text transition-colors duration-300 bg-fixed font-arabic selection:bg-primary-500 selection:text-white">
+  <body class="bg-gradient-to-b from-white to-[#F8F9F9] dark:from-dark-bg dark:to-black min-h-screen text-gray-900 dark:text-dark-text transition-colors duration-300 bg-fixed">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

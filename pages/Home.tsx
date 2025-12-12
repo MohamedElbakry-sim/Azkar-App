@@ -1,140 +1,283 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpenText, ArrowLeft, Book, Bookmark, Radio } from 'lucide-react';
+import { CATEGORIES, AZKAR_DATA } from '../data';
+import { Search, X, AlertCircle, ArrowLeft, SunMedium, Moon, CloudMoon, Sunrise, BookHeart } from 'lucide-react';
+import DhikrCard from '../components/DhikrCard';
 import DailyWisdom from '../components/DailyWisdom';
 import RandomNameCard from '../components/RandomNameCard';
 import DailySahabi from '../components/DailySahabi';
 import SmartAzkarSuggestion from '../components/SmartAzkarSuggestion';
-import AlKahfAlert from '../components/AlKahfAlert';
-import * as quranService from '../services/quranService';
-import { QURAN_META } from '../data/quranMeta';
+import * as storage from '../services/storage';
+import { normalizeArabic } from '../utils';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const [bookmark, setBookmark] = useState<quranService.Bookmark | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<number[]>(storage.getFavorites());
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  useEffect(() => {
-    setBookmark(quranService.getBookmark());
-  }, []);
+  // Advanced Search Logic with Memoization
+  const filteredAzkar = useMemo(() => {
+    if (searchQuery.trim().length === 0) return [];
 
-  const handleContinueReading = () => {
-    if (bookmark) {
-      navigate(`/quran/read/${bookmark.surahNumber}`, { state: { scrollToAyah: bookmark.ayahNumber }});
-    } else {
-        navigate('/quran');
+    const normalizedQuery = normalizeArabic(searchQuery.toLowerCase());
+    const queryWords = normalizedQuery.split(/\s+/).filter(w => w.length > 0);
+
+    return AZKAR_DATA
+      .filter(item => activeCategory ? item.category === activeCategory : true)
+      .map(item => {
+          let score = 0;
+          const normalizedText = normalizeArabic(item.text);
+          const normalizedBenefit = item.benefit ? normalizeArabic(item.benefit) : '';
+          const normalizedSource = item.source ? normalizeArabic(item.source) : '';
+
+          // 1. Exact Phrase Match (Highest Priority)
+          if (normalizedText.includes(normalizedQuery)) score += 100;
+          if (normalizedSource.includes(normalizedQuery)) score += 80;
+
+          // 2. Word Scoring
+          let matchedWordsCount = 0;
+          queryWords.forEach(word => {
+            let wordMatch = false;
+            // Text Match
+            if (normalizedText.includes(word)) {
+              score += 20;
+              wordMatch = true;
+            }
+            // Source Match
+            if (normalizedSource.includes(word)) {
+              score += 15;
+              wordMatch = true;
+            }
+            // Benefit Match (Lower priority)
+            if (normalizedBenefit.includes(word)) {
+              score += 5;
+              wordMatch = true;
+            }
+
+            if (wordMatch) matchedWordsCount++;
+          });
+
+          // 3. Completeness Bonus (If all typed words exist somewhere in the item)
+          if (matchedWordsCount === queryWords.length && queryWords.length > 0) {
+            score += 50;
+          }
+
+          return { item, score };
+      })
+      .filter(result => result.score > 0) // Remove items with 0 score
+      .sort((a, b) => b.score - a.score) // Sort highest score first
+      .map(result => result.item)
+      .slice(0, 50); // Limit results for performance
+  }, [searchQuery, activeCategory]);
+
+  const handleToggleFavorite = (dhikrId: number) => {
+    const newFavs = storage.toggleFavoriteStorage(dhikrId);
+    setFavorites(newFavs);
+  };
+
+  const displayedCategories = activeCategory 
+    ? CATEGORIES.filter(c => c.id === activeCategory)
+    : CATEGORIES;
+
+  // Logic to show filters: if search is focused, or there is text, or a category is selected
+  const showFilters = isSearchFocused || searchQuery.length > 0 || activeCategory !== null;
+
+  // Helper to get theme text colors
+  const getThemeTextColor = (theme: string) => {
+    switch (theme) {
+      case 'orange': return 'text-orange-600 dark:text-orange-400 group-hover:text-orange-700 dark:group-hover:text-orange-300';
+      case 'indigo': return 'text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300';
+      case 'slate': return 'text-slate-600 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300';
+      case 'yellow': return 'text-yellow-600 dark:text-yellow-400 group-hover:text-yellow-700 dark:group-hover:text-yellow-300';
+      case 'emerald': return 'text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-300';
+      default: return 'text-gray-800 dark:text-gray-100';
+    }
+  };
+
+  const getThemeBgColor = (theme: string) => {
+    switch (theme) {
+      case 'orange': return 'bg-orange-100 dark:bg-orange-900/20';
+      case 'indigo': return 'bg-indigo-100 dark:bg-indigo-900/20';
+      case 'slate': return 'bg-slate-100 dark:bg-slate-800/50';
+      case 'yellow': return 'bg-yellow-100 dark:bg-yellow-900/20';
+      case 'emerald': return 'bg-emerald-100 dark:bg-emerald-900/20';
+      default: return 'bg-gray-100 dark:bg-gray-800';
+    }
+  };
+
+  const getCategoryIcon = (id: string, theme: string) => {
+    const colorClass = getThemeTextColor(theme);
+    const size = 28;
+    switch (id) {
+      case 'sabah': return <SunMedium size={size} className={colorClass} />;
+      case 'masaa': return <Moon size={size} className={colorClass} />;
+      case 'sleep': return <CloudMoon size={size} className={colorClass} />;
+      case 'waking': return <Sunrise size={size} className={colorClass} />;
+      case 'prayer': return <BookHeart size={size} className={colorClass} />;
+      default: return <SunMedium size={size} className={colorClass} />;
     }
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto relative pb-10">
-      <AlKahfAlert />
-      
-      <div className="text-center py-6 md:py-10 animate-fadeIn">
-        <h1 className="text-h1 text-gray-800 dark:text-white mb-3 font-arabicHead">
-          مرحباً بك في ريان
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 text-body-md md:text-body-lg font-arabic">
-          رفيقك اليومي في الذكر والطاعة
-        </p>
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="text-center py-6 md:py-10">
+        <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3 font-serif">اختر الأذكار التي تريد قراءتها الآن</h2>
       </div>
 
-      {/* Smart Suggestion Widget */}
-      <SmartAzkarSuggestion />
+      {/* Search Bar */}
+      <div className="relative max-w-xl mx-auto mb-4">
+        <label htmlFor="search-input" className="sr-only">ابحث عن ذكر</label>
+        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+          <Search className="h-5 w-5 text-gray-400" />
+        </div>
+        <input
+          id="search-input"
+          type="text"
+          className="block w-full p-4 pr-11 text-base rounded-2xl border-none bg-white dark:bg-dark-surface shadow-sm focus:ring-2 focus:ring-primary-400 placeholder-gray-400 dark:text-white transition-shadow"
+          placeholder="ابحث عن ذكر، دعاء، أو كلمة..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => setIsSearchFocused(true)}
+          onBlur={() => {
+            // Delay hide to allow click on filter chips to register
+            setTimeout(() => setIsSearchFocused(false), 200);
+          }}
+        />
+        {searchQuery && (
+          <button 
+            onClick={() => setSearchQuery('')}
+            className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none focus:text-primary-500"
+            aria-label="مسح البحث"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
+      </div>
 
-      {/* Continue Reading Widget (If bookmark exists) */}
-      {bookmark && (
-        <div className="max-w-2xl mx-auto animate-slideUp mb-6">
+      {/* Filter Chips - Only visible when interacting with search */}
+      <div 
+        className={`max-w-xl mx-auto transition-all duration-300 overflow-hidden ease-in-out ${showFilters ? 'max-h-20 opacity-100 mb-8' : 'max-h-0 opacity-0 mb-0'}`}
+      >
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar px-1">
+          <button
+            onClick={() => setActiveCategory(null)}
+            className={`
+              px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200
+              ${activeCategory === null 
+                ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20' 
+                : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-dark-border'}
+            `}
+          >
+            الكل
+          </button>
+          {CATEGORIES.map(cat => (
             <button
-                onClick={handleContinueReading}
-                className="w-full bg-gradient-to-l from-emerald-50 to-white dark:from-emerald-900/20 dark:to-dark-surface p-6 rounded-3xl border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex items-center justify-between group hover:shadow-md transition-all text-right"
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id === activeCategory ? null : cat.id)}
+              className={`
+                px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200
+                ${activeCategory === cat.id 
+                  ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20' 
+                  : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-dark-border'}
+              `}
             >
-                <div className="flex items-center gap-4">
-                     <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                         <Book size={24} />
-                     </div>
-                     <div>
-                         <h3 className="text-gray-500 dark:text-gray-400 text-xs font-bold mb-1">متابعة القراءة</h3>
-                         <h2 className="font-bold text-lg text-gray-800 dark:text-white font-arabicHead">
-                             سورة {QURAN_META[bookmark.surahNumber - 1].name} <span className="text-sm font-sans text-gray-400 mx-1">|</span> آية {bookmark.ayahNumber}
-                         </h2>
-                     </div>
-                </div>
-                <div className="text-emerald-500 group-hover:translate-x-[-4px] transition-transform">
-                    <ArrowLeft size={20} className="rtl:rotate-0" />
-                </div>
+              {cat.title}
             </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Smart Suggestion (Only show when not searching) */}
+      {!searchQuery && !activeCategory && <SmartAzkarSuggestion />}
+
+      {/* Search Results or Categories */}
+      {searchQuery ? (
+        <div className="space-y-4" role="region" aria-label="نتائج البحث">
+          <div className="flex items-center justify-between">
+             <h3 className="text-lg font-bold text-gray-600 dark:text-gray-300" aria-live="polite">
+               {filteredAzkar.length > 0 ? `نتائج البحث (${filteredAzkar.length})` : 'لا توجد نتائج'}
+             </h3>
+             {filteredAzkar.length > 0 && (
+               <span className="text-xs text-gray-400">تظهر أفضل النتائج</span>
+             )}
+          </div>
+          
+          {filteredAzkar.length > 0 ? (
+            <div className="space-y-6">
+              {filteredAzkar.map(item => (
+                <DhikrCard
+                  key={item.id}
+                  item={item}
+                  isFavorite={favorites.includes(item.id)}
+                  initialCount={0}
+                  onToggleFavorite={handleToggleFavorite}
+                  highlightQuery={searchQuery}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-center animate-fadeIn">
+              <div className="bg-gray-100 dark:bg-dark-surface p-6 rounded-full mb-4">
+                 <AlertCircle size={48} className="text-gray-400" />
+              </div>
+              <p className="text-lg font-bold text-gray-600 dark:text-gray-300">لا توجد نتائج مطابقة لـ "{searchQuery}"</p>
+              {activeCategory && <p className="text-primary-500 mt-1 text-sm font-medium">في قسم: {CATEGORIES.find(c => c.id === activeCategory)?.title}</p>}
+              <p className="text-gray-400 mt-2 text-sm">حاول البحث باستخدام كلمات مختلفة أو تأكد من الكتابة الصحيحة</p>
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="mt-6 px-6 py-2 text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                مسح البحث
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {displayedCategories.map((cat) => {
+            return (
+              <button
+                key={cat.id}
+                onClick={() => navigate(`/category/${cat.id}`)}
+                className="group relative bg-white dark:bg-dark-surface p-5 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md transition-all duration-300 text-right focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-[0.98] flex items-center gap-5 min-h-[110px]"
+                aria-label={`قسم ${cat.title}`}
+              >
+                {/* Icon Container */}
+                <div className={`p-4 rounded-2xl ${getThemeBgColor(cat.theme)} transition-colors`}>
+                    {getCategoryIcon(cat.id, cat.theme)}
+                </div>
+
+                <div className="flex-1 flex items-center justify-between">
+                    <div>
+                        <h3 className={`text-xl font-bold font-serif mb-1 transition-colors ${getThemeTextColor(cat.theme)}`}>
+                            {cat.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                            {cat.description}
+                        </p>
+                    </div>
+                    
+                    <div className="pl-1 text-gray-300 dark:text-gray-600 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors">
+                        <ArrowLeft size={20} className="rtl:rotate-0" />
+                    </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto animate-slideUp grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Quran Navigation Card */}
-          <button
-              onClick={() => navigate('/quran')}
-              className="group relative w-full bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md transition-all duration-300 text-right focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-[0.98] flex items-center justify-between gap-3 overflow-hidden"
-          >
-              <div className="flex items-center gap-4 relative z-10">
-                  <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
-                      <Book size={32} />
-                  </div>
-                  <div>
-                      <h2 className="text-xl font-bold font-arabicHead text-gray-800 dark:text-white mb-1">
-                          القرآن الكريم
-                      </h2>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm font-arabic">
-                          تلاوة واستماع
-                      </p>
-                  </div>
-              </div>
-          </button>
-
-          {/* Radio Navigation Card */}
-          <button
-              onClick={() => navigate('/radio')}
-              className="group relative w-full bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md transition-all duration-300 text-right focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-[0.98] flex items-center justify-between gap-3 overflow-hidden"
-          >
-              <div className="flex items-center gap-4 relative z-10">
-                  <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
-                      <Radio size={32} />
-                  </div>
-                  <div>
-                      <h2 className="text-xl font-bold font-arabicHead text-gray-800 dark:text-white mb-1">
-                          الإذاعة
-                      </h2>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm font-arabic">
-                          بث مباشر 24/7
-                      </p>
-                  </div>
-              </div>
-          </button>
-
-          {/* Hisn Al Muslim Main Navigation Card */}
-          <button
-              onClick={() => navigate('/duas')}
-              className="group relative w-full bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:shadow-md transition-all duration-300 text-right focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-[0.98] flex items-center justify-between gap-3 overflow-hidden md:col-span-2"
-          >
-              <div className="flex items-center gap-4 relative z-10">
-                  <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
-                      <BookOpenText size={32} />
-                  </div>
-                  <div>
-                      <h2 className="text-xl font-bold font-arabicHead text-gray-800 dark:text-white mb-1">
-                          حصن المسلم
-                      </h2>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm font-arabic">
-                          أذكار وأدعية لكل المواقف
-                      </p>
-                  </div>
-              </div>
-          </button>
-      </div>
-
-      {/* Daily Widgets Section */}
-      <div className="max-w-2xl mx-auto mt-12 mb-12 space-y-8">
-          <RandomNameCard />
-          <DailyWisdom />
-          <DailySahabi />
-      </div>
+      {/* Widgets (Only if no search and no specific category selected) */}
+      {!searchQuery && !activeCategory && (
+        <div className="max-w-2xl mx-auto mt-16 mb-12 space-y-10 md:space-y-10">
+            <RandomNameCard />
+            <DailyWisdom />
+            <DailySahabi />
+        </div>
+      )}
     </div>
   );
 };
