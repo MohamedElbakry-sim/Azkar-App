@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { Compass, Clock, MapPin, Loader2, Calendar, Navigation, RefreshCw } from 'lucide-react';
+import { Compass, Clock, MapPin, Loader2, Calendar, Navigation, RefreshCw, AlertTriangle } from 'lucide-react';
 import * as AdhanLib from 'adhan';
 import * as storage from '../services/storage';
 import ErrorState from '../components/ErrorState';
@@ -29,6 +29,7 @@ const PrayerTimes: React.FC = () => {
   const [isCompassActive, setIsCompassActive] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [calibrationNeeded, setCalibrationNeeded] = useState(false);
+  const [sensorError, setSensorError] = useState(false);
 
   // Helper to retry location fetching
   const fetchLocation = () => {
@@ -95,6 +96,9 @@ const PrayerTimes: React.FC = () => {
     // Cleanup compass listener
     return () => {
         window.removeEventListener('deviceorientation', handleOrientation);
+        if ('ondeviceorientationabsolute' in window) {
+            (window as any).removeEventListener('deviceorientationabsolute', handleOrientation as any);
+        }
     };
   }, []);
 
@@ -148,21 +152,34 @@ const PrayerTimes: React.FC = () => {
   const handleOrientation = (event: DeviceOrientationEvent) => {
     let compassHeading = 0;
     
+    // Check if sensor data is actually available
+    if (event.alpha === null && !(event as any).webkitCompassHeading) {
+        return;
+    }
+
     // iOS devices
     if ((event as any).webkitCompassHeading) {
         compassHeading = (event as any).webkitCompassHeading;
     } 
     // Android/Non-iOS
-    else if (event.alpha) {
-        // alpha is counter-clockwise, we need clockwise
+    else if (event.alpha !== null) {
+        // compassHeading = 360 - alpha is standard for deviceorientationabsolute
         compassHeading = 360 - event.alpha;
     }
 
+    // Normalize
+    compassHeading = (compassHeading + 360) % 360;
+
     setHeading(compassHeading);
-    setIsCompassActive(true);
+    // We already set active in startCompass, but this confirms data is flowing
+    setSensorError(false);
   };
 
   const startCompass = async () => {
+    // Immediately show the compass UI (optimistic update)
+    setIsCompassActive(true);
+    setSensorError(false);
+
     if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
         // iOS 13+ requires permission
         try {
@@ -172,15 +189,29 @@ const PrayerTimes: React.FC = () => {
                 window.addEventListener('deviceorientation', handleOrientation);
             } else {
                 alert('يرجى السماح بالوصول إلى المستشعرات لاستخدام البوصلة');
+                setIsCompassActive(false); // Revert if denied
             }
         } catch (e) {
             console.error(e);
+            setIsCompassActive(false);
         }
     } else {
         // Non-iOS or older devices
         setPermissionGranted(true);
-        window.addEventListener('deviceorientation', handleOrientation);
+        // Check for absolute orientation support (Android)
+        if ('ondeviceorientationabsolute' in window) {
+             (window as any).addEventListener('deviceorientationabsolute', handleOrientation as any);
+        } else {
+             (window as any).addEventListener('deviceorientation', handleOrientation);
+        }
     }
+
+    // Check if sensors are actually working after a short timeout
+    setTimeout(() => {
+        // If heading is still exactly 0 (initial) after 2 seconds, it might be a sensor issue
+        // Note: Actual North is 0, so this is a heuristic. 
+        // Better to just leave it active so user sees UI.
+    }, 2000);
   };
 
   // Calculate rotation: 
@@ -189,8 +220,6 @@ const PrayerTimes: React.FC = () => {
   // Kaaba Marker Rotation = Qibla Angle (It stays fixed relative to the North on the disk)
   
   // Calculate if aligned (within 5 degrees)
-  // Logic: The device is aligned if the Heading is close to the Qibla Angle
-  // Difference should be near 0
   let bearing = qiblaAngle - heading;
   // Normalize to -180 to +180
   while (bearing < -180) bearing += 360;
@@ -343,7 +372,7 @@ const PrayerTimes: React.FC = () => {
                                 <div className="absolute top-2 left-1/2 -translate-x-1/2 w-1 h-1/2 bg-gradient-to-t from-transparent to-emerald-500/50 origin-bottom"></div>
                                 
                                 {/* The Icon */}
-                                <div className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center transform -rotate-[${qiblaAngle}deg]">
+                                <div className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center">
                                     <div className={`transition-all duration-300 p-2 rounded-lg ${isAligned ? 'bg-emerald-500 text-white shadow-lg scale-110' : 'bg-gray-200 dark:bg-dark-surface text-gray-500'}`}>
                                         <div className="w-6 h-6 bg-black rounded-sm border border-amber-400 relative">
                                             <div className="absolute top-1 w-full h-[1px] bg-amber-400"></div>
@@ -364,6 +393,8 @@ const PrayerTimes: React.FC = () => {
                         <p className="text-xs text-gray-400 mt-1 font-mono font-english" dir="ltr">
                             Heading: {Math.round(heading)}° | Qibla: {Math.round(qiblaAngle)}°
                         </p>
+                        
+                        {/* Fallback msg if heading stays 0 for too long? Usually user notices if it doesn't move */}
                     </div>
                 </div>
             )}
