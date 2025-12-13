@@ -8,11 +8,13 @@ import {
   ArrowRight, Play, Pause, Settings, BookOpen, ChevronLeft, ChevronRight,
   Loader2, Type, X, RefreshCw, Eye, EyeOff, Mic, 
   FastForward, Rewind, Infinity, Search, AlertTriangle, Heart,
-  FileText, Book, Info
+  FileText, Book, Info, Moon, Sun, Coffee
 } from 'lucide-react';
 import ErrorState from '../components/ErrorState';
 import { toArabicNumerals, applyTajweed, normalizeArabic, getHighlightRegex } from '../utils';
 import MushafPagesViewer from '../components/MushafPagesViewer';
+
+type PageTheme = 'light' | 'sepia' | 'dark';
 
 const QuranReader: React.FC = () => {
   const { surahId } = useParams<{ surahId: string }>();
@@ -29,6 +31,11 @@ const QuranReader: React.FC = () => {
   
   // Reading Mode State
   const [readingMode, setReadingMode] = useState<ReadingMode>('text');
+  const [pageTheme, setPageTheme] = useState<PageTheme>(() => {
+      // Default to dark if system is dark, else light
+      return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  });
+
   // Track page for Mushaf mode sync
   const [currentMushafPage, setCurrentMushafPage] = useState<number>(1);
   
@@ -378,6 +385,23 @@ const QuranReader: React.FC = () => {
       }
   };
 
+  // --- Theme Classes ---
+  const getThemeClasses = () => {
+      switch (pageTheme) {
+          case 'sepia': return 'bg-[#F4ECD8] text-[#433422]';
+          case 'dark': return 'bg-[#151515] text-[#D1D5DB]';
+          default: return 'bg-[#FAF9F6] text-gray-800'; // Light/Default
+      }
+  };
+
+  const getOverlayClasses = () => {
+      switch (pageTheme) {
+          case 'sepia': return 'bg-[#e9ded0]/90 border-[#d0c0a0] text-[#5c4b37]';
+          case 'dark': return 'bg-[#1a1a1a]/90 border-gray-800 text-gray-200';
+          default: return 'bg-white/90 border-gray-100 text-gray-800';
+      }
+  };
+
   // --- Swipe Handlers (Text Mode Only) ---
   // We only attach these if readingMode === 'text'
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -409,47 +433,50 @@ const QuranReader: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="h-full flex items-center justify-center bg-gray-50 dark:bg-dark-bg"><Loader2 className="animate-spin text-emerald-500" size={40} /></div>;
+  if (loading) return <div className={`h-full flex items-center justify-center ${getThemeClasses()}`}><Loader2 className="animate-spin text-emerald-500" size={40} /></div>;
   if (!surah) return <ErrorState onRetry={() => window.location.reload()} />;
 
   const isBismillah = surahNumber !== 1 && surahNumber !== 9;
+  const themeClass = getThemeClasses();
+  const overlayClass = getOverlayClasses();
 
   return (
-    <div className="h-full bg-[#FAF9F6] dark:bg-dark-bg flex flex-col relative overflow-hidden transition-colors duration-300">
+    <div className={`h-full flex flex-col relative overflow-hidden transition-colors duration-300 ${themeClass}`}>
         
         {/* --- Top Bar (Text Mode) --- */}
         {readingMode === 'text' && (
         <div 
             className={`
                 absolute top-0 left-0 right-0 z-40 px-4 py-3 flex items-center justify-between
-                bg-white/90 dark:bg-dark-surface/90 backdrop-blur-md border-b border-gray-100 dark:border-dark-border
+                backdrop-blur-md border-b
                 transition-transform duration-300 shadow-sm
                 ${uiVisible ? 'translate-y-0' : '-translate-y-full'}
+                ${overlayClass}
             `}
         >
             <div className="flex items-center gap-3">
-                <button onClick={() => navigate('/quran')} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-dark-elevated text-gray-600 dark:text-gray-300">
+                <button onClick={() => navigate('/quran')} className={`p-2 rounded-full hover:bg-black/5 transition-colors`}>
                     <ArrowRight size={20} />
                 </button>
                 <div>
-                    <h1 className="font-bold text-lg text-gray-800 dark:text-white font-arabicHead leading-none">{surah.name}</h1>
-                    <span className="text-xs text-gray-400 font-medium">الآيات {surah.numberOfAyahs}</span>
+                    <h1 className="font-bold text-lg font-arabicHead leading-none">{surah.name}</h1>
+                    <span className="text-xs opacity-60 font-medium">الآيات {surah.numberOfAyahs}</span>
                 </div>
             </div>
 
             <div className="flex items-center gap-1 md:gap-2">
                 {/* Reading Mode Switch */}
-                <div className="bg-gray-100 dark:bg-dark-elevated p-1 rounded-lg flex mr-1">
+                <div className="bg-black/5 p-1 rounded-lg flex mr-1">
                     <button 
                         onClick={() => setReadingMode('text')}
-                        className="p-1.5 rounded-md transition-all bg-white dark:bg-dark-surface shadow text-emerald-600"
+                        className={`p-1.5 rounded-md transition-all shadow ${pageTheme === 'dark' ? 'bg-gray-700 text-emerald-400' : 'bg-white text-emerald-600'}`}
                         title="وضعية النص"
                     >
                         <FileText size={18} />
                     </button>
                     <button 
                         onClick={() => setReadingMode('page')}
-                        className="p-1.5 rounded-md transition-all text-gray-400 hover:text-gray-600"
+                        className="p-1.5 rounded-md transition-all opacity-50 hover:opacity-100"
                         title="وضعية المصحف"
                     >
                         <Book size={18} />
@@ -458,7 +485,7 @@ const QuranReader: React.FC = () => {
 
                 <button 
                     onClick={handleFavoriteToggle}
-                    className={`p-2 rounded-full transition-colors ${isBookmarked ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-elevated'}`}
+                    className={`p-2 rounded-full transition-colors ${isBookmarked ? 'text-red-500 bg-red-500/10' : 'hover:bg-black/5'}`}
                     title={isBookmarked ? "إزالة من المفضلة" : "إضافة للمفضلة"}
                 >
                     <Heart size={20} fill={isBookmarked ? "currentColor" : "none"} />
@@ -467,7 +494,7 @@ const QuranReader: React.FC = () => {
                 {memorizeMode && (
                     <button 
                         onClick={() => setHideText(!hideText)}
-                        className={`p-2 rounded-full transition-colors ${hideText ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600 dark:bg-dark-elevated dark:text-gray-300'}`}
+                        className={`p-2 rounded-full transition-colors ${hideText ? 'bg-red-500/10 text-red-600' : 'hover:bg-black/5'}`}
                         title="إخفاء النص"
                     >
                         {hideText ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -476,14 +503,14 @@ const QuranReader: React.FC = () => {
 
                 <button 
                     onClick={() => setShowSearch(true)}
-                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-dark-elevated text-gray-600 dark:text-gray-300"
+                    className="p-2 rounded-full hover:bg-black/5 transition-colors"
                     title="بحث"
                 >
                     <Search size={20} />
                 </button>
                 
-                <button onClick={() => setShowSettings(true)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-dark-elevated relative">
-                    <Settings size={20} className="text-gray-600 dark:text-gray-300" />
+                <button onClick={() => setShowSettings(true)} className="p-2 rounded-full hover:bg-black/5 transition-colors relative">
+                    <Settings size={20} />
                     {memorizeMode && <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full"></span>}
                 </button>
             </div>
@@ -501,7 +528,7 @@ const QuranReader: React.FC = () => {
                 <div className="flex-1 overflow-y-auto px-4 md:px-8 py-20 animate-fadeIn scroll-smooth" onClick={() => setUiVisible(!uiVisible)}>
                     <div className="max-w-3xl mx-auto text-justify leading-[3]" dir="rtl">
                         {isBismillah && (
-                            <div className="text-center mb-10 font-quran text-3xl text-gray-800 dark:text-gray-200">
+                            <div className="text-center mb-10 font-quran text-3xl opacity-80">
                                 بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
                             </div>
                         )}
@@ -521,7 +548,7 @@ const QuranReader: React.FC = () => {
                             if (showTextHighlight) {
                                 const regex = getHighlightRegex(highlightTerm);
                                 if (regex) {
-                                    htmlContent = text.replace(regex, (match) => `<span class="bg-yellow-200 dark:bg-yellow-500/30 text-gray-900 dark:text-white rounded px-1">${match}</span>`);
+                                    htmlContent = text.replace(regex, (match) => `<span class="bg-yellow-300/50 rounded px-1">${match}</span>`);
                                 }
                             } else if (tajweedMode) {
                                 htmlContent = applyTajweed(text);
@@ -535,13 +562,13 @@ const QuranReader: React.FC = () => {
                                     onDoubleClick={(e) => { e.stopPropagation(); playAyah(ayah.numberInSurah); }}
                                     className={`
                                         font-quran inline px-1 py-1 rounded-lg cursor-pointer transition-colors duration-200 scroll-m-32 select-none
-                                        ${showBg ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-100 ring-2 ring-emerald-200 dark:ring-emerald-800' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-800 dark:text-gray-200'}
+                                        ${showBg ? 'bg-emerald-500/20 ring-2 ring-emerald-500/30' : 'hover:bg-black/5'}
                                         ${hideText ? 'blur-[6px] hover:blur-none transition-all' : ''}
                                     `}
                                     style={{ fontSize: `${fontSize}px` }}
                                 >
                                     <span dangerouslySetInnerHTML={{ __html: htmlContent }} />
-                                    <span className="text-emerald-600 dark:text-emerald-400 text-[0.6em] mx-1 font-quran inline-block">
+                                    <span className="text-emerald-500 text-[0.6em] mx-1 font-quran inline-block">
                                         ﴿{toArabicNumerals(ayah.numberInSurah)}﴾
                                     </span>
                                     
@@ -556,14 +583,14 @@ const QuranReader: React.FC = () => {
                                             </button>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); setShowTafsir(true); }}
-                                                className="inline-flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors shadow-sm"
+                                                className="inline-flex items-center justify-center w-6 h-6 bg-blue-500/20 text-blue-600 rounded-full hover:bg-blue-500/30 transition-colors shadow-sm"
                                                 title="تفسير"
                                             >
                                                 <BookOpen size={12} />
                                             </button>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); handleFavoriteToggle(); }}
-                                                className={`inline-flex items-center justify-center w-6 h-6 rounded-full transition-colors shadow-sm ${isBookmarked && activeAyahId === ayah.numberInSurah ? 'bg-red-100 text-red-500 dark:bg-red-900/50' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200'}`}
+                                                className={`inline-flex items-center justify-center w-6 h-6 rounded-full transition-colors shadow-sm ${isBookmarked && activeAyahId === ayah.numberInSurah ? 'bg-red-500/20 text-red-500' : 'bg-gray-500/10 text-gray-500 hover:bg-gray-500/20'}`}
                                                 title="إضافة للمفضلة"
                                             >
                                                 <Heart size={12} fill={isBookmarked && activeAyahId === ayah.numberInSurah ? "currentColor" : "none"} />
@@ -580,14 +607,14 @@ const QuranReader: React.FC = () => {
                         {surahNumber > 1 ? (
                             <button
                                 onClick={() => navigate(`/quran/read/${surahNumber - 1}`)}
-                                className="group flex items-center gap-3 px-5 py-3 rounded-2xl bg-white dark:bg-dark-surface border border-gray-100 dark:border-dark-border hover:border-emerald-200 dark:hover:border-emerald-800 transition-all shadow-sm"
+                                className={`group flex items-center gap-3 px-5 py-3 rounded-2xl border transition-all shadow-sm ${pageTheme === 'dark' ? 'border-gray-800 bg-gray-900 hover:border-emerald-800' : 'border-gray-100 bg-white hover:border-emerald-200'}`}
                             >
-                                <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-dark-bg flex items-center justify-center text-gray-400 group-hover:text-emerald-500 transition-colors">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${pageTheme === 'dark' ? 'bg-gray-800 text-gray-400 group-hover:text-emerald-500' : 'bg-gray-50 text-gray-400 group-hover:text-emerald-500'}`}>
                                     <ChevronRight size={20} />
                                 </div>
                                 <div className="text-right">
-                                    <span className="block text-xs text-gray-400 mb-0.5">السورة السابقة</span>
-                                    <span className="block font-bold text-gray-800 dark:text-gray-200 font-arabicHead">
+                                    <span className="block text-xs opacity-60 mb-0.5">السورة السابقة</span>
+                                    <span className="block font-bold font-arabicHead">
                                         {QURAN_META[surahNumber - 2].name}
                                     </span>
                                 </div>
@@ -597,14 +624,14 @@ const QuranReader: React.FC = () => {
                         {surahNumber < 114 ? (
                             <button
                                 onClick={() => navigate(`/quran/read/${surahNumber + 1}`)}
-                                className="group flex items-center gap-3 px-5 py-3 rounded-2xl bg-white dark:bg-dark-surface border border-gray-100 dark:border-dark-border hover:border-emerald-200 dark:hover:border-emerald-800 transition-all shadow-sm flex-row-reverse text-left"
+                                className={`group flex items-center gap-3 px-5 py-3 rounded-2xl border transition-all shadow-sm flex-row-reverse text-left ${pageTheme === 'dark' ? 'border-gray-800 bg-gray-900 hover:border-emerald-800' : 'border-gray-100 bg-white hover:border-emerald-200'}`}
                             >
-                                <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
                                     <ChevronLeft size={20} />
                                 </div>
                                 <div>
-                                    <span className="block text-xs text-gray-400 mb-0.5">السورة التالية</span>
-                                    <span className="block font-bold text-gray-800 dark:text-gray-200 font-arabicHead">
+                                    <span className="block text-xs opacity-60 mb-0.5">السورة التالية</span>
+                                    <span className="block font-bold font-arabicHead">
                                         {QURAN_META[surahNumber].name}
                                     </span>
                                 </div>
@@ -622,14 +649,12 @@ const QuranReader: React.FC = () => {
             />
         )}
         
-        {/* Settings Modal, Search Modal, Tafsir Drawer omitted for brevity as they are unchanged */}
-        
         {/* Settings Modal */}
         {showSettings && (
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center p-4 animate-fadeIn" onClick={() => setShowSettings(false)}>
-                <div className="bg-white dark:bg-dark-surface w-full max-w-md rounded-3xl p-6 shadow-2xl animate-slideUp" onClick={e => e.stopPropagation()}>
+                <div className="bg-white dark:bg-dark-surface w-full max-w-md rounded-3xl p-6 shadow-2xl animate-slideUp text-gray-800 dark:text-white" onClick={e => e.stopPropagation()}>
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-xl font-bold text-gray-800 dark:text-white font-arabicHead">إعدادات القراءة</h3>
+                        <h3 className="text-xl font-bold font-arabicHead">إعدادات القراءة</h3>
                         <button onClick={() => setShowSettings(false)} className="p-2 bg-gray-100 dark:bg-dark-bg rounded-full">
                             <X size={20} />
                         </button>
@@ -638,7 +663,7 @@ const QuranReader: React.FC = () => {
                     <div className="space-y-6">
                         {/* Font Size */}
                         <div>
-                            <label className="text-sm font-bold text-gray-500 mb-3 block">حجم الخط</label>
+                            <label className="text-sm font-bold opacity-70 mb-3 block">حجم الخط</label>
                             <div className="flex items-center gap-4 bg-gray-50 dark:bg-dark-bg p-3 rounded-xl">
                                 <span className="text-xs">A</span>
                                 <input 
@@ -653,16 +678,44 @@ const QuranReader: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Theme Mode */}
+                        <div>
+                            <label className="text-sm font-bold opacity-70 mb-3 block">نمط القراءة</label>
+                            <div className="flex gap-2 bg-gray-50 dark:bg-dark-bg p-1.5 rounded-xl">
+                                <button 
+                                    onClick={() => setPageTheme('light')}
+                                    className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${pageTheme === 'light' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                                >
+                                    <Sun size={16} />
+                                    أبيض
+                                </button>
+                                <button 
+                                    onClick={() => setPageTheme('sepia')}
+                                    className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${pageTheme === 'sepia' ? 'bg-[#F4ECD8] text-[#433422] shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                                >
+                                    <Coffee size={16} />
+                                    كريمي
+                                </button>
+                                <button 
+                                    onClick={() => setPageTheme('dark')}
+                                    className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${pageTheme === 'dark' ? 'bg-[#1a1a1a] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                                >
+                                    <Moon size={16} />
+                                    ليلي
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Reciter */}
                         <div>
-                            <label className="text-sm font-bold text-gray-500 mb-3 block">القارئ</label>
+                            <label className="text-sm font-bold opacity-70 mb-3 block">القارئ</label>
                             <select 
                                 value={reciterId}
                                 onChange={(e) => {
                                     setReciterId(e.target.value);
                                     quranService.savePreferredReciter(e.target.value);
                                 }}
-                                className="w-full p-3 rounded-xl bg-gray-50 dark:bg-dark-bg border-none focus:ring-2 focus:ring-emerald-500 dark:text-white font-arabic"
+                                className="w-full p-3 rounded-xl bg-gray-50 dark:bg-dark-bg border-none focus:ring-2 focus:ring-emerald-500 font-arabic"
                             >
                                 {quranService.RECITERS.map(r => (
                                     <option key={r.id} value={r.id}>{r.name}</option>
@@ -673,7 +726,7 @@ const QuranReader: React.FC = () => {
                         {/* Toggles */}
                         <div className="space-y-3">
                             <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-bg rounded-xl">
-                                <span className="font-bold text-gray-700 dark:text-gray-200">وضع التجويد الملون</span>
+                                <span className="font-bold">وضع التجويد الملون</span>
                                 <button 
                                     onClick={() => setTajweedMode(!tajweedMode)}
                                     className={`w-12 h-7 rounded-full transition-colors relative ${tajweedMode ? 'bg-emerald-500' : 'bg-gray-300'}`}
@@ -683,7 +736,7 @@ const QuranReader: React.FC = () => {
                             </div>
 
                             <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-bg rounded-xl">
-                                <span className="font-bold text-gray-700 dark:text-gray-200">وضع التحفيظ (تكرار)</span>
+                                <span className="font-bold">وضع التحفيظ (تكرار)</span>
                                 <button 
                                     onClick={() => setMemorizeMode(!memorizeMode)}
                                     className={`w-12 h-7 rounded-full transition-colors relative ${memorizeMode ? 'bg-emerald-500' : 'bg-gray-300'}`}
@@ -695,13 +748,13 @@ const QuranReader: React.FC = () => {
 
                         {memorizeMode && (
                             <div className="animate-slideUp">
-                                <label className="text-sm font-bold text-gray-500 mb-3 block">عدد مرات التكرار</label>
+                                <label className="text-sm font-bold opacity-70 mb-3 block">عدد مرات التكرار</label>
                                 <div className="flex gap-2">
                                     {[0, 3, 5, 10, Number.POSITIVE_INFINITY].map(count => (
                                         <button
                                             key={count}
                                             onClick={() => setRepeatCount(count)}
-                                            className={`flex-1 py-2 rounded-lg font-bold text-sm border transition-all ${repeatCount === count ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white dark:bg-dark-surface border-gray-200 dark:border-dark-border text-gray-600 dark:text-gray-300'}`}
+                                            className={`flex-1 py-2 rounded-lg font-bold text-sm border transition-all ${repeatCount === count ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white dark:bg-dark-surface border-gray-200 dark:border-dark-border opacity-70'}`}
                                         >
                                             {count === 0 ? 'لا' : count === Number.POSITIVE_INFINITY ? '∞' : count}
                                         </button>
@@ -717,14 +770,14 @@ const QuranReader: React.FC = () => {
         {/* Search Modal */}
         {showSearch && (
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-20 px-4 animate-fadeIn" onClick={() => setShowSearch(false)}>
-                <div className="bg-white dark:bg-dark-surface w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-slideUp" onClick={e => e.stopPropagation()}>
+                <div className="bg-white dark:bg-dark-surface w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-slideUp text-gray-800 dark:text-white" onClick={e => e.stopPropagation()}>
                     <div className="p-4 border-b border-gray-100 dark:border-dark-border flex gap-3 items-center">
                         <Search className="text-gray-400" />
                         <input 
                             autoFocus
                             type="text" 
                             placeholder="ابحث في القرآن الكريم..." 
-                            className="flex-1 bg-transparent border-none outline-none text-lg font-arabic dark:text-white placeholder-gray-400"
+                            className="flex-1 bg-transparent border-none outline-none text-lg font-arabic placeholder-gray-400"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -768,14 +821,14 @@ const QuranReader: React.FC = () => {
                                         <button 
                                             key={idx} 
                                             onClick={() => handleSearchResultClick(r)}
-                                            className="w-full text-right p-4 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors border border-transparent hover:border-emerald-200 dark:hover:border-emerald-900/50 group"
+                                            className="w-full text-right p-4 rounded-xl hover:bg-black/5 transition-colors border border-transparent hover:border-emerald-200 group"
                                         >
                                             <div className="flex justify-between items-center mb-1">
-                                                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md">
+                                                <span className="text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md">
                                                     سورة {r.surah.name} - آية {r.numberInSurah}
                                                 </span>
                                             </div>
-                                            <p className="font-quran text-lg text-gray-700 dark:text-gray-200 line-clamp-1" dir="rtl">
+                                            <p className="font-quran text-lg opacity-90 line-clamp-1" dir="rtl">
                                                 {r.text}
                                             </p>
                                         </button>
@@ -795,9 +848,9 @@ const QuranReader: React.FC = () => {
         {/* Tafsir Drawer */}
         {showTafsir && activeAyahData && (
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-6" onClick={() => setShowTafsir(false)}>
-                <div className="bg-white dark:bg-dark-surface w-full max-w-2xl sm:rounded-3xl rounded-t-3xl max-h-[80vh] flex flex-col shadow-2xl animate-slideUp" onClick={e => e.stopPropagation()}>
+                <div className="bg-white dark:bg-dark-surface w-full max-w-2xl sm:rounded-3xl rounded-t-3xl max-h-[80vh] flex flex-col shadow-2xl animate-slideUp text-gray-800 dark:text-white" onClick={e => e.stopPropagation()}>
                     <div className="p-4 border-b border-gray-100 dark:border-dark-border flex justify-between items-center bg-gray-50 dark:bg-dark-bg/50 sm:rounded-t-3xl">
-                        <h3 className="font-bold text-lg text-gray-800 dark:text-white font-arabicHead">
+                        <h3 className="font-bold text-lg font-arabicHead">
                             تفسير الآية {activeAyahData.numberInSurah}
                         </h3>
                         <button onClick={() => setShowTafsir(false)} className="p-2 bg-white dark:bg-dark-surface rounded-full shadow-sm">
@@ -817,15 +870,15 @@ const QuranReader: React.FC = () => {
                                 <BookOpen size={18} />
                                 التفسير الميسر
                             </h4>
-                            <p className="text-gray-700 dark:text-gray-200 leading-loose text-lg font-arabic text-justify">
+                            <p className="opacity-90 leading-loose text-lg font-arabic text-justify">
                                 {activeAyahData.tafsir}
                             </p>
                         </div>
 
                         {activeAyahData.translation && (
                             <div className="mt-6 pt-6 border-t border-gray-100 dark:border-dark-border">
-                                <h4 className="font-bold text-gray-500 mb-2 text-sm uppercase tracking-wider font-english">English Translation (Sahih International)</h4>
-                                <p className="text-gray-600 dark:text-gray-300 leading-relaxed font-english text-lg" dir="ltr">
+                                <h4 className="font-bold opacity-60 mb-2 text-sm uppercase tracking-wider font-english">English Translation (Sahih International)</h4>
+                                <p className="opacity-80 leading-relaxed font-english text-lg" dir="ltr">
                                     {activeAyahData.translation}
                                 </p>
                             </div>

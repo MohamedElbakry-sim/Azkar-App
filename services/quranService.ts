@@ -2,6 +2,7 @@
 import { SurahData, Ayah, SearchResult, Reciter, Word } from '../types';
 
 const QURAN_CACHE_PREFIX = 'nour_quran_surah_full_v3_';
+const PAGE_CACHE_PREFIX = 'nour_quran_page_uthmani_v1_';
 const BOOKMARK_KEY = 'nour_quran_bookmark_v1'; // Now acts as "Saved/Favorite Verses"
 const LAST_READ_KEY = 'nour_quran_last_read_v1'; // New key for auto-save
 const PREFERRED_RECITER_KEY = 'nour_preferred_reciter_v1';
@@ -26,6 +27,30 @@ export const RECITERS: Reciter[] = [
 ];
 
 /**
+ * Helper: Fetch with exponential backoff retry
+ */
+const fetchWithRetry = async (url: string, retries = 3, backoff = 500): Promise<Response> => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) return response;
+      
+      // If 404 or client error, don't retry, just throw
+      if (response.status >= 400 && response.status < 500) {
+        throw new Error(`Client error: ${response.status}`);
+      }
+      
+      throw new Error(`Server error: ${response.status}`);
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      console.warn(`Fetch failed, retrying (${i + 1}/${retries})...`, err);
+      await new Promise(resolve => setTimeout(resolve, backoff * Math.pow(1.5, i)));
+    }
+  }
+  throw new Error('Max retries reached');
+};
+
+/**
  * Fetches Surah data including Uthmani text, Translation, Tafsir, and Word-by-Word.
  */
 export const getSurah = async (surahNumber: number): Promise<SurahData> => {
@@ -41,8 +66,7 @@ export const getSurah = async (surahNumber: number): Promise<SurahData> => {
   }
 
   try {
-    const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/editions/quran-uthmani,en.sahih,ar.muyassar,quran-wordbyword-2`);
-    if (!response.ok) throw new Error(`Failed to fetch Surah ${surahNumber}`);
+    const response = await fetchWithRetry(`https://api.alquran.cloud/v1/surah/${surahNumber}/editions/quran-uthmani,en.sahih,ar.muyassar,quran-wordbyword-2`);
     
     const json = await response.json();
     const editions = json.data;
@@ -86,10 +110,49 @@ export const getSurah = async (surahNumber: number): Promise<SurahData> => {
   }
 };
 
+/**
+ * Fetches specific page content (Ayahs) for Mushaf View.
+ */
+export const getPageContent = async (pageNumber: number): Promise<Ayah[]> => {
+  const cacheKey = `${PAGE_CACHE_PREFIX}${pageNumber}`;
+  
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) return JSON.parse(cached);
+  } catch (e) { /* ignore */ }
+
+  try {
+    // Fetch specifically the Uthmani script for the page
+    const response = await fetchWithRetry(`https://api.alquran.cloud/v1/page/${pageNumber}/quran-uthmani`);
+    
+    const json = await response.json();
+    const ayahs = json.data.ayahs;
+
+    if (!ayahs || !Array.isArray(ayahs)) throw new Error("Invalid page data");
+
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(ayahs));
+    } catch (e) {
+      // If quota exceeded, clear old page caches to make room
+      console.warn("Storage full, clearing page cache");
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(PAGE_CACHE_PREFIX) && key !== cacheKey) {
+          localStorage.removeItem(key);
+        }
+      });
+      try { localStorage.setItem(cacheKey, JSON.stringify(ayahs)); } catch(e2) {}
+    }
+
+    return ayahs;
+  } catch (e) {
+    console.error(`Failed to fetch page ${pageNumber}`, e);
+    throw e; // Throw so UI handles error state
+  }
+};
+
 export const getJuz = async (juzNumber: number) => {
     try {
-        const response = await fetch(`https://api.alquran.cloud/v1/juz/${juzNumber}/quran-uthmani`);
-        if (!response.ok) throw new Error("Juz fetch failed");
+        const response = await fetchWithRetry(`https://api.alquran.cloud/v1/juz/${juzNumber}/quran-uthmani`);
         return await response.json();
     } catch (e) {
         console.error(e);
@@ -136,9 +199,6 @@ export const addBookmark = (bookmark: Bookmark) => {
     
     let newBookmarks;
     if (existingIndex >= 0) {
-        // Already bookmarked, maybe update timestamp or remove? 
-        // For toggling behavior in UI, we usually want to add if not exists.
-        // But here we update timestamp to move to top.
         const existing = bookmarks[existingIndex];
         newBookmarks = [
             { ...existing, timestamp: Date.now() }, 

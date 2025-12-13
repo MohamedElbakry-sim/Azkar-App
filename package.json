@@ -15,7 +15,8 @@
     "lucide-react": "^0.555.0",
     "adhan": "4.4.1",
     "react-pageflip": "2.0.3",
-    "@vercel/node": "^5.5.15"
+    "@vercel/node": "^5.5.15",
+    "date-fns": "^4.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

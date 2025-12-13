@@ -37,32 +37,43 @@ const AthkarIndex: React.FC = () => {
       {/* Main Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {CATEGORIES.map((cat) => {
-            const isDay = cat.id === 'sabah' || cat.id === 'waking';
             return (
                 <div 
                     key={cat.id}
                     onClick={() => navigate(`/category/${cat.id}`)}
-                    className="group relative overflow-hidden bg-white dark:bg-dark-surface rounded-3xl p-6 border border-gray-100 dark:border-dark-border cursor-pointer shadow-card hover:shadow-lg hover:border-primary-200 dark:hover:border-primary-900 transition-all duration-300"
+                    className="group relative overflow-hidden rounded-3xl p-6 cursor-pointer shadow-card hover:shadow-xl transition-all duration-500 min-h-[140px] flex items-center"
                 >
-                    {/* Background Pattern */}
-                    <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${isDay ? 'from-orange-400 to-yellow-400' : 'from-indigo-500 to-purple-500'}`}></div>
+                    {/* Background Image */}
+                    <div className="absolute inset-0 z-0">
+                        {cat.imageUrl && (
+                            <img 
+                                src={cat.imageUrl} 
+                                alt={cat.title}
+                                loading="lazy"
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            />
+                        )}
+                        {/* Overlay Gradient for readability */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent dark:from-black/90 dark:via-black/60"></div>
+                    </div>
                     
-                    <div className="flex items-start justify-between relative z-10">
-                        <div className="flex gap-4">
-                            <div className={`p-4 rounded-2xl ${isDay ? 'bg-orange-50 text-orange-500 dark:bg-orange-900/20' : 'bg-indigo-50 text-indigo-500 dark:bg-indigo-900/20'}`}>
+                    <div className="flex items-center justify-between relative z-10 w-full">
+                        <div className="flex items-center gap-5">
+                            <div className="p-3.5 rounded-2xl bg-white/20 backdrop-blur-md text-white border border-white/10 shadow-inner">
                                 {getIcon(cat.id, 28)}
                             </div>
                             <div>
-                                <h3 className="text-h2 font-bold text-gray-800 dark:text-white font-arabicHead mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                                <h3 className="text-h2 font-bold text-white font-arabicHead mb-1 shadow-black/10 drop-shadow-sm">
                                     {cat.title}
                                 </h3>
-                                <p className="text-small text-gray-500 dark:text-dark-muted font-arabic leading-relaxed max-w-[200px]">
+                                <p className="text-small text-gray-200 font-arabic leading-relaxed max-w-[200px] opacity-90">
                                     {cat.description}
                                 </p>
                             </div>
                         </div>
-                        <div className="text-gray-300 dark:text-dark-elevated group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors transform group-hover:-translate-x-1">
-                            <ArrowLeft size={24} className="rtl:rotate-0" />
+                        
+                        <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300 border border-white/10">
+                            <ArrowLeft size={20} className="rtl:rotate-0" />
                         </div>
                     </div>
                 </div>

@@ -27,6 +27,7 @@ const SurahDetail = React.lazy(() => import('./pages/SurahDetail'));
 const QuranReader = React.lazy(() => import('./pages/QuranReader')); 
 const Radio = React.lazy(() => import('./pages/Radio'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
+const Habits = React.lazy(() => import('./pages/Habits')); // New Page
 
 // New Pages
 const MoreMenu = React.lazy(() => import('./pages/MoreMenu'));
@@ -102,6 +103,7 @@ const App: React.FC = () => {
                   <Route path="/names" element={<NamesOfAllah />} />
                   <Route path="/qada" element={<MissedPrayers />} />
                   <Route path="/duas" element={<Duas />} />
+                  <Route path="/habits" element={<Habits />} /> 
                   <Route path="/stats" element={<Stats />} />
                   <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
                   <Route path="/contact" element={<Contact />} />

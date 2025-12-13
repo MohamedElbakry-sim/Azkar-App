@@ -1,5 +1,4 @@
 
-
 export interface Dhikr {
   id: number;
   category: CategoryId;
@@ -156,4 +155,33 @@ export interface RadioStation {
   name: string;
   url: string;
   img?: string;
+}
+
+// --- Habit Tracker Types ---
+
+export type HabitType = 'boolean' | 'numeric' | 'timer';
+
+export interface Habit {
+  id: string;
+  title: string;
+  type: HabitType;
+  goal: number; // 1 for boolean, count for numeric, seconds for timer
+  unit: string; // e.g. 'pages', 'minutes'
+  color: string; // tailwind color class e.g. 'bg-blue-500'
+  icon: string; // emoji or identifier
+  frequency: number[]; // 0-6 (Sun-Sat)
+  streak: number;
+  archived: boolean;
+}
+
+export interface HabitLog {
+  [date: string]: {
+    [habitId: string]: number; // Value achieved
+  };
+}
+
+export interface HabitUserStats {
+  xp: number;
+  level: number;
+  totalCompletions: number;
 }
