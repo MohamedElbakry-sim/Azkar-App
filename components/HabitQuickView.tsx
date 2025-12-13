@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Circle, ArrowLeft, Target } from 'lucide-react';
 import * as habitService from '../services/habitService';
+import * as storage from '../services/storage';
 import { Habit, HabitLog } from '../types';
 import { format } from 'date-fns';
 
@@ -27,6 +28,59 @@ const HabitQuickView: React.FC = () => {
     setLoading(false);
   };
 
+  const playSound = (type: 'tick' | 'success' = 'tick') => {
+      // Check settings to respect mute preferences
+      const settings = storage.getNotificationSettings();
+      if (!settings.soundEnabled) return;
+
+      try {
+          const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+          if (!AudioContext) return;
+          
+          const ctx = new AudioContext();
+          const t = ctx.currentTime;
+
+          if (type === 'tick') {
+              // Refined Tick: Shorter, crisper, constant pitch (Woodblock-ish)
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(800, t);
+              
+              // Short envelope for percussive feel
+              gain.gain.setValueAtTime(0.0, t);
+              gain.gain.linearRampToValueAtTime(0.15, t + 0.01); // Attack
+              gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08); // Decay
+
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+
+              osc.start(t);
+              osc.stop(t + 0.1);
+          } else {
+              // Success Chime: Major Third (C5 + E5)
+              const freqs = [523.25, 659.25];
+              freqs.forEach((f, i) => {
+                  const osc = ctx.createOscillator();
+                  const gain = ctx.createGain();
+                  osc.type = 'sine';
+                  osc.frequency.setValueAtTime(f, t);
+                  
+                  gain.gain.setValueAtTime(0.05, t);
+                  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4 + (i * 0.1));
+
+                  osc.connect(gain);
+                  gain.connect(ctx.destination);
+                  osc.start(t);
+                  osc.stop(t + 0.6);
+              });
+          }
+      } catch (e) {
+          console.error("Audio playback failed", e);
+      }
+  };
+
   const handleToggle = (e: React.MouseEvent, habit: Habit) => {
     e.stopPropagation();
     const dateKey = format(new Date(), 'yyyy-MM-dd');
@@ -34,6 +88,11 @@ const HabitQuickView: React.FC = () => {
     const isCompleted = currentValue >= habit.goal;
     
     const newValue = isCompleted ? 0 : habit.goal;
+    
+    if (!isCompleted) {
+        playSound('success');
+    }
+
     habitService.logActivity(habit.id, newValue);
     
     // Haptic feedback

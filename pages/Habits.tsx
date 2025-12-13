@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Check, Flame, Star, X, ChevronRight, ChevronLeft, Calendar as CalendarIcon, CheckSquare, Clock, Settings, Info, Edit3, Trash2, Repeat } from 'lucide-react';
+import { Plus, Check, Flame, Star, X, ChevronRight, ChevronLeft, Calendar as CalendarIcon, CheckSquare, Clock, Settings, Info, Edit3, Trash2, Repeat, ArrowUp, ArrowDown, Move, MoreVertical, AlertTriangle } from 'lucide-react';
 import * as habitService from '../services/habitService';
+import * as storage from '../services/storage';
 import { Habit, HabitLog, HabitUserStats, HabitType, HabitCategory, SystemHabitType } from '../types';
 import { format, startOfWeek, addDays, isSameDay, subDays } from 'date-fns';
 import { arSA } from 'date-fns/locale';
-import Tooltip from '../components/Tooltip';
 
 // --- Heatmap Component ---
 const HabitHeatmap = ({ data }: { data: { [date: string]: number } }) => {
+    const [tooltip, setTooltip] = useState<{x: number, y: number, text: string} | null>(null);
     const today = new Date();
     const weeks = 12;
     const startDate = subDays(today, weeks * 7);
@@ -26,18 +27,42 @@ const HabitHeatmap = ({ data }: { data: { [date: string]: number } }) => {
         return 'bg-emerald-500';
     };
 
+    const handleMouseEnter = (e: React.MouseEvent, text: string) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setTooltip({
+            x: rect.left + rect.width / 2,
+            y: rect.top,
+            text
+        });
+    };
+
     return (
-        <div className="flex flex-wrap gap-1 justify-end dir-ltr">
-            {days.map((day, i) => {
-                const dateKey = day.toISOString().split('T')[0];
-                const count = data[dateKey] || 0;
-                return (
-                    <Tooltip key={i} text={`${format(day, 'd MMM', { locale: arSA })}: ${count}`}>
-                        <div className={`w-3 h-3 rounded-sm ${getColor(count)} transition-colors`}></div>
-                    </Tooltip>
-                );
-            })}
-        </div>
+        <>
+            <div className="flex flex-wrap gap-1 justify-end dir-ltr" onMouseLeave={() => setTooltip(null)}>
+                {days.map((day, i) => {
+                    const dateKey = format(day, 'yyyy-MM-dd');
+                    const count = data[dateKey] || 0;
+                    const text = `${format(day, 'd MMM', { locale: arSA })}: ${count}`;
+                    return (
+                        <div 
+                            key={i}
+                            onMouseEnter={(e) => handleMouseEnter(e, text)}
+                            className={`w-3 h-3 rounded-sm ${getColor(count)} transition-all hover:ring-1 hover:ring-gray-400 hover:scale-125 cursor-default`}
+                        ></div>
+                    );
+                })}
+            </div>
+            
+            {tooltip && (
+                <div 
+                    className="fixed z-[60] px-3 py-1.5 bg-gray-900/95 dark:bg-white/95 text-white dark:text-gray-900 text-xs font-medium rounded-lg shadow-xl pointer-events-none transform -translate-x-1/2 -translate-y-full border border-white/10 dark:border-gray-900/10 whitespace-nowrap animate-fadeIn"
+                    style={{ left: tooltip.x, top: tooltip.y - 8 }}
+                >
+                    {tooltip.text}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-gray-900/95 dark:border-t-white/95"></div>
+                </div>
+            )}
+        </>
     );
 };
 
@@ -49,6 +74,9 @@ const Habits: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | undefined>(undefined);
   const [heatmapData, setHeatmapData] = useState<{ [date: string]: number }>({});
+  
+  // Reordering State
+  const [isReordering, setIsReordering] = useState(false);
 
   const refreshData = () => {
     setHabits(habitService.getHabits());
@@ -61,10 +89,75 @@ const Habits: React.FC = () => {
     refreshData();
   }, []);
 
+  const playSound = (type: 'tick' | 'success' = 'tick') => {
+      // Check settings to respect mute preferences
+      const settings = storage.getNotificationSettings();
+      if (!settings.soundEnabled) return;
+
+      try {
+          const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+          if (!AudioContext) return;
+          
+          const ctx = new AudioContext();
+          const t = ctx.currentTime;
+
+          if (type === 'tick') {
+              // Refined Tick: Shorter, crisper, constant pitch (Woodblock-ish)
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(800, t);
+              
+              // Short envelope for percussive feel
+              gain.gain.setValueAtTime(0.0, t);
+              gain.gain.linearRampToValueAtTime(0.15, t + 0.01); // Attack
+              gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08); // Decay
+
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+
+              osc.start(t);
+              osc.stop(t + 0.1);
+          } else {
+              // Success Chime: Major Third (C5 + E5)
+              const freqs = [523.25, 659.25];
+              freqs.forEach((f, i) => {
+                  const osc = ctx.createOscillator();
+                  const gain = ctx.createGain();
+                  osc.type = 'sine';
+                  osc.frequency.setValueAtTime(f, t);
+                  
+                  gain.gain.setValueAtTime(0.05, t);
+                  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4 + (i * 0.1));
+
+                  osc.connect(gain);
+                  gain.connect(ctx.destination);
+                  osc.start(t);
+                  osc.stop(t + 0.6);
+              });
+          }
+      } catch (e) {
+          console.error("Audio playback failed", e);
+      }
+  };
+
   const handleUpdateProgress = (habitId: string, value: number) => {
+    const dateKey = format(selectedDate, 'yyyy-MM-dd');
+    const oldValue = logs[dateKey]?.[habitId] || 0;
+    const habit = habits.find(h => h.id === habitId);
+
+    // Play sound if making progress (checking or incrementing)
+    if (value > oldValue) {
+        if (habit && value >= habit.goal) {
+            playSound('success');
+        } else {
+            playSound('tick');
+        }
+    }
+
     habitService.logActivity(habitId, value, selectedDate);
     // Haptic feedback on completion
-    const habit = habits.find(h => h.id === habitId);
     if (habit && value >= habit.goal && navigator.vibrate) {
         navigator.vibrate(50);
     }
@@ -83,35 +176,54 @@ const Habits: React.FC = () => {
   };
 
   const handleDeleteHabit = (id: string) => {
-      if(confirm('هل أنت متأكد من حذف هذه العادة؟')) {
-          habitService.removeHabit(id);
-          refreshData();
-      }
+      // Deletion logic executes immediately here, confirmation is handled in UI now
+      habitService.removeHabit(id);
+      refreshData();
+      setIsModalOpen(false); 
   };
 
   const openEditModal = (habit: Habit) => {
+      if (isReordering) return;
       setEditingHabit(habit);
       setIsModalOpen(true);
+  };
+
+  const handleMoveHabit = (index: number, direction: 'up' | 'down') => {
+      const newHabits = [...habits];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+      if (targetIndex >= 0 && targetIndex < newHabits.length) {
+          [newHabits[index], newHabits[targetIndex]] = [newHabits[targetIndex], newHabits[index]];
+          setHabits(newHabits);
+          habitService.saveHabits(newHabits);
+      }
   };
 
   // Week Calendar Logic
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 6 }); 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  // Filter habits for current day
-  const dayIndex = selectedDate.getDay();
-  const todaysHabits = habits.filter(h => h.frequency.includes(dayIndex) && !h.archived);
+  // Determine which habits to show
+  // If reordering, show ALL habits. If viewing day, show filtered habits.
+  let displayedHabits: Habit[] = [];
   
-  // Sort: Incomplete first
-  todaysHabits.sort((a, b) => {
-      const dateKey = format(selectedDate, 'yyyy-MM-dd');
-      const valA = logs[dateKey]?.[a.id] || 0;
-      const valB = logs[dateKey]?.[b.id] || 0;
-      const completeA = valA >= a.goal;
-      const completeB = valB >= b.goal;
-      if (completeA === completeB) return 0;
-      return completeA ? 1 : -1;
-  });
+  if (isReordering) {
+      displayedHabits = habits.filter(h => !h.archived);
+  } else {
+      const dayIndex = selectedDate.getDay();
+      displayedHabits = habits.filter(h => h.frequency.includes(dayIndex) && !h.archived);
+      
+      // Sort incomplete first only when not reordering
+      displayedHabits.sort((a, b) => {
+          const dateKey = format(selectedDate, 'yyyy-MM-dd');
+          const valA = logs[dateKey]?.[a.id] || 0;
+          const valB = logs[dateKey]?.[b.id] || 0;
+          const completeA = valA >= a.goal;
+          const completeB = valB >= b.goal;
+          if (completeA === completeB) return 0;
+          return completeA ? 1 : -1;
+      });
+  }
 
   const getProgress = (habitId: string) => {
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
@@ -167,82 +279,101 @@ const Habits: React.FC = () => {
                     <HabitHeatmap data={heatmapData} />
                 </div>
 
-                {/* Week Calendar */}
-                <div className="border-t border-gray-100 dark:border-dark-border pt-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <button onClick={() => setSelectedDate(addDays(selectedDate, -7))} className="p-1.5 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full transition-colors text-gray-500">
-                            <ChevronRight size={18} />
-                        </button>
-                        <h4 className="font-bold text-gray-800 dark:text-white font-arabic text-sm">
-                            {format(selectedDate, 'MMMM yyyy', { locale: arSA })}
-                        </h4>
-                        <button onClick={() => setSelectedDate(addDays(selectedDate, 7))} className="p-1.5 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full transition-colors text-gray-500">
-                            <ChevronLeft size={18} />
-                        </button>
-                    </div>
-                    <div className="grid grid-cols-7 gap-2">
-                        {weekDays.map((day, i) => {
-                            const isSelected = isSameDay(day, selectedDate);
-                            const dateKey = format(day, 'yyyy-MM-dd');
-                            const hasActivity = heatmapData[dateKey] > 0;
+                {/* Week Calendar - Hide during reorder mode to reduce clutter */}
+                {!isReordering && (
+                    <div className="border-t border-gray-100 dark:border-dark-border pt-4">
+                        <div className="flex justify-between items-center mb-4">
+                            <button onClick={() => setSelectedDate(addDays(selectedDate, -7))} className="p-1.5 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full transition-colors text-gray-500">
+                                <ChevronRight size={18} />
+                            </button>
+                            <h4 className="font-bold text-gray-800 dark:text-white font-arabic text-sm">
+                                {format(selectedDate, 'MMMM yyyy', { locale: arSA })}
+                            </h4>
+                            <button onClick={() => setSelectedDate(addDays(selectedDate, 7))} className="p-1.5 hover:bg-gray-100 dark:hover:bg-dark-bg rounded-full transition-colors text-gray-500">
+                                <ChevronLeft size={18} />
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-7 gap-2">
+                            {weekDays.map((day, i) => {
+                                const isSelected = isSameDay(day, selectedDate);
+                                const dateKey = format(day, 'yyyy-MM-dd');
+                                const hasActivity = heatmapData[dateKey] > 0;
 
-                            return (
-                                <button
-                                    key={i}
-                                    onClick={() => setSelectedDate(day)}
-                                    className={`
-                                        flex flex-col items-center justify-center p-2 rounded-2xl transition-all relative
-                                        ${isSelected 
-                                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 scale-105' 
-                                            : 'bg-gray-50 dark:bg-dark-bg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}
-                                    `}
-                                >
-                                    <span className="text-[10px] opacity-70 mb-0.5">{format(day, 'EEE', { locale: arSA })}</span>
-                                    <span className="font-bold text-lg leading-none">{format(day, 'd')}</span>
-                                    {hasActivity && !isSelected && (
-                                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1"></div>
-                                    )}
-                                </button>
-                            );
-                        })}
+                                return (
+                                    <button
+                                        key={i}
+                                        onClick={() => setSelectedDate(day)}
+                                        className={`
+                                            flex flex-col items-center justify-center p-2 rounded-2xl transition-all relative
+                                            ${isSelected 
+                                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 scale-105' 
+                                                : 'bg-gray-50 dark:bg-dark-bg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}
+                                        `}
+                                    >
+                                        <span className="text-[10px] opacity-70 mb-0.5">{format(day, 'EEE', { locale: arSA })}</span>
+                                        <span className="font-bold text-lg leading-none">{format(day, 'd')}</span>
+                                        {hasActivity && !isSelected && (
+                                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1"></div>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
 
-        {/* Habits List */}
+        {/* Habits List Header */}
         <div className="px-4 space-y-4">
             <div className="flex items-center justify-between">
                 <h3 className="font-bold text-xl text-gray-800 dark:text-white font-arabicHead flex items-center gap-2">
                     <CheckSquare size={20} className="text-emerald-500" />
-                    مهام {isSameDay(selectedDate, new Date()) ? 'اليوم' : format(selectedDate, 'EEEE', { locale: arSA })}
+                    {isReordering ? 'ترتيب العادات' : `مهام ${isSameDay(selectedDate, new Date()) ? 'اليوم' : format(selectedDate, 'EEEE', { locale: arSA })}`}
                 </h3>
-                <button 
-                    onClick={() => { setEditingHabit(undefined); setIsModalOpen(true); }}
-                    className="flex items-center gap-1 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-xl text-sm font-bold hover:bg-emerald-100 transition-all active:scale-95"
-                >
-                    <Plus size={18} />
-                    <span>إضافة</span>
-                </button>
+                
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => setIsReordering(!isReordering)}
+                        className={`p-2 rounded-xl transition-all ${isReordering ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/20' : 'bg-gray-100 text-gray-500 dark:bg-dark-surface dark:text-gray-400'}`}
+                        title="ترتيب"
+                    >
+                        {isReordering ? <Check size={20} /> : <Move size={20} />}
+                    </button>
+                    {!isReordering && (
+                        <button 
+                            onClick={() => { setEditingHabit(undefined); setIsModalOpen(true); }}
+                            className="flex items-center gap-1 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-xl text-sm font-bold hover:bg-emerald-100 transition-all active:scale-95"
+                        >
+                            <Plus size={18} />
+                            <span>إضافة</span>
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {todaysHabits.length === 0 ? (
+            {displayedHabits.length === 0 ? (
                 <div className="py-16 text-center text-gray-400 bg-white dark:bg-dark-surface rounded-3xl border border-dashed border-gray-200 dark:border-dark-border">
                     <div className="w-16 h-16 bg-gray-50 dark:bg-dark-bg rounded-full flex items-center justify-center mx-auto mb-4">
                         <CalendarIcon size={32} className="opacity-50" />
                     </div>
-                    <p>لا توجد مهام مجدولة لهذا اليوم</p>
-                    <button onClick={() => setIsModalOpen(true)} className="text-emerald-500 font-bold mt-2 hover:underline">أضف عادة جديدة</button>
+                    <p>لا توجد مهام مجدولة {isReordering ? '' : 'لهذا اليوم'}</p>
+                    <button onClick={() => { setIsReordering(false); setIsModalOpen(true); }} className="text-emerald-500 font-bold mt-2 hover:underline">أضف عادة جديدة</button>
                 </div>
             ) : (
                 <div className="grid gap-3">
-                    {todaysHabits.map(habit => (
+                    {displayedHabits.map((habit, index) => (
                         <HabitCard 
                             key={habit.id} 
                             habit={habit} 
                             currentValue={getProgress(habit.id)}
                             onUpdate={(val) => handleUpdateProgress(habit.id, val)}
-                            onLongPress={() => openEditModal(habit)}
+                            onEdit={() => openEditModal(habit)}
+                            reorderMode={isReordering}
+                            onMoveUp={() => handleMoveHabit(index, 'up')}
+                            onMoveDown={() => handleMoveHabit(index, 'down')}
+                            isFirst={index === 0}
+                            isLast={index === habits.length - 1}
                         />
                     ))}
                 </div>
@@ -255,21 +386,27 @@ const Habits: React.FC = () => {
   );
 };
 
-// --- Refined Habit Card with Long Press ---
+// --- Refined Habit Card with Long Press & Edit Button ---
 const HabitCard: React.FC<{ 
     habit: Habit; 
     currentValue: number; 
     onUpdate: (val: number) => void;
-    onLongPress: () => void;
-}> = ({ habit, currentValue, onUpdate, onLongPress }) => {
+    onEdit: () => void;
+    reorderMode?: boolean;
+    onMoveUp?: () => void;
+    onMoveDown?: () => void;
+    isFirst?: boolean;
+    isLast?: boolean;
+}> = ({ habit, currentValue, onUpdate, onEdit, reorderMode, onMoveUp, onMoveDown, isFirst, isLast }) => {
     const isCompleted = currentValue >= habit.goal;
     const progress = Math.min(100, (currentValue / habit.goal) * 100);
     const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const handleStartPress = () => {
+        if (reorderMode) return;
         pressTimer.current = setTimeout(() => {
             if (navigator.vibrate) navigator.vibrate(50);
-            onLongPress();
+            onEdit();
         }, 600); // 600ms long press
     };
 
@@ -286,64 +423,101 @@ const HabitCard: React.FC<{
             onMouseLeave={handleEndPress}
             className={`
             bg-white dark:bg-dark-surface rounded-2xl p-4 border transition-all relative overflow-hidden group select-none
-            ${isCompleted ? 'border-emerald-200 dark:border-emerald-900 bg-emerald-50/30 dark:bg-emerald-900/10' : 'border-gray-100 dark:border-dark-border'}
+            ${isCompleted && !reorderMode ? 'border-emerald-200 dark:border-emerald-900 bg-emerald-50/30 dark:bg-emerald-900/10' : 'border-gray-100 dark:border-dark-border'}
+            ${reorderMode ? 'cursor-move hover:border-emerald-300' : ''}
         `}>
             <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-sm transition-colors ${isCompleted ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-dark-bg text-gray-500'}`}>
-                        {isCompleted ? <Check size={24} /> : habit.icon}
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-sm transition-colors ${isCompleted && !reorderMode ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-dark-bg text-gray-500'}`}>
+                        {isCompleted && !reorderMode ? <Check size={24} /> : habit.icon}
                     </div>
                     <div>
-                        <h4 className={`font-bold font-arabicHead text-lg ${isCompleted ? 'text-emerald-800 dark:text-emerald-300 line-through opacity-70' : 'text-gray-800 dark:text-white'}`}>
-                            {habit.title}
-                        </h4>
+                        <div className="flex items-center gap-2">
+                            <h4 className={`font-bold font-arabicHead text-lg ${isCompleted && !reorderMode ? 'text-emerald-800 dark:text-emerald-300 line-through opacity-70' : 'text-gray-800 dark:text-white'}`}>
+                                {habit.title}
+                            </h4>
+                            {!reorderMode && (
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full active:bg-gray-100 dark:active:bg-dark-bg transition-colors"
+                                    title="تعديل / خيارات"
+                                >
+                                    <MoreVertical size={16} />
+                                </button>
+                            )}
+                        </div>
                         <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                            {habit.streak > 0 && (
+                            {habit.streak > 0 && !reorderMode && (
                                 <span className="flex items-center gap-0.5 text-orange-500 font-bold">
                                     <Flame size={12} fill="currentColor" /> {habit.streak}
                                 </span>
                             )}
-                            {habit.goal > 1 && (
+                            {!reorderMode && habit.goal > 1 && (
                                 <span>{currentValue} / {habit.goal} {habit.unit}</span>
+                            )}
+                            {reorderMode && habit.frequency.length < 7 && (
+                                <span className="flex items-center gap-1">
+                                    <Repeat size={12} />
+                                    أيام محددة
+                                </span>
                             )}
                         </div>
                     </div>
                 </div>
                 
-                {/* Action Button (Big Target) */}
+                {/* Action Button or Reorder Controls */}
                 <div className="flex items-center">
-                    {habit.type === 'numeric' ? (
-                        <div className="flex items-center bg-gray-100 dark:bg-dark-bg rounded-xl p-1">
+                    {reorderMode ? (
+                        <div className="flex gap-2">
                             <button 
-                                onClick={(e) => { e.stopPropagation(); onUpdate(Math.max(0, currentValue - 1)); }}
-                                className="w-10 h-10 flex items-center justify-center rounded-lg bg-white dark:bg-dark-surface shadow-sm text-gray-500 hover:text-red-500 active:scale-95 transition-transform"
+                                onClick={(e) => { e.stopPropagation(); onMoveUp && onMoveUp(); }}
+                                disabled={isFirst}
+                                className="p-2 bg-gray-50 dark:bg-dark-bg rounded-lg text-gray-500 disabled:opacity-30 hover:text-emerald-600 transition-colors"
                             >
-                                -
+                                <ArrowUp size={20} />
                             </button>
-                            <span className="w-10 text-center font-bold">{currentValue}</span>
                             <button 
-                                onClick={(e) => { e.stopPropagation(); onUpdate(currentValue + 1); }}
-                                className="w-10 h-10 flex items-center justify-center rounded-lg bg-white dark:bg-dark-surface shadow-sm text-gray-500 hover:text-emerald-500 active:scale-95 transition-transform"
+                                onClick={(e) => { e.stopPropagation(); onMoveDown && onMoveDown(); }}
+                                disabled={isLast}
+                                className="p-2 bg-gray-50 dark:bg-dark-bg rounded-lg text-gray-500 disabled:opacity-30 hover:text-emerald-600 transition-colors"
                             >
-                                +
+                                <ArrowDown size={20} />
                             </button>
                         </div>
                     ) : (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onUpdate(isCompleted ? 0 : 1); }}
-                            className={`
-                                w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-90
-                                ${isCompleted ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-dark-bg text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-elevated'}
-                            `}
-                        >
-                            <Check size={24} />
-                        </button>
+                        habit.type === 'numeric' ? (
+                            <div className="flex items-center bg-gray-100 dark:bg-dark-bg rounded-xl p-1">
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onUpdate(Math.max(0, currentValue - 1)); }}
+                                    className="w-10 h-10 flex items-center justify-center rounded-lg bg-white dark:bg-dark-surface shadow-sm text-gray-500 hover:text-red-500 active:scale-95 transition-transform"
+                                >
+                                    -
+                                </button>
+                                <span className="w-10 text-center font-bold">{currentValue}</span>
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onUpdate(currentValue + 1); }}
+                                    className="w-10 h-10 flex items-center justify-center rounded-lg bg-white dark:bg-dark-surface shadow-sm text-gray-500 hover:text-emerald-500 active:scale-95 transition-transform"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onUpdate(isCompleted ? 0 : 1); }}
+                                className={`
+                                    w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-90
+                                    ${isCompleted ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-dark-bg text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-elevated'}
+                                `}
+                            >
+                                <Check size={24} />
+                            </button>
+                        )
                     )}
                 </div>
             </div>
             
             {/* Progress Bar for Numeric */}
-            {habit.type !== 'boolean' && (
+            {habit.type !== 'boolean' && !reorderMode && (
                 <div className="h-1.5 w-full bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden">
                     <div 
                         className={`h-full transition-all duration-500 ease-out ${isCompleted ? 'bg-emerald-500' : 'bg-indigo-500'}`}
@@ -361,6 +535,7 @@ const HabitModal: React.FC<{ onClose: () => void; onSave: (h: Habit) => void; in
     const [goal, setGoal] = useState(initialData?.goal || 1);
     const [unit, setUnit] = useState(initialData?.unit || '');
     const [category, setCategory] = useState<HabitCategory>(initialData?.category || 'spiritual');
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     
     // Frequency Logic
     const [frequencyMode, setFrequencyMode] = useState<'daily' | 'custom'>(
@@ -542,14 +717,41 @@ const HabitModal: React.FC<{ onClose: () => void; onSave: (h: Habit) => void; in
                     </button>
                     
                     {initialData && onDelete && (
-                        <button 
-                            type="button"
-                            onClick={() => onDelete(initialData.id)}
-                            className="w-full py-3 rounded-xl text-red-500 font-bold bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
-                        >
-                            <Trash2 size={18} />
-                            حذف العادة
-                        </button>
+                        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-dark-border">
+                            {!showDeleteConfirm ? (
+                                <button 
+                                    type="button"
+                                    onClick={() => setShowDeleteConfirm(true)}
+                                    className="w-full py-3 rounded-xl text-red-500 font-bold bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Trash2 size={18} />
+                                    حذف العادة
+                                </button>
+                            ) : (
+                                <div className="space-y-3 animate-fadeIn">
+                                    <div className="flex items-center gap-2 text-sm text-red-500 justify-center font-bold mb-1">
+                                        <AlertTriangle size={16} />
+                                        <span>هل أنت متأكد من الحذف؟</span>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button 
+                                            type="button"
+                                            onClick={() => setShowDeleteConfirm(false)}
+                                            className="flex-1 py-3 rounded-xl text-gray-500 font-bold bg-gray-100 dark:bg-dark-bg hover:bg-gray-200 transition-colors"
+                                        >
+                                            إلغاء
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={() => onDelete(initialData.id)}
+                                            className="flex-1 py-3 rounded-xl text-white font-bold bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30"
+                                        >
+                                            تأكيد الحذف
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     )}
                 </form>
             </div>

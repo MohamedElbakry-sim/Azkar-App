@@ -10,6 +10,14 @@ export const LEVEL_BASE_XP = 200;
 export const XP_PER_COMPLETION = 15;
 export const XP_BONUS_STREAK = 50;
 
+// Helper for consistent local date keys
+const getLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // --- Default Habits Configuration ---
 const DEFAULT_HABITS: Habit[] = [
   { 
@@ -122,7 +130,7 @@ export const saveUserStats = (stats: HabitUserStats) => {
 // --- Logic & Actions ---
 
 export const logActivity = (habitId: string, value: number, dateObj: Date = new Date()) => {
-  const dateKey = dateObj.toISOString().split('T')[0];
+  const dateKey = getLocalDateKey(dateObj);
   const habits = getHabits();
   const habit = habits.find(h => h.id === habitId);
   const logs = getHabitLogs();
@@ -193,7 +201,7 @@ export const logSystemActivity = (type: SystemHabitType, amount: number = 1) => 
 
   if (matchingHabits.length === 0) return;
 
-  const todayLogs = getHabitLogs()[new Date().toISOString().split('T')[0]] || {};
+  const todayLogs = getHabitLogs()[getLocalDateKey(new Date())] || {};
 
   matchingHabits.forEach(habit => {
     const currentValue = todayLogs[habit.id] || 0;
@@ -267,7 +275,7 @@ export const getYearlyProgress = () => {
   const data: { [date: string]: number } = {};
 
   for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
-    const dateKey = d.toISOString().split('T')[0];
+    const dateKey = getLocalDateKey(d);
     const dayLog = logs[dateKey];
     
     if (dayLog) {
