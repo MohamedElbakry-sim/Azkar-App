@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Book, Clock, Menu, Sun, Moon, ArrowRight, LayoutGrid } from 'lucide-react';
+import { Home, Book, Clock, Menu, Sun, Moon, ArrowRight, LayoutGrid, Maximize2, Square, Play, Pause } from 'lucide-react';
 import Logo from './Logo';
 import { useRadio } from '../contexts/RadioContext';
 
@@ -173,41 +173,65 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
 
         {/* --- MINI PLAYER (Global) - Hide in reading mode --- */}
         {showMiniPlayer && !isReadingMode && (
-            <div className="fixed bottom-20 left-4 right-4 md:bottom-6 md:left-auto md:w-96 md:right-8 z-40 animate-slideUp">
-                <div className="bg-white/95 dark:bg-dark-surface/95 backdrop-blur-xl border border-gray-200 dark:border-dark-border rounded-2xl p-3 shadow-2xl flex items-center justify-between">
-                    <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/20 rounded-lg flex items-center justify-center text-primary-600 dark:text-primary-400 flex-shrink-0">
+            <div 
+                onClick={() => navigate('/radio')}
+                className="fixed bottom-20 left-4 right-4 md:bottom-6 md:left-auto md:w-96 md:right-8 z-40 animate-slideUp cursor-pointer group"
+            >
+                <div className="bg-white/95 dark:bg-dark-surface/95 backdrop-blur-xl border border-gray-200 dark:border-dark-border rounded-2xl p-3 shadow-2xl flex items-center justify-between hover:border-emerald-500/30 transition-colors">
+                    <div className="flex items-center gap-3 overflow-hidden flex-1">
+                        {/* Icon Box */}
+                        <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/20 rounded-xl flex items-center justify-center text-primary-600 dark:text-primary-400 flex-shrink-0 relative">
                              {/* Visualizer bars */}
-                             <div className="flex gap-0.5 h-3 items-end">
-                                <div className={`w-1 bg-current rounded-sm ${isPlaying ? 'animate-[pulse_0.6s_ease-in-out_infinite]' : 'h-1'}`}></div>
-                                <div className={`w-1 bg-current rounded-sm ${isPlaying ? 'animate-[pulse_0.8s_ease-in-out_infinite]' : 'h-2'}`}></div>
+                             <div className="flex gap-0.5 h-4 items-end">
+                                <div className={`w-1 bg-current rounded-sm ${isPlaying ? 'animate-[pulse_0.6s_ease-in-out_infinite]' : 'h-2'}`}></div>
+                                <div className={`w-1 bg-current rounded-sm ${isPlaying ? 'animate-[pulse_0.8s_ease-in-out_infinite]' : 'h-3'}`}></div>
                                 <div className={`w-1 bg-current rounded-sm ${isPlaying ? 'animate-[pulse_0.5s_ease-in-out_infinite]' : 'h-1.5'}`}></div>
                              </div>
                         </div>
+                        
+                        {/* Info */}
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider">Radio</span>
-                            <span className="font-bold text-sm text-gray-800 dark:text-white truncate">{currentStation.name}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                                    بث مباشر
+                                </span>
+                            </div>
+                            <span className="font-bold text-sm text-gray-800 dark:text-white truncate font-arabicHead leading-tight mt-0.5">
+                                {currentStation.name}
+                            </span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1">
+
+                    {/* Controls */}
+                    <div className="flex items-center gap-2 pl-2 border-r border-gray-100 dark:border-gray-700 mr-2 pr-1" onClick={(e) => e.stopPropagation()}>
+                        {/* Play/Pause */}
                         <button 
-                            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-                            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-dark-elevated text-gray-800 dark:text-white"
+                            onClick={togglePlay}
+                            className="w-10 h-10 rounded-full bg-gray-50 dark:bg-dark-elevated hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-gray-800 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center justify-center transition-all shadow-sm"
                         >
                             {isBuffering ? (
-                                <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                             ) : isPlaying ? (
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></svg>
+                                <Pause size={18} fill="currentColor" />
                             ) : (
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3L19 12L5 21V3Z" /></svg>
+                                <Play size={18} fill="currentColor" className="ml-0.5" />
                             )}
                         </button>
+
+                        {/* Stop Button */}
                         <button 
-                            onClick={(e) => { e.stopPropagation(); stop(); }}
-                            className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500"
+                            onClick={stop}
+                            className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 hover:text-red-600 flex items-center justify-center transition-all shadow-sm"
+                            title="إيقاف"
                         >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /></svg>
+                            <Square size={16} fill="currentColor" />
                         </button>
+                    </div>
+
+                    {/* Expand Icon */}
+                    <div className="text-gray-300 dark:text-gray-600 group-hover:text-emerald-500 transition-colors">
+                        <Maximize2 size={18} />
                     </div>
                 </div>
             </div>

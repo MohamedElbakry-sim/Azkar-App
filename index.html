@@ -120,6 +120,14 @@
       .safe-area-bottom {
         padding-bottom: env(safe-area-inset-bottom, 20px);
       }
+
+      /* Book Shadow for Mushaf Mode */
+      .book-shadow {
+        box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.3);
+      }
+      .dark .book-shadow {
+        box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.6);
+      }
     </style>
   <script type="importmap">
 {
@@ -131,6 +139,7 @@
     "react-router-dom": "https://aistudiocdn.com/react-router-dom@^6.28.0",
     "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
     "adhan": "https://cdn.jsdelivr.net/npm/adhan@4.4.1/+esm",
+    "react-pageflip": "https://esm.sh/react-pageflip@2.0.3",
     "@vercel/node": "https://aistudiocdn.com/@vercel/node@^5.5.15"
   }
 }

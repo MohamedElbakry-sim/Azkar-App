@@ -31,11 +31,12 @@ export const RadioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Initialize Audio Object once
   useEffect(() => {
     const audio = new Audio();
-    // Removed crossOrigin="anonymous" to prevent CORS errors on streams that don't send Access-Control-Allow-Origin
-    // We don't need Web Audio API analysis for the simple CSS visualizer we use.
     audio.preload = "none";
     
-    const handlePlay = () => setIsPlaying(true);
+    const handlePlay = () => {
+        setIsPlaying(true);
+        setHasError(false);
+    };
     const handlePause = () => setIsPlaying(false);
     const handleWaiting = () => setIsBuffering(true);
     const handleCanPlay = () => setIsBuffering(false);
@@ -43,14 +44,15 @@ export const RadioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const handleError = (e: Event) => {
         const target = e.target as HTMLAudioElement;
         const error = target.error;
-        console.error("Global Audio Error:", error ? `Code: ${error.code}, Message: ${error.message}` : "Unknown Error");
+        console.warn("Audio Error Event:", error);
         
-        // Don't set error state if it was just an abort (code 20) which happens on stop/switch
+        // Code 20 (ABORT) happens on manual stop/load change, ignore it.
+        // Code 4 (SRC_NOT_SUPPORTED) is the main one to catch.
         if (error && error.code !== 20) { 
             setHasError(true);
+            setIsPlaying(false);
+            setIsBuffering(false);
         }
-        setIsBuffering(false);
-        setIsPlaying(false);
     };
 
     audio.addEventListener('play', handlePlay);
@@ -84,7 +86,7 @@ export const RadioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (!audioRef.current) return;
 
     // If clicking the same station, just toggle
-    if (currentStation?.id === station.id) {
+    if (currentStation?.id === station.id && !hasError) {
         togglePlay();
         return;
     }
@@ -99,10 +101,18 @@ export const RadioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
-            await playPromise;
+            await playPromise.catch(error => {
+                // Auto-play policy or load error
+                console.warn("Playback prevented:", error);
+                setIsPlaying(false);
+                setIsBuffering(false);
+                if (error.name !== 'AbortError') {
+                    setHasError(true);
+                }
+            });
         }
     } catch (err) {
-        console.error("Play Station Error:", err);
+        console.error("Play Station Exception:", err);
         setHasError(true);
         setIsPlaying(false);
         setIsBuffering(false);
@@ -115,11 +125,21 @@ export const RadioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (isPlaying) {
         audioRef.current.pause();
     } else {
+        // If we are in error state, try reloading the current station
+        if (hasError) {
+            playStation(currentStation);
+            return;
+        }
+
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
             playPromise.catch(e => {
                 console.error("Resume Error:", e);
-                setHasError(true);
+                // If resume fails with no supported sources (e.g. stream expired), set error
+                if (e.name === 'NotSupportedError' || e.message.includes('no supported sources')) {
+                    setHasError(true);
+                }
+                setIsPlaying(false);
             });
         }
     }
@@ -128,7 +148,8 @@ export const RadioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const stop = () => {
     if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.removeAttribute('src'); // Safer than src=""
+        // audioRef.current.currentTime = 0; // Not valid for live streams usually
+        audioRef.current.removeAttribute('src'); 
         audioRef.current.load();
     }
     setCurrentStation(null);

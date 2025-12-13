@@ -1,10 +1,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { AZKAR_DATA, SITUATIONAL_DUAS } from '../data';
+import { QURAN_META } from '../data/quranMeta';
 import DhikrCard from '../components/DhikrCard';
 import * as storage from '../services/storage';
-import { HeartOff, Trash2, Hand } from 'lucide-react';
+import * as quranService from '../services/quranService';
+import { HeartOff, Trash2, Hand, Bookmark as BookmarkIcon, Heart } from 'lucide-react';
 import { Dhikr, CategoryId } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 // --- Swipeable Card Component ---
 interface SwipeableCardProps {
@@ -32,7 +35,6 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ children, onDelete }) => 
     const diff = currentX.current - startX.current;
     
     // Limit swipe to left direction (negative values in LTR, but in RTL logic we want to move it 'out')
-    // Let's allow dragging to the Left (negative X) to delete
     if (diff < 0) {
       setOffsetX(diff);
     }
@@ -42,23 +44,19 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ children, onDelete }) => 
     setIsDragging(false);
     const diff = currentX.current - startX.current;
     
-    // Threshold to trigger delete (e.g. -100px)
     if (diff < -120) {
-      // Swiped far enough
       setOffsetX(-500); // Animate out
       setTimeout(() => {
         onDelete();
-        setOffsetX(0); // Reset for next render if reused (though likely unmounted)
+        setOffsetX(0); 
       }, 300);
     } else {
-      // Bounce back
       setOffsetX(0);
     }
   };
 
   return (
     <div className="relative select-none touch-pan-y">
-      {/* Background (Delete Action) */}
       <div 
         className="absolute inset-0 bg-red-500 rounded-2xl flex items-center justify-end px-8 text-white transition-opacity duration-200"
         style={{ opacity: Math.abs(offsetX) > 20 ? 1 : 0 }}
@@ -69,7 +67,6 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ children, onDelete }) => 
         </div>
       </div>
 
-      {/* Foreground (The Card) */}
       <div 
         ref={cardRef}
         onTouchStart={handleTouchStart}
@@ -88,11 +85,17 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ children, onDelete }) => 
 };
 
 const Favorites: React.FC = () => {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'azkar' | 'quran'>('azkar');
+  
+  // Data States
   const [favorites, setFavorites] = useState<number[]>([]);
+  const [quranBookmarks, setQuranBookmarks] = useState<quranService.Bookmark[]>([]);
   const [progress, setProgress] = useState<{[key: number]: number}>({});
 
   useEffect(() => {
     setFavorites(storage.getFavorites());
+    setQuranBookmarks(quranService.getBookmarks());
     const allProgress = storage.getProgress();
     const today = storage.getTodayKey();
     setProgress(allProgress[today] || {});
@@ -103,11 +106,20 @@ const Favorites: React.FC = () => {
     setFavorites(newFavs);
   };
 
-  // Generate IDs for Situational Duas to match those in Duas.tsx
+  const handleDeleteBookmark = (surah: number, ayah: number) => {
+      const updated = quranService.removeBookmark(surah, ayah);
+      setQuranBookmarks(updated);
+  };
+
+  const handleContinueReading = (bm: quranService.Bookmark) => {
+      navigate(`/quran/read/${bm.surahNumber}`, { state: { scrollToAyah: bm.ayahNumber }});
+  };
+
+  // Generate IDs for Situational Duas
   const situationalItems: Dhikr[] = SITUATIONAL_DUAS.flatMap((cat, catIdx) => 
     cat.items.map((item, itemIdx) => ({
-      id: 90000 + (catIdx * 1000) + itemIdx, // Deterministic ID generation
-      category: 'prayer' as CategoryId, // Placeholder category type
+      id: 90000 + (catIdx * 1000) + itemIdx,
+      category: 'prayer' as CategoryId,
       text: item.text,
       count: 1,
       source: item.source || cat.title,
@@ -115,57 +127,120 @@ const Favorites: React.FC = () => {
     }))
   );
 
-  // Combine standard Azkar and Situational Duas
   const allItems = [...AZKAR_DATA, ...situationalItems];
-
   const favoriteItems = allItems.filter(item => favorites.includes(item.id));
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-10">
-      <div className="flex items-center justify-between mb-6 md:mb-10">
-         <div className="flex items-center gap-3">
+      
+      {/* Header & Tabs */}
+      <div className="flex flex-col gap-6 mb-6">
+         <div className="flex items-center justify-between">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white font-arabicHead">المفضلة</h2>
-            <span className="bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 px-3 py-1 rounded-full text-sm font-bold">
-            {favorites.length}
-            </span>
          </div>
-         
-         {favorites.length > 0 && (
-            <div className="hidden md:flex items-center gap-1 text-xs text-gray-400">
-                <Hand size={14} />
-                <span>يمكنك سحب البطاقة للحذف</span>
-            </div>
-         )}
+
+         <div className="flex bg-gray-100 dark:bg-dark-surface p-1 rounded-xl">
+             <button 
+                onClick={() => setActiveTab('azkar')}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'azkar' ? 'bg-white dark:bg-dark-elevated text-emerald-600 shadow-sm' : 'text-gray-500'}`}
+             >
+                 <Heart size={18} />
+                 الأذكار
+                 <span className="bg-gray-100 dark:bg-dark-bg text-xs px-2 py-0.5 rounded-full ml-1 opacity-70">
+                     {favoriteItems.length}
+                 </span>
+             </button>
+             <button 
+                onClick={() => setActiveTab('quran')}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'quran' ? 'bg-white dark:bg-dark-elevated text-emerald-600 shadow-sm' : 'text-gray-500'}`}
+             >
+                 <BookmarkIcon size={18} />
+                 الآيات المحفوظة
+                 <span className="bg-gray-100 dark:bg-dark-bg text-xs px-2 py-0.5 rounded-full ml-1 opacity-70">
+                     {quranBookmarks.length}
+                 </span>
+             </button>
+         </div>
       </div>
 
-      {favoriteItems.length > 0 ? (
-        <div className="space-y-4 md:space-y-6">
-          {favoriteItems.map(item => (
-            <SwipeableCard 
-                key={item.id} 
-                onDelete={() => handleToggleFavorite(item.id)}
-            >
-                <DhikrCard
-                item={item}
-                isFavorite={true}
-                initialCount={progress[item.id] || 0}
-                onToggleFavorite={handleToggleFavorite}
-                readonly={true}
-                />
-            </SwipeableCard>
-          ))}
-          
-          <div className="text-center mt-8 text-gray-400 text-xs md:hidden flex items-center justify-center gap-2 opacity-60">
-             <Hand size={16} />
-             <span>اسحب البطاقة لليسار للحذف</span>
-          </div>
-        </div>
+      {/* Content */}
+      {activeTab === 'azkar' ? (
+          favoriteItems.length > 0 ? (
+            <div className="space-y-4 md:space-y-6">
+              {favoriteItems.map(item => (
+                <SwipeableCard 
+                    key={item.id} 
+                    onDelete={() => handleToggleFavorite(item.id)}
+                >
+                    <DhikrCard
+                    item={item}
+                    isFavorite={true}
+                    initialCount={progress[item.id] || 0}
+                    onToggleFavorite={handleToggleFavorite}
+                    readonly={true}
+                    />
+                </SwipeableCard>
+              ))}
+              
+              <div className="text-center mt-8 text-gray-400 text-xs md:hidden flex items-center justify-center gap-2 opacity-60">
+                 <Hand size={16} />
+                 <span>اسحب البطاقة لليسار للحذف</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-400 text-center bg-white dark:bg-dark-surface rounded-3xl border border-gray-100 dark:border-dark-border border-dashed">
+              <HeartOff size={64} className="mb-4 opacity-20" />
+              <p className="text-lg font-medium text-gray-600 dark:text-gray-400 font-arabic">لا توجد أذكار في المفضلة</p>
+              <p className="text-sm opacity-70 mt-2 font-arabic">اضغط على رمز القلب لإضافة الأذكار هنا</p>
+            </div>
+          )
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400 text-center bg-white dark:bg-dark-surface rounded-3xl border border-gray-100 dark:border-dark-border border-dashed">
-          <HeartOff size={64} className="mb-4 opacity-20" />
-          <p className="text-lg font-medium text-gray-600 dark:text-gray-400 font-arabic">لا توجد أذكار في المفضلة بعد</p>
-          <p className="text-sm opacity-70 mt-2 font-arabic">اضغط على رمز القلب لإضافة الأذكار هنا</p>
-        </div>
+          quranBookmarks.length > 0 ? (
+            <div className="space-y-3">
+                {quranBookmarks.map((bm, idx) => (
+                    <SwipeableCard
+                        key={`${bm.surahNumber}-${bm.ayahNumber}`}
+                        onDelete={() => handleDeleteBookmark(bm.surahNumber, bm.ayahNumber)}
+                    >
+                        <div 
+                            onClick={() => handleContinueReading(bm)}
+                            className="bg-white dark:bg-dark-surface p-4 rounded-2xl border border-gray-100 dark:border-dark-border flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-elevated transition-colors shadow-sm"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-amber-50 dark:bg-amber-900/20 rounded-xl flex items-center justify-center text-amber-600 dark:text-amber-400">
+                                    <BookmarkIcon size={24} />
+                                </div>
+                                <div>
+                                    <span className="font-bold text-gray-800 dark:text-white font-arabicHead text-lg block">
+                                        سورة {QURAN_META[bm.surahNumber - 1].name}
+                                    </span>
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                                        الآية {bm.ayahNumber} {bm.pageNumber && `• صفحة ${bm.pageNumber}`}
+                                    </span>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); handleDeleteBookmark(bm.surahNumber, bm.ayahNumber); }}
+                                className="p-3 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                            >
+                                <Trash2 size={20} />
+                            </button>
+                        </div>
+                    </SwipeableCard>
+                ))}
+                
+                <div className="text-center mt-8 text-gray-400 text-xs md:hidden flex items-center justify-center gap-2 opacity-60">
+                    <Hand size={16} />
+                    <span>اسحب البطاقة لليسار للحذف</span>
+                </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-400 text-center bg-white dark:bg-dark-surface rounded-3xl border border-gray-100 dark:border-dark-border border-dashed">
+              <BookmarkIcon size={64} className="mb-4 opacity-20" />
+              <p className="text-lg font-medium text-gray-600 dark:text-gray-400 font-arabic">لا توجد آيات محفوظة</p>
+              <p className="text-sm opacity-70 mt-2 font-arabic">استخدم زر الحفظ (القلب) أثناء القراءة لحفظ الآيات هنا</p>
+            </div>
+          )
       )}
     </div>
   );

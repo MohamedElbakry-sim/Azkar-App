@@ -1,16 +1,18 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { Radio as RadioIcon, Play, Pause, Search, Volume2, VolumeX, BarChart3, WifiOff, AlertCircle } from 'lucide-react';
+import { Radio as RadioIcon, Play, Pause, Search, Volume2, VolumeX, BarChart3, WifiOff, AlertCircle, Heart } from 'lucide-react';
 import * as radioService from '../services/radioService';
 import { RadioStation } from '../types';
 import ErrorState from '../components/ErrorState';
 import { useRadio } from '../contexts/RadioContext';
+import * as storage from '../services/storage';
 
 const Radio: React.FC = () => {
   const [stations, setStations] = useState<RadioStation[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [favoriteStations, setFavoriteStations] = useState<number[]>([]);
 
   // Consume Global Radio Context
   const { 
@@ -33,8 +35,6 @@ const Radio: React.FC = () => {
         const data = await radioService.getRadioStations();
         if (data.length > 0) {
           setStations(data);
-          // Auto-select first station if none active is not handled here to avoid auto-play on load
-          // Only play if user clicks
         } else {
           setFetchError(true);
         }
@@ -46,16 +46,32 @@ const Radio: React.FC = () => {
     };
 
     fetchStations();
+    setFavoriteStations(storage.getRadioFavorites());
   }, []);
 
-  const filteredStations = useMemo(() => {
-    if (!searchQuery.trim()) return stations;
-    return stations.filter(s => s.name.includes(searchQuery));
-  }, [stations, searchQuery]);
+  const toggleFavorite = (stationId: number) => {
+      const updated = storage.toggleRadioFavorite(stationId);
+      setFavoriteStations(updated);
+  };
 
-  // If no station is active, but list loaded, we can conceptually "target" the first one for the UI 
-  // without playing it, or just show "Select Station".
-  // Let's fallback to first station for display only if nothing is globally playing.
+  const filteredStations = useMemo(() => {
+    let result = stations;
+    
+    // Filter by search
+    if (searchQuery.trim()) {
+        result = stations.filter(s => s.name.includes(searchQuery));
+    }
+
+    // Sort: Favorites first, then alphabetical
+    return result.sort((a, b) => {
+        const isFavA = favoriteStations.includes(a.id);
+        const isFavB = favoriteStations.includes(b.id);
+        if (isFavA && !isFavB) return -1;
+        if (!isFavA && isFavB) return 1;
+        return 0;
+    });
+  }, [stations, searchQuery, favoriteStations]);
+
   const displayStation = currentStation || stations[0];
 
   if (loading) {
@@ -191,40 +207,54 @@ const Radio: React.FC = () => {
                     <p>لا توجد إذاعات مطابقة</p>
                 </div>
             ) : (
-                filteredStations.map((station) => (
-                    <button
-                        key={station.id}
-                        onClick={() => playStation(station)}
-                        className={`
-                            flex items-center gap-3 p-4 rounded-xl text-right transition-all border
-                            ${currentStation?.id === station.id 
-                                ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800' 
-                                : 'bg-gray-50 dark:bg-dark-bg border-transparent hover:border-gray-200 dark:hover:border-gray-700'
-                            }
-                        `}
-                    >
-                        <div className={`
-                            w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors
-                            ${currentStation?.id === station.id 
-                                ? 'bg-emerald-500 text-white' 
-                                : 'bg-gray-200 dark:bg-dark-surface text-gray-500'
-                            }
-                        `}>
-                            {currentStation?.id === station.id && isPlaying && !playbackError ? (
-                                <div className="flex gap-0.5 h-4 items-end">
-                                    <div className="w-1 bg-white animate-pulse" style={{ height: '60%', animationDelay: '0s' }}></div>
-                                    <div className="w-1 bg-white animate-pulse" style={{ height: '100%', animationDelay: '0.2s' }}></div>
-                                    <div className="w-1 bg-white animate-pulse" style={{ height: '40%', animationDelay: '0.4s' }}></div>
+                filteredStations.map((station) => {
+                    const isFav = favoriteStations.includes(station.id);
+                    return (
+                        <div
+                            key={station.id}
+                            className={`
+                                flex items-center justify-between p-2 pl-3 rounded-xl text-right transition-all border group
+                                ${currentStation?.id === station.id 
+                                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800' 
+                                    : 'bg-gray-50 dark:bg-dark-bg border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+                                }
+                            `}
+                        >
+                            <button
+                                onClick={() => playStation(station)}
+                                className="flex items-center gap-3 flex-1 p-2"
+                            >
+                                <div className={`
+                                    w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors
+                                    ${currentStation?.id === station.id 
+                                        ? 'bg-emerald-500 text-white' 
+                                        : 'bg-gray-200 dark:bg-dark-surface text-gray-500'
+                                    }
+                                `}>
+                                    {currentStation?.id === station.id && isPlaying && !playbackError ? (
+                                        <div className="flex gap-0.5 h-4 items-end">
+                                            <div className="w-1 bg-white animate-pulse" style={{ height: '60%', animationDelay: '0s' }}></div>
+                                            <div className="w-1 bg-white animate-pulse" style={{ height: '100%', animationDelay: '0.2s' }}></div>
+                                            <div className="w-1 bg-white animate-pulse" style={{ height: '40%', animationDelay: '0.4s' }}></div>
+                                        </div>
+                                    ) : (
+                                        <RadioIcon size={18} />
+                                    )}
                                 </div>
-                            ) : (
-                                <RadioIcon size={18} />
-                            )}
+                                <span className={`font-bold text-sm ${currentStation?.id === station.id ? 'text-emerald-800 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                                    {station.name}
+                                </span>
+                            </button>
+                            
+                            <button
+                                onClick={() => toggleFavorite(station.id)}
+                                className={`p-2 rounded-full transition-colors ${isFav ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-300 hover:bg-white dark:hover:bg-dark-surface'}`}
+                            >
+                                <Heart size={16} fill={isFav ? "currentColor" : "none"} />
+                            </button>
                         </div>
-                        <span className={`font-bold text-sm ${currentStation?.id === station.id ? 'text-emerald-800 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-300'}`}>
-                            {station.name}
-                        </span>
-                    </button>
-                ))
+                    );
+                })
             )}
         </div>
       </div>

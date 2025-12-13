@@ -5,7 +5,7 @@ import { AZKAR_DATA, CATEGORIES } from '../data';
 import DhikrCard from '../components/DhikrCard';
 import DhikrFormModal from '../components/DhikrFormModal';
 import * as storage from '../services/storage';
-import { CheckCircle, Home, BarChart3, Type, Plus } from 'lucide-react';
+import { CheckCircle, Home, BarChart3, Type, Plus, ArrowDownUp, Check } from 'lucide-react';
 import { Dhikr, CategoryId } from '../types';
 
 const CategoryView: React.FC = () => {
@@ -28,6 +28,9 @@ const CategoryView: React.FC = () => {
   const [fontSize, setFontSize] = useState<storage.FontSize>('medium');
   const [showFontControls, setShowFontControls] = useState(false);
 
+  // Reorder State
+  const [isReordering, setIsReordering] = useState(false);
+
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Dhikr | undefined>(undefined);
@@ -49,12 +52,26 @@ const CategoryView: React.FC = () => {
     const deletedDefaults = storage.getDeletedDefaults();
 
     // 5. Merge
-    // Map defaults to their overridden version if exists
     const mergedDefaults = defaults.map(item => overrides[item.id] || item);
-    
-    // Combine merged defaults + custom items, then filter out deleted defaults
     const allItems = [...mergedDefaults, ...custom].filter(item => !deletedDefaults.includes(item.id));
     
+    // 6. Apply Saved Order
+    const savedOrder = storage.getDhikrOrder(id);
+    if (savedOrder.length > 0) {
+        allItems.sort((a, b) => {
+            const indexA = savedOrder.indexOf(a.id);
+            const indexB = savedOrder.indexOf(b.id);
+            // If both present, sort by index
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            // If A has order, it goes first
+            if (indexA !== -1) return -1;
+            // If B has order, it goes first
+            if (indexB !== -1) return 1;
+            // Otherwise maintain default relative order
+            return 0;
+        });
+    }
+
     setItems(allItems);
     return allItems;
   };
@@ -108,6 +125,11 @@ const CategoryView: React.FC = () => {
     setVisibleIds(prev => prev.filter(id => id !== dhikrId));
   };
 
+  const handleSkip = (dhikrId: number) => {
+      storage.markAsSkipped(dhikrId);
+      setVisibleIds(prev => prev.filter(id => id !== dhikrId));
+  };
+
   const handleFontSizeChange = (size: storage.FontSize) => {
     setFontSize(size);
     storage.saveFontSize(size);
@@ -126,51 +148,55 @@ const CategoryView: React.FC = () => {
   };
 
   const handleSaveDhikr = (dhikrData: Partial<Dhikr>) => {
-    // If updating existing
     if (dhikrData.id) {
-        // Check if it is a default item (ID < 10000 assume default logic or check AZKAR_DATA)
-        // Simple check: if ID exists in AZKAR_DATA, it's a default item being overridden
         const isDefault = AZKAR_DATA.some(d => d.id === dhikrData.id);
-        
         if (isDefault) {
             storage.saveDhikrOverride(dhikrData as Dhikr);
         } else {
             storage.saveCustomDhikr(dhikrData as Dhikr);
         }
     } else {
-        // New Item
         const newDhikr: Dhikr = {
             ...dhikrData,
-            id: Date.now(), // Generate ID
+            id: Date.now(),
             category: id as CategoryId,
         } as Dhikr;
-        
         storage.saveCustomDhikr(newDhikr);
-        
-        // Make sure it appears
         setVisibleIds(prev => [...prev, newDhikr.id]);
     }
-    
-    // Reload list
     loadData();
   };
 
   const handleDeleteDhikr = (id: number) => {
     const isDefault = AZKAR_DATA.some(d => d.id === id);
-    
     if (isDefault) {
-        // Mark as deleted/hidden from view
         storage.markDefaultAsDeleted(id);
-        // Also clean up any overrides to keep storage clean
         storage.deleteDhikrOverride(id);
     } else {
-        // Permanently delete custom item
         storage.deleteCustomDhikr(id);
     }
-    
-    // Remove from current view
     setVisibleIds(prev => prev.filter(vId => vId !== id));
     loadData();
+  };
+
+  // --- Reorder Logic ---
+
+  const moveItem = (itemId: number, direction: 'up' | 'down') => {
+      const currentIndex = items.findIndex(i => i.id === itemId);
+      if (currentIndex < 0) return;
+      
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      if (newIndex >= 0 && newIndex < items.length) {
+          const newItems = [...items];
+          // Swap
+          [newItems[currentIndex], newItems[newIndex]] = [newItems[newIndex], newItems[currentIndex]];
+          setItems(newItems);
+          
+          // Save new order
+          const idOrder = newItems.map(i => i.id);
+          storage.saveDhikrOrder(id as string, idOrder);
+      }
   };
 
   if (!category) {
@@ -201,8 +227,8 @@ const CategoryView: React.FC = () => {
       {/* Category Header */}
       <div className={`rounded-3xl p-6 md:p-8 text-center mb-8 shadow-sm border border-gray-100 dark:border-dark-border ${themeClasses} relative overflow-visible`}>
         
-        {/* Font Size Toggle */}
-        <div className="absolute top-4 left-4 z-20">
+        {/* Controls Bar */}
+        <div className="absolute top-4 left-4 z-20 flex gap-2">
              <button 
                onClick={() => setShowFontControls(!showFontControls)}
                className="p-2 rounded-full bg-white/60 hover:bg-white dark:bg-black/20 dark:hover:bg-black/40 text-inherit transition-all shadow-sm backdrop-blur-sm"
@@ -237,8 +263,15 @@ const CategoryView: React.FC = () => {
              )}
         </div>
 
-        {/* Add Button */}
-        <div className="absolute top-4 right-4 z-20">
+        {/* Right Actions */}
+        <div className="absolute top-4 right-4 z-20 flex gap-2">
+            <button
+                onClick={() => setIsReordering(!isReordering)}
+                className={`p-2 rounded-full bg-white/60 hover:bg-white dark:bg-black/20 dark:hover:bg-black/40 text-inherit transition-all shadow-sm backdrop-blur-sm flex items-center gap-1 ${isReordering ? 'ring-2 ring-primary-500 bg-white dark:bg-black/40' : ''}`}
+                title={isReordering ? "إنهاء الترتيب" : "إعادة الترتيب"}
+            >
+                {isReordering ? <Check size={20} /> : <ArrowDownUp size={20} />}
+            </button>
             <button
                 onClick={handleAddItem}
                 className="p-2 rounded-full bg-white/60 hover:bg-white dark:bg-black/20 dark:hover:bg-black/40 text-inherit transition-all shadow-sm backdrop-blur-sm flex items-center gap-1"
@@ -290,12 +323,12 @@ const CategoryView: React.FC = () => {
         ) : (
           <>
             {items
-            .filter(item => visibleIds.includes(item.id))
+            .filter(item => isReordering || visibleIds.includes(item.id)) // Show all when reordering
             .map((item, index) => (
                 <div 
                 key={item.id} 
-                className="animate-slideUp opacity-0 fill-mode-forwards"
-                style={{ animationDelay: `${index * 80}ms` }}
+                className={!isReordering ? "animate-slideUp opacity-0 fill-mode-forwards" : ""}
+                style={!isReordering ? { animationDelay: `${index * 80}ms` } : {}}
                 >
                 <DhikrCard
                     item={item}
@@ -306,12 +339,16 @@ const CategoryView: React.FC = () => {
                     onComplete={handleComplete}
                     onEdit={handleEditItem}
                     onDelete={handleDeleteDhikr}
+                    onSkip={handleSkip}
                     fontSizeOverride={fontSize}
+                    reorderMode={isReordering}
+                    onMoveUp={() => moveItem(item.id, 'up')}
+                    onMoveDown={() => moveItem(item.id, 'down')}
                 />
                 </div>
             ))}
 
-            {!isLoading && visibleIds.length === 0 && (
+            {!isLoading && !isReordering && visibleIds.length === 0 && (
             <div className="flex flex-col items-center justify-center py-10 md:py-16 text-center animate-slideUp">
                 <div className="w-24 h-24 bg-gradient-to-br from-[#2ECC71] to-[#16A085] rounded-full flex items-center justify-center mb-6 text-white shadow-lg animate-popIn">
                     <CheckCircle size={48} />

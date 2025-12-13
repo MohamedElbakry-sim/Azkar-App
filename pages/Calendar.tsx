@@ -40,8 +40,9 @@ const CalendarPage: React.FC = () => {
     setHijriString(formatted);
 
     // 3. Extract parts for event logic
-    // Using Intl.DateTimeFormat with 'parts' to robustly get day/month values
-    const parts = new Intl.DateTimeFormat('en-US-u-ca-islamic-nu-latn', {
+    // Using ar-SA with nu-latn to ensure we get Western digits (1,2,3) but use the same
+    // Umm al-Qura calendar algorithm as the display string to prevent off-by-one inconsistencies.
+    const parts = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-nu-latn', {
         day: 'numeric',
         month: 'numeric',
         year: 'numeric'

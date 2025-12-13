@@ -12,15 +12,15 @@ import { QURAN_META } from '../data/quranMeta';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const [bookmark, setBookmark] = useState<quranService.Bookmark | null>(null);
+  const [lastRead, setLastRead] = useState<quranService.Bookmark | null>(null);
 
   useEffect(() => {
-    setBookmark(quranService.getBookmark());
+    setLastRead(quranService.getLastRead());
   }, []);
 
   const handleContinueReading = () => {
-    if (bookmark) {
-      navigate(`/quran/read/${bookmark.surahNumber}`, { state: { scrollToAyah: bookmark.ayahNumber }});
+    if (lastRead) {
+      navigate(`/quran/read/${lastRead.surahNumber}`, { state: { scrollToAyah: lastRead.ayahNumber }});
     } else {
         navigate('/quran');
     }
@@ -53,7 +53,7 @@ const Home: React.FC = () => {
           <SmartAzkarSuggestion />
 
           {/* Continue Reading Widget */}
-          {bookmark ? (
+          {lastRead ? (
             <div 
                 onClick={handleContinueReading}
                 className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-card cursor-pointer group hover:border-emerald-200 dark:hover:border-emerald-900 transition-all relative overflow-hidden"
@@ -67,10 +67,10 @@ const Home: React.FC = () => {
                         <div>
                             <span className="text-caption font-bold text-gray-400 uppercase tracking-wider mb-1 block">متابعة القراءة</span>
                             <h2 className="text-h2 font-bold text-gray-800 dark:text-white font-arabicHead">
-                                سورة {QURAN_META[bookmark.surahNumber - 1].name}
+                                سورة {QURAN_META[lastRead.surahNumber - 1].name}
                             </h2>
                             <p className="text-small text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
-                                الآية {bookmark.ayahNumber}
+                                {lastRead.pageNumber ? `صفحة ${lastRead.pageNumber}` : `الآية ${lastRead.ayahNumber}`}
                             </p>
                         </div>
                     </div>

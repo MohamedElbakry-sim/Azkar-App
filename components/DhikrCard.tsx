@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Dhikr } from '../types';
-import { Heart, Repeat, Info, Share2, Copy, Check, Edit3, Trash2 } from 'lucide-react';
+import { Heart, Repeat, Info, Share2, Copy, Check, Edit3, Trash2, SkipForward, MoveUp, MoveDown } from 'lucide-react';
 import * as storage from '../services/storage';
 import { getHighlightRegex } from '../utils';
 
@@ -14,9 +14,14 @@ interface DhikrCardProps {
   onComplete?: (id: number) => void;
   onEdit?: (item: Dhikr) => void;
   onDelete?: (id: number) => void;
+  onSkip?: (id: number) => void; // New prop
   highlightQuery?: string;
   readonly?: boolean;
   fontSizeOverride?: storage.FontSize;
+  // Reordering props
+  reorderMode?: boolean;
+  onMoveUp?: (id: number) => void;
+  onMoveDown?: (id: number) => void;
 }
 
 const DhikrCard: React.FC<DhikrCardProps> = ({ 
@@ -28,9 +33,13 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   onComplete,
   onEdit,
   onDelete,
+  onSkip,
   highlightQuery,
   readonly = false,
-  fontSizeOverride
+  fontSizeOverride,
+  reorderMode = false,
+  onMoveUp,
+  onMoveDown
 }) => {
   const [count, setCount] = useState(initialCount);
   const [showBenefit, setShowBenefit] = useState(false);
@@ -55,7 +64,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   }, [fontSizeOverride]);
 
   const handleTap = () => {
-    if (readonly || isCompleted) return;
+    if (readonly || isCompleted || reorderMode) return;
 
     // Trigger visual press state
     setIsPressed(true);
@@ -75,7 +84,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!readonly && !isCompleted && (e.key === 'Enter' || e.key === ' ')) {
+    if (!readonly && !isCompleted && !reorderMode && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       handleTap();
     }
@@ -106,18 +115,19 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
       {/* Main Interaction Card */}
       <div 
         role="button"
-        tabIndex={readonly || isCompleted ? -1 : 0}
+        tabIndex={readonly || isCompleted || reorderMode ? -1 : 0}
         onClick={handleTap}
         onKeyDown={handleKeyDown}
         className={`
             w-full text-right relative overflow-hidden bg-white dark:bg-dark-surface rounded-[2rem] shadow-card border border-gray-100 dark:border-dark-border
             transition-transform duration-100 outline-none select-none
             ${isPressed ? 'scale-[0.98]' : 'scale-100'}
-            ${!readonly && !isCompleted ? 'active:ring-2 active:ring-primary-500 cursor-pointer' : 'cursor-default'}
+            ${!readonly && !isCompleted && !reorderMode ? 'active:ring-2 active:ring-primary-500 cursor-pointer' : 'cursor-default'}
+            ${reorderMode ? 'border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-dark-bg' : ''}
         `}
       >
         {/* Progress Background Fill */}
-        {!readonly && (
+        {!readonly && !reorderMode && (
             <div 
                 className="absolute bottom-0 right-0 top-0 bg-primary-50 dark:bg-primary-900/10 transition-all duration-300 ease-out z-0"
                 style={{ width: `${progressPercent}%` }}
@@ -131,7 +141,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                     <span className="bg-gray-100 dark:bg-dark-bg text-gray-500 dark:text-dark-muted px-3 py-1 rounded-lg text-caption font-bold">
                         {item.source || 'ذكر'}
                     </span>
-                    {currentTarget > 1 && (
+                    {currentTarget > 1 && !reorderMode && (
                         <div className="flex items-center gap-1 text-primary-600 dark:text-primary-400 bg-white dark:bg-dark-elevated px-2 py-1 rounded-lg shadow-sm border border-gray-100 dark:border-dark-border">
                             <Repeat size={14} />
                             <span className="text-caption font-bold font-english">{count} / {currentTarget}</span>
@@ -140,31 +150,55 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                 </div>
 
                 <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                    <button 
-                        onClick={() => onToggleFavorite(item.id)}
-                        className={`p-2 rounded-full transition-colors ${isFavorite ? 'text-rose-500 bg-rose-50 dark:bg-rose-900/20' : 'text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
-                        title={isFavorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}
-                    >
-                        <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
-                    </button>
-                    {item.benefit && (
-                        <button 
-                            onClick={() => setShowBenefit(!showBenefit)}
-                            className={`p-2 rounded-full transition-colors ${showBenefit ? 'text-blue-500 bg-blue-50' : 'text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
-                            title="فضل الذكر"
-                        >
-                            <Info size={20} />
-                        </button>
-                    )}
-                    {onEdit && (
-                        <button onClick={() => onEdit(item)} className="p-2 text-gray-300 hover:text-amber-500 hover:bg-amber-50 rounded-full" title="تعديل">
-                            <Edit3 size={20} />
-                        </button>
-                    )}
-                    {onDelete && (
-                        <button onClick={() => onDelete(item.id)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full" title="حذف">
-                            <Trash2 size={20} />
-                        </button>
+                    {/* Reorder Controls */}
+                    {reorderMode && onMoveUp && onMoveDown ? (
+                        <>
+                            <button onClick={() => onMoveUp(item.id)} className="p-2 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-full hover:text-primary-600 text-gray-500">
+                                <MoveUp size={18} />
+                            </button>
+                            <button onClick={() => onMoveDown(item.id)} className="p-2 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-full hover:text-primary-600 text-gray-500">
+                                <MoveDown size={18} />
+                            </button>
+                        </>
+                    ) : (
+                        // Standard Actions
+                        <>
+                            {onSkip && !readonly && !isCompleted && (
+                                <button
+                                    onClick={() => onSkip(item.id)}
+                                    className="p-2 rounded-full text-gray-300 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-bg transition-colors"
+                                    title="تخطي (لا يحتسب)"
+                                >
+                                    <SkipForward size={20} />
+                                </button>
+                            )}
+                            <button 
+                                onClick={() => onToggleFavorite(item.id)}
+                                className={`p-2 rounded-full transition-colors ${isFavorite ? 'text-rose-500 bg-rose-50 dark:bg-rose-900/20' : 'text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
+                                title={isFavorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}
+                            >
+                                <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
+                            </button>
+                            {item.benefit && (
+                                <button 
+                                    onClick={() => setShowBenefit(!showBenefit)}
+                                    className={`p-2 rounded-full transition-colors ${showBenefit ? 'text-blue-500 bg-blue-50' : 'text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
+                                    title="فضل الذكر"
+                                >
+                                    <Info size={20} />
+                                </button>
+                            )}
+                            {onEdit && (
+                                <button onClick={() => onEdit(item)} className="p-2 text-gray-300 hover:text-amber-500 hover:bg-amber-50 rounded-full" title="تعديل">
+                                    <Edit3 size={20} />
+                                </button>
+                            )}
+                            {onDelete && (
+                                <button onClick={() => onDelete(item.id)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full" title="حذف">
+                                    <Trash2 size={20} />
+                                </button>
+                            )}
+                        </>
                     )}
                 </div>
             </div>

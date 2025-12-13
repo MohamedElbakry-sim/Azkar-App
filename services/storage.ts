@@ -1,3 +1,4 @@
+
 import { ProgressState, Dhikr, CategoryId, MissedPrayers } from '../types';
 
 const FAVORITES_KEY = 'nour_favorites_v1';
@@ -17,6 +18,8 @@ const REMINDERS_KEY = 'nour_reminders_v1';
 const NOTIFICATION_SETTINGS_KEY = 'nour_notification_settings_v1';
 const HEATMAP_THEME_KEY = 'nour_heatmap_theme_v1';
 const ALKAHF_PROMPT_KEY = 'nour_alkahf_prompt_v1';
+const DHIKR_ORDER_KEY = 'nour_dhikr_order_v1';
+const RADIO_FAVORITES_KEY = 'nour_radio_favorites_v1';
 
 export type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
 
@@ -538,4 +541,43 @@ export const hasSeenAlKahfPrompt = (): boolean => {
 export const markAlKahfPromptSeen = () => {
   const today = getTodayKey();
   localStorage.setItem(ALKAHF_PROMPT_KEY, today);
+};
+
+// --- Dhikr Ordering ---
+
+export const getDhikrOrder = (categoryId: string): number[] => {
+  try {
+    const stored = localStorage.getItem(`${DHIKR_ORDER_KEY}_${categoryId}`);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const saveDhikrOrder = (categoryId: string, order: number[]) => {
+  localStorage.setItem(`${DHIKR_ORDER_KEY}_${categoryId}`, JSON.stringify(order));
+};
+
+// --- Radio Favorites ---
+
+export const getRadioFavorites = (): number[] => {
+  try {
+    const stored = localStorage.getItem(RADIO_FAVORITES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const toggleRadioFavorite = (stationId: number): number[] => {
+  const current = getRadioFavorites();
+  const index = current.indexOf(stationId);
+  let newFavs;
+  if (index >= 0) {
+    newFavs = current.filter(id => id !== stationId);
+  } else {
+    newFavs = [...current, stationId];
+  }
+  localStorage.setItem(RADIO_FAVORITES_KEY, JSON.stringify(newFavs));
+  return newFavs;
 };
