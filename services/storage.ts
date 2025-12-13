@@ -20,6 +20,7 @@ const HEATMAP_THEME_KEY = 'nour_heatmap_theme_v1';
 const ALKAHF_PROMPT_KEY = 'nour_alkahf_prompt_v1';
 const DHIKR_ORDER_KEY = 'nour_dhikr_order_v1';
 const RADIO_FAVORITES_KEY = 'nour_radio_favorites_v1';
+const NAV_SETTINGS_KEY = 'nour_nav_settings_v1';
 
 export type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
 
@@ -580,4 +581,22 @@ export const toggleRadioFavorite = (stationId: number): number[] => {
   }
   localStorage.setItem(RADIO_FAVORITES_KEY, JSON.stringify(newFavs));
   return newFavs;
+};
+
+// --- Navigation Settings ---
+
+export const DEFAULT_NAV_ORDER = ['home', 'quran', 'athkar', 'prayers', 'more'];
+
+export const getNavOrder = (): string[] => {
+  try {
+    const stored = localStorage.getItem(NAV_SETTINGS_KEY);
+    if (stored) return JSON.parse(stored);
+    return DEFAULT_NAV_ORDER;
+  } catch {
+    return DEFAULT_NAV_ORDER;
+  }
+};
+
+export const saveNavOrder = (order: string[]) => {
+  localStorage.setItem(NAV_SETTINGS_KEY, JSON.stringify(order));
 };

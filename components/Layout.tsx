@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Book, Clock, Menu, Sun, Moon, ArrowRight, LayoutGrid, Maximize2, Square, Play, Pause } from 'lucide-react';
+import { Home, Book, Menu, Sun, Moon, ArrowRight, Maximize2, Square, Play, Pause, Radio, Calendar, Target } from 'lucide-react';
 import Logo from './Logo';
 import { useRadio } from '../contexts/RadioContext';
+import * as storage from '../services/storage';
 
-// Custom Icons
+// Custom Icons Exported for Reuse in Settings
 export const PrayerIcon = ({ size = 24 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 2L4 7V17L12 22L20 17V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -35,6 +36,19 @@ export const AllahIcon = ({ size = 24 }: { size?: number }) => (
   </svg>
 );
 
+// Define All Possible Nav Items
+export const ALL_NAV_ITEMS: Record<string, { path: string; label: string; icon: React.ReactNode }> = {
+    'home': { path: '/', label: 'الرئيسية', icon: <Home size={22} /> },
+    'quran': { path: '/quran', label: 'القرآن', icon: <Book size={22} /> },
+    'athkar': { path: '/athkar', label: 'الأذكار', icon: <AthkarIcon size={22} /> },
+    'prayers': { path: '/prayers', label: 'الصلاة', icon: <PrayerIcon size={22} /> },
+    'habits': { path: '/habits', label: 'المواظبة', icon: <Target size={22} /> },
+    'tasbeeh': { path: '/tasbeeh', label: 'السبحة', icon: <TasbeehIcon size={22} /> },
+    'radio': { path: '/radio', label: 'الإذاعة', icon: <Radio size={22} /> },
+    'calendar': { path: '/calendar', label: 'التقويم', icon: <Calendar size={22} /> },
+    'more': { path: '/more', label: 'المزيد', icon: <Menu size={22} /> }
+};
+
 interface LayoutProps {
   children: React.ReactNode;
   darkMode: boolean;
@@ -47,6 +61,19 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   const { currentStation, isPlaying, togglePlay, stop, isBuffering } = useRadio();
   const showMiniPlayer = currentStation && location.pathname !== '/radio';
 
+  // State for dynamic navigation items
+  const [activeNavIds, setActiveNavIds] = useState<string[]>(storage.getNavOrder());
+
+  // Listen for navigation updates from Settings page
+  useEffect(() => {
+      const handleNavUpdate = () => {
+          setActiveNavIds(storage.getNavOrder());
+      };
+      
+      window.addEventListener('nav-settings-updated', handleNavUpdate);
+      return () => window.removeEventListener('nav-settings-updated', handleNavUpdate);
+  }, []);
+
   // Check if we are in Reading Mode (Quran Reader)
   const isReadingMode = location.pathname.includes('/quran/read');
 
@@ -57,13 +84,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                        location.pathname.startsWith('/category/') ||
                        location.pathname === '/settings');
 
-  const navTabs = [
-    { path: '/', icon: <Home size={22} />, label: 'الرئيسية' },
-    { path: '/quran', icon: <Book size={22} />, label: 'القرآن' },
-    { path: '/athkar', icon: <AthkarIcon size={22} />, label: 'الأذكار' },
-    { path: '/prayers', icon: <PrayerIcon size={22} />, label: 'الصلاة' },
-    { path: '/more', icon: <Menu size={22} />, label: 'المزيد' },
-  ];
+  const navTabs = activeNavIds.map(id => ALL_NAV_ITEMS[id]).filter(Boolean);
 
   return (
     <div className="min-h-screen flex bg-[#F9FAFB] dark:bg-dark-bg transition-colors duration-200 font-arabic text-body text-gray-900 dark:text-dark-text">

@@ -160,18 +160,25 @@ export interface RadioStation {
 // --- Habit Tracker Types ---
 
 export type HabitType = 'boolean' | 'numeric' | 'timer';
+export type HabitCategory = 'spiritual' | 'health' | 'personal' | 'sunnah';
+export type SystemHabitType = 'azkar_sabah' | 'azkar_masaa' | 'azkar_sleep' | 'quran_reading' | 'salah_fajr' | 'salah_dhuhr' | 'salah_asr' | 'salah_maghrib' | 'salah_isha' | 'duas_general' | 'none';
 
 export interface Habit {
   id: string;
   title: string;
   type: HabitType;
+  category: HabitCategory;
+  systemType: SystemHabitType; // For auto-detection
   goal: number; // 1 for boolean, count for numeric, seconds for timer
-  unit: string; // e.g. 'pages', 'minutes'
+  unit: string; // e.g. 'pages', 'minutes', 'rakats'
   color: string; // tailwind color class e.g. 'bg-blue-500'
   icon: string; // emoji or identifier
   frequency: number[]; // 0-6 (Sun-Sat)
   streak: number;
+  bestStreak: number;
+  totalCompletions: number;
   archived: boolean;
+  reminderTime?: string; // "08:00"
 }
 
 export interface HabitLog {
@@ -180,8 +187,19 @@ export interface HabitLog {
   };
 }
 
+export interface Badge {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  condition: (stats: HabitUserStats) => boolean;
+  unlocked: boolean;
+  unlockedDate?: string;
+}
+
 export interface HabitUserStats {
   xp: number;
   level: number;
   totalCompletions: number;
+  badges: string[]; // IDs of unlocked badges
 }

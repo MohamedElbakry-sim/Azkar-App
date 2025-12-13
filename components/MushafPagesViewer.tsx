@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, Loader2, AlertCircle, Bookmark, Eye, EyeOff, Type, Settings, Sun, Moon, Coffee } from 'lucide-react';
 import * as quranService from '../services/quranService';
+import * as habitService from '../services/habitService';
 import { toArabicNumerals } from '../utils';
 import { Ayah } from '../types';
 
@@ -77,6 +78,9 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({ initialPage, onPa
         const data = await quranService.getPageContent(pageNumber);
         setAyahs(data);
         
+        // Log Habit Activity (1 page read)
+        habitService.logSystemActivity('quran_reading', 1);
+
         // Preload adjacent pages
         if (pageNumber < TOTAL_PAGES) quranService.getPageContent(pageNumber + 1);
         if (pageNumber > 1) quranService.getPageContent(pageNumber - 1);

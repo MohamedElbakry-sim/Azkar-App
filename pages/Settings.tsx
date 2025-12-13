@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, AlertTriangle } from 'lucide-react';
+import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, AlertTriangle, Menu, ArrowUp, ArrowDown, X } from 'lucide-react';
 import * as storage from '../services/storage';
 import { CATEGORIES } from '../data';
+import { ALL_NAV_ITEMS } from '../components/Layout';
 
 interface SettingsProps {
   darkMode: boolean;
@@ -20,6 +21,9 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   const [newReminderLabel, setNewReminderLabel] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
 
+  // Nav Settings State
+  const [navOrder, setNavOrder] = useState<string[]>([]);
+
   // Notification Settings State
   const [notifSettings, setNotifSettings] = useState<storage.NotificationSettings>({
     soundEnabled: true,
@@ -33,6 +37,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     setReminders(storage.getReminders());
     setHijriOffset(storage.getHijriOffset());
     setNotifSettings(storage.getNotificationSettings());
+    setNavOrder(storage.getNavOrder());
   }, []);
 
   const changeFontSize = (size: storage.FontSize) => {
@@ -105,6 +110,42 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     reader.readAsText(file);
     // Reset input
     e.target.value = '';
+  };
+
+  // --- Nav Settings Handlers ---
+  
+  const handleMoveNav = (index: number, direction: 'up' | 'down') => {
+      const newOrder = [...navOrder];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      
+      if (targetIndex >= 0 && targetIndex < newOrder.length) {
+          [newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
+          setNavOrder(newOrder);
+          storage.saveNavOrder(newOrder);
+          window.dispatchEvent(new Event('nav-settings-updated'));
+      }
+  };
+
+  const handleRemoveNav = (id: string) => {
+      if (navOrder.length <= 2) {
+          alert("يجب اختيار عنصرين على الأقل");
+          return;
+      }
+      const newOrder = navOrder.filter(item => item !== id);
+      setNavOrder(newOrder);
+      storage.saveNavOrder(newOrder);
+      window.dispatchEvent(new Event('nav-settings-updated'));
+  };
+
+  const handleAddNav = (id: string) => {
+      if (navOrder.length >= 5) {
+          alert("الحد الأقصى هو 5 عناصر في القائمة");
+          return;
+      }
+      const newOrder = [...navOrder, id];
+      setNavOrder(newOrder);
+      storage.saveNavOrder(newOrder);
+      window.dispatchEvent(new Event('nav-settings-updated'));
   };
 
   // --- Reminder Handlers ---
@@ -227,6 +268,86 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
       </div>
 
       <div className="space-y-4">
+        
+        {/* Customize Menu Section */}
+        <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
+            <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 rounded-full bg-gray-100 dark:bg-dark-panel text-gray-600 dark:text-dark-secondary">
+                    <Menu size={24} />
+                </div>
+                <div>
+                    <h3 className="font-bold text-body-lg text-gray-800 dark:text-dark-text font-arabic">ترتيب القائمة</h3>
+                    <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">اسحب أو استخدم الأسهم لترتيب العناصر (الحد الأقصى 5)</p>
+                </div>
+            </div>
+
+            {/* Active Items List */}
+            <div className="space-y-2 mb-6">
+                {navOrder.map((id, index) => {
+                    const item = ALL_NAV_ITEMS[id];
+                    if (!item) return null;
+                    return (
+                        <div key={id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-panel rounded-xl border border-gray-100 dark:border-dark-border animate-slideUp">
+                            <div className="flex items-center gap-3">
+                                <div className="text-gray-500 dark:text-gray-400 bg-white dark:bg-dark-surface p-2 rounded-lg">
+                                    {item.icon}
+                                </div>
+                                <span className="font-bold text-gray-800 dark:text-white font-arabic">{item.label}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-1">
+                                <button 
+                                    onClick={() => handleMoveNav(index, 'up')}
+                                    disabled={index === 0}
+                                    className="p-2 text-gray-400 hover:text-primary-600 hover:bg-white dark:hover:bg-dark-surface rounded-lg disabled:opacity-30 disabled:hover:bg-transparent"
+                                >
+                                    <ArrowUp size={18} />
+                                </button>
+                                <button 
+                                    onClick={() => handleMoveNav(index, 'down')}
+                                    disabled={index === navOrder.length - 1}
+                                    className="p-2 text-gray-400 hover:text-primary-600 hover:bg-white dark:hover:bg-dark-surface rounded-lg disabled:opacity-30 disabled:hover:bg-transparent"
+                                >
+                                    <ArrowDown size={18} />
+                                </button>
+                                <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1"></div>
+                                <button 
+                                    onClick={() => handleRemoveNav(id)}
+                                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                                    title="إزالة"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Available Items */}
+            <div className="pt-4 border-t border-gray-100 dark:border-dark-border">
+                <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 px-1">عناصر متاحة للإضافة</h4>
+                <div className="flex flex-wrap gap-2">
+                    {Object.entries(ALL_NAV_ITEMS)
+                        .filter(([id]) => !navOrder.includes(id))
+                        .map(([id, item]) => (
+                            <button
+                                key={id}
+                                onClick={() => handleAddNav(id)}
+                                className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-dark-panel hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl border border-gray-100 dark:border-dark-border hover:border-emerald-200 dark:hover:border-emerald-800 transition-all"
+                            >
+                                <Plus size={16} />
+                                <span className="font-bold text-sm">{item.label}</span>
+                            </button>
+                        ))
+                    }
+                    {Object.entries(ALL_NAV_ITEMS).filter(([id]) => !navOrder.includes(id)).length === 0 && (
+                        <span className="text-sm text-gray-400 italic px-1">لا توجد عناصر إضافية</span>
+                    )}
+                </div>
+            </div>
+        </div>
+
         {/* Reminder Section */}
         <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
              <div className="flex items-center justify-between mb-4">

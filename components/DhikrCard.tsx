@@ -134,21 +134,15 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             />
         )}
 
-        <div className="relative z-10 p-6 md:p-8">
+        <div className="relative z-10 p-5 md:p-8">
             {/* Header: Meta & Actions */}
-            <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-2">
-                    <span className="bg-gray-100 dark:bg-dark-bg text-gray-500 dark:text-dark-muted px-3 py-1 rounded-lg text-caption font-bold">
-                        {item.source || 'ذكر'}
-                    </span>
-                    {currentTarget > 1 && !reorderMode && (
-                        <div className="flex items-center gap-1 text-primary-600 dark:text-primary-400 bg-white dark:bg-dark-elevated px-2 py-1 rounded-lg shadow-sm border border-gray-100 dark:border-dark-border">
-                            <Repeat size={14} />
-                            <span className="text-caption font-bold font-english">{count} / {currentTarget}</span>
-                        </div>
-                    )}
-                </div>
+            <div className="flex justify-between items-center mb-4">
+                {/* Source Badge */}
+                <span className="bg-gray-100 dark:bg-dark-bg text-gray-500 dark:text-dark-muted px-3 py-1 rounded-lg text-caption font-bold truncate max-w-[150px]">
+                    {item.source || 'ذكر'}
+                </span>
 
+                {/* Actions */}
                 <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                     {/* Reorder Controls */}
                     {reorderMode && onMoveUp && onMoveDown ? (
@@ -166,36 +160,36 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                             {onSkip && !readonly && !isCompleted && (
                                 <button
                                     onClick={() => onSkip(item.id)}
-                                    className="p-2 rounded-full text-gray-300 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-bg transition-colors"
+                                    className="p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-dark-bg transition-colors"
                                     title="تخطي (لا يحتسب)"
                                 >
-                                    <SkipForward size={20} />
+                                    <SkipForward size={18} />
                                 </button>
                             )}
                             <button 
                                 onClick={() => onToggleFavorite(item.id)}
-                                className={`p-2 rounded-full transition-colors ${isFavorite ? 'text-rose-500 bg-rose-50 dark:bg-rose-900/20' : 'text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
+                                className={`p-2 rounded-full transition-colors ${isFavorite ? 'text-rose-500 bg-rose-50 dark:bg-rose-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
                                 title={isFavorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}
                             >
-                                <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
+                                <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
                             </button>
                             {item.benefit && (
                                 <button 
                                     onClick={() => setShowBenefit(!showBenefit)}
-                                    className={`p-2 rounded-full transition-colors ${showBenefit ? 'text-blue-500 bg-blue-50' : 'text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
+                                    className={`p-2 rounded-full transition-colors ${showBenefit ? 'text-blue-500 bg-blue-50' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
                                     title="فضل الذكر"
                                 >
-                                    <Info size={20} />
+                                    <Info size={18} />
                                 </button>
                             )}
                             {onEdit && (
-                                <button onClick={() => onEdit(item)} className="p-2 text-gray-300 hover:text-amber-500 hover:bg-amber-50 rounded-full" title="تعديل">
-                                    <Edit3 size={20} />
+                                <button onClick={() => onEdit(item)} className="p-2 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-full" title="تعديل">
+                                    <Edit3 size={18} />
                                 </button>
                             )}
                             {onDelete && (
-                                <button onClick={() => onDelete(item.id)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full" title="حذف">
-                                    <Trash2 size={20} />
+                                <button onClick={() => onDelete(item.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full" title="حذف">
+                                    <Trash2 size={18} />
                                 </button>
                             )}
                         </>
@@ -204,7 +198,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             </div>
 
             {/* Content */}
-            <div className="mb-4">
+            <div className="mb-2 px-1">
                 {hasBasmala && (
                     <div className="text-center text-primary-600 dark:text-primary-400 mb-4 opacity-80 font-arabic text-xl">
                         {BASMALA}
@@ -214,6 +208,16 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                     {renderHighlightedText(displayText)}
                 </p>
             </div>
+
+            {/* Counter Badge (Moved to bottom for space) */}
+            {currentTarget > 1 && !reorderMode && (
+                <div className="flex justify-center mt-6">
+                    <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 bg-gray-50 dark:bg-dark-elevated/50 px-4 py-1.5 rounded-full shadow-sm border border-gray-100 dark:border-dark-border">
+                        <Repeat size={14} className="opacity-70" />
+                        <span className="text-sm font-bold font-english">{count} / {currentTarget}</span>
+                    </div>
+                </div>
+            )}
 
             {/* Benefit Drawer */}
             {showBenefit && item.benefit && (
