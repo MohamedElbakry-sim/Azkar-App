@@ -172,6 +172,18 @@ export const searchGlobal = async (query: string): Promise<SearchResult[]> => {
   }
 };
 
+export const searchSurah = async (query: string, surahNumber: number): Promise<SearchResult[]> => {
+  if (!query || query.trim().length < 2) return [];
+  try {
+    const response = await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(query)}/${surahNumber}/quran-simple-clean`);
+    if (!response.ok) return [];
+    const json = await response.json();
+    return json.data?.matches || [];
+  } catch (e) {
+    return [];
+  }
+};
+
 // --- Bookmarking (Favorites) Logic ---
 
 export const getBookmarks = (): Bookmark[] => {

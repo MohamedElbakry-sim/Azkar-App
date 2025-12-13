@@ -38,11 +38,6 @@ const OnboardingModal: React.FC = () => {
       description: "سبحة ذكية مع ردود فعل اهتزازية لتشعر بكل تسبيحة، مع إمكانية حفظ العدد تلقائياً.",
       icon: <Activity size={48} className="text-orange-500" />,
     },
-    {
-      title: "تابع إنجازك",
-      description: "راقب استمراريتك من خلال الرسوم البيانية والإحصائيات المفصلة لتحفيز نفسك على المزيد.",
-      icon: <BarChart2 size={48} className="text-purple-500" />,
-    },
   ];
 
   if (!isOpen) return null;

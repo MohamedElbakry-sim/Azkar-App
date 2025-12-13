@@ -157,34 +157,41 @@ export interface RadioStation {
   img?: string;
 }
 
-// --- Habit Tracker Types ---
+// --- Habit Types ---
 
 export type HabitType = 'boolean' | 'numeric' | 'timer';
 export type HabitCategory = 'spiritual' | 'health' | 'personal' | 'sunnah';
-export type SystemHabitType = 'azkar_sabah' | 'azkar_masaa' | 'azkar_sleep' | 'quran_reading' | 'salah_fajr' | 'salah_dhuhr' | 'salah_asr' | 'salah_maghrib' | 'salah_isha' | 'duas_general' | 'none';
+export type SystemHabitType = 'none' | 'salah_fajr' | 'salah_dhuhr' | 'salah_asr' | 'salah_maghrib' | 'salah_isha' | 'quran_reading' | 'azkar_sabah' | 'azkar_masaa';
 
 export interface Habit {
   id: string;
   title: string;
   type: HabitType;
   category: HabitCategory;
-  systemType: SystemHabitType; // For auto-detection
-  goal: number; // 1 for boolean, count for numeric, seconds for timer
-  unit: string; // e.g. 'pages', 'minutes', 'rakats'
-  color: string; // tailwind color class e.g. 'bg-blue-500'
-  icon: string; // emoji or identifier
-  frequency: number[]; // 0-6 (Sun-Sat)
+  systemType: SystemHabitType;
+  goal: number;
+  unit: string;
+  color: string;
+  icon: string;
+  frequency: number[];
   streak: number;
   bestStreak: number;
   totalCompletions: number;
   archived: boolean;
-  reminderTime?: string; // "08:00"
+  reminderTime?: string;
 }
 
 export interface HabitLog {
-  [date: string]: {
-    [habitId: string]: number; // Value achieved
+  [dateKey: string]: {
+    [habitId: string]: number;
   };
+}
+
+export interface HabitUserStats {
+  xp: number;
+  level: number;
+  totalCompletions: number;
+  badges: string[];
 }
 
 export interface Badge {
@@ -194,12 +201,4 @@ export interface Badge {
   icon: string;
   condition: (stats: HabitUserStats) => boolean;
   unlocked: boolean;
-  unlockedDate?: string;
-}
-
-export interface HabitUserStats {
-  xp: number;
-  level: number;
-  totalCompletions: number;
-  badges: string[]; // IDs of unlocked badges
 }

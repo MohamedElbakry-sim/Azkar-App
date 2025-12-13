@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Check, Flame, Star, X, ChevronRight, ChevronLeft, Calendar as CalendarIcon, CheckSquare, Clock, Settings, Info, Edit3, Trash2, Repeat, ArrowUp, ArrowDown, Move, MoreVertical, AlertTriangle } from 'lucide-react';
+import { Plus, Check, Flame, Star, X, ChevronRight, ChevronLeft, Calendar as CalendarIcon, CheckSquare, Clock, Settings, Info, Edit3, Trash2, Repeat, ArrowUp, ArrowDown, Move, MoreVertical, AlertTriangle, FileWarning } from 'lucide-react';
 import * as habitService from '../services/habitService';
 import * as storage from '../services/storage';
-import { Habit, HabitLog, HabitUserStats, HabitType, HabitCategory, SystemHabitType } from '../types';
+import { Habit, HabitLog, HabitUserStats, HabitType, HabitCategory, SystemHabitType, MissedPrayers } from '../types';
 import { format, startOfWeek, addDays, isSameDay, subDays } from 'date-fns';
 import { arSA } from 'date-fns/locale';
 
@@ -401,6 +401,7 @@ const HabitCard: React.FC<{
     const isCompleted = currentValue >= habit.goal;
     const progress = Math.min(100, (currentValue / habit.goal) * 100);
     const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [missedFeedback, setMissedFeedback] = useState(false);
 
     const handleStartPress = () => {
         if (reorderMode) return;
@@ -413,6 +414,30 @@ const HabitCard: React.FC<{
     const handleEndPress = () => {
         if (pressTimer.current) clearTimeout(pressTimer.current);
     };
+
+    const getPrayerKey = (systemType: string): keyof MissedPrayers | null => {
+        switch(systemType) {
+            case 'salah_fajr': return 'fajr';
+            case 'salah_dhuhr': return 'dhuhr';
+            case 'salah_asr': return 'asr';
+            case 'salah_maghrib': return 'maghrib';
+            case 'salah_isha': return 'isha';
+            default: return null;
+        }
+    };
+
+    const handleMarkMissed = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const pKey = getPrayerKey(habit.systemType);
+        if (pKey) {
+            storage.updateMissedPrayerCount(pKey, 1);
+            setMissedFeedback(true);
+            setTimeout(() => setMissedFeedback(false), 2000);
+            if (navigator.vibrate) navigator.vibrate(50);
+        }
+    };
+
+    const isPrayer = !!getPrayerKey(habit.systemType);
 
     return (
         <div 
@@ -466,7 +491,7 @@ const HabitCard: React.FC<{
                 </div>
                 
                 {/* Action Button or Reorder Controls */}
-                <div className="flex items-center">
+                <div className="flex items-center gap-2">
                     {reorderMode ? (
                         <div className="flex gap-2">
                             <button 
@@ -485,33 +510,45 @@ const HabitCard: React.FC<{
                             </button>
                         </div>
                     ) : (
-                        habit.type === 'numeric' ? (
-                            <div className="flex items-center bg-gray-100 dark:bg-dark-bg rounded-xl p-1">
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); onUpdate(Math.max(0, currentValue - 1)); }}
-                                    className="w-10 h-10 flex items-center justify-center rounded-lg bg-white dark:bg-dark-surface shadow-sm text-gray-500 hover:text-red-500 active:scale-95 transition-transform"
+                        <>
+                            {isPrayer && !isCompleted && (
+                                <button
+                                    onClick={handleMarkMissed}
+                                    className={`p-2 rounded-xl transition-all ${missedFeedback ? 'bg-red-50 text-red-500' : 'bg-gray-100 dark:bg-dark-bg text-gray-300 hover:text-red-500 hover:bg-red-50'}`}
+                                    title="تسجيل كفائتة"
                                 >
-                                    -
+                                    {missedFeedback ? <span className="text-[10px] font-bold">تم</span> : <FileWarning size={24} />}
                                 </button>
-                                <span className="w-10 text-center font-bold">{currentValue}</span>
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); onUpdate(currentValue + 1); }}
-                                    className="w-10 h-10 flex items-center justify-center rounded-lg bg-white dark:bg-dark-surface shadow-sm text-gray-500 hover:text-emerald-500 active:scale-95 transition-transform"
+                            )}
+
+                            {habit.type === 'numeric' ? (
+                                <div className="flex items-center bg-gray-100 dark:bg-dark-bg rounded-xl p-1">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); onUpdate(Math.max(0, currentValue - 1)); }}
+                                        className="w-10 h-10 flex items-center justify-center rounded-lg bg-white dark:bg-dark-surface shadow-sm text-gray-500 hover:text-red-500 active:scale-95 transition-transform"
+                                    >
+                                        -
+                                    </button>
+                                    <span className="w-10 text-center font-bold">{currentValue}</span>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); onUpdate(currentValue + 1); }}
+                                        className="w-10 h-10 flex items-center justify-center rounded-lg bg-white dark:bg-dark-surface shadow-sm text-gray-500 hover:text-emerald-500 active:scale-95 transition-transform"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onUpdate(isCompleted ? 0 : 1); }}
+                                    className={`
+                                        w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-90
+                                        ${isCompleted ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-dark-bg text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-elevated'}
+                                    `}
                                 >
-                                    +
+                                    <Check size={24} />
                                 </button>
-                            </div>
-                        ) : (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onUpdate(isCompleted ? 0 : 1); }}
-                                className={`
-                                    w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-90
-                                    ${isCompleted ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-dark-bg text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-elevated'}
-                                `}
-                            >
-                                <Check size={24} />
-                            </button>
-                        )
+                            )}
+                        </>
                     )}
                 </div>
             </div>

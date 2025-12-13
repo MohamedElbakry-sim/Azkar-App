@@ -5,9 +5,8 @@ import { AZKAR_DATA, CATEGORIES } from '../data';
 import DhikrCard from '../components/DhikrCard';
 import DhikrFormModal from '../components/DhikrFormModal';
 import * as storage from '../services/storage';
-import * as habitService from '../services/habitService';
 import { CheckCircle, Home, BarChart3, Type, Plus, ArrowDownUp, Check } from 'lucide-react';
-import { Dhikr, CategoryId, SystemHabitType } from '../types';
+import { Dhikr, CategoryId } from '../types';
 
 const CategoryView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -116,20 +115,6 @@ const CategoryView: React.FC = () => {
     }
     setTimeout(() => setIsLoading(false), 300);
   }, [id]);
-
-  // Check for auto-completion of Habits
-  useEffect(() => {
-      if (!isLoading && items.length > 0 && visibleIds.length === 0) {
-          // Identify the habit type
-          let habitType: SystemHabitType | null = null;
-          if (id === 'sabah') habitType = 'azkar_sabah';
-          if (id === 'masaa') habitType = 'azkar_masaa';
-          
-          if (habitType) {
-              habitService.logSystemActivity(habitType);
-          }
-      }
-  }, [visibleIds, items, id, isLoading]);
 
   const handleToggleFavorite = (dhikrId: number) => {
     const newFavs = storage.toggleFavoriteStorage(dhikrId);

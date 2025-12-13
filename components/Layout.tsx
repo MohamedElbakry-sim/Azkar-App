@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Book, Menu, Sun, Moon, ArrowRight, Maximize2, Square, Play, Pause, Radio, Calendar, Target } from 'lucide-react';
+import { Home, Book, Menu, Sun, Moon, ArrowRight, Maximize2, Square, Play, Pause, Radio, Calendar } from 'lucide-react';
 import Logo from './Logo';
 import { useRadio } from '../contexts/RadioContext';
 import * as storage from '../services/storage';
@@ -42,7 +42,6 @@ export const ALL_NAV_ITEMS: Record<string, { path: string; label: string; icon: 
     'quran': { path: '/quran', label: 'القرآن', icon: <Book size={22} /> },
     'athkar': { path: '/athkar', label: 'الأذكار', icon: <AthkarIcon size={22} /> },
     'prayers': { path: '/prayers', label: 'الصلاة', icon: <PrayerIcon size={22} /> },
-    'habits': { path: '/habits', label: 'المواظبة', icon: <Target size={22} /> },
     'tasbeeh': { path: '/tasbeeh', label: 'السبحة', icon: <TasbeehIcon size={22} /> },
     'radio': { path: '/radio', label: 'الإذاعة', icon: <Radio size={22} /> },
     'calendar': { path: '/calendar', label: 'التقويم', icon: <Calendar size={22} /> },

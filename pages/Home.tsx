@@ -7,7 +7,6 @@ import RandomNameCard from '../components/RandomNameCard';
 import DailySahabi from '../components/DailySahabi';
 import SmartAzkarSuggestion from '../components/SmartAzkarSuggestion';
 import AlKahfAlert from '../components/AlKahfAlert';
-import HabitQuickView from '../components/HabitQuickView';
 import * as quranService from '../services/quranService';
 import { QURAN_META } from '../data/quranMeta';
 
@@ -52,9 +51,6 @@ const Home: React.FC = () => {
       <div className="space-y-6">
           {/* Smart Suggestion (Morning/Evening Azkar) */}
           <SmartAzkarSuggestion />
-
-          {/* New Habit Quick View Widget */}
-          <HabitQuickView />
 
           {/* Continue Reading Widget */}
           {lastRead ? (

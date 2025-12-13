@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Settings, Clock, Activity, Heart, BookOpenText, 
   Radio, Calendar, Mail, Shield, BarChart2, 
-  ChevronLeft, Smartphone, ListTodo, Target
+  ChevronLeft, Smartphone, ListTodo
 } from 'lucide-react';
 import { TasbeehIcon, AllahIcon } from '../components/Layout';
 
@@ -15,7 +15,6 @@ const MoreMenu: React.FC = () => {
     {
       title: "أدوات",
       items: [
-        { label: "المواظبة (جديد)", icon: <Target size={22} />, path: "/habits", color: "text-indigo-500" },
         { label: "السبحة الإلكترونية", icon: <TasbeehIcon size={22} />, path: "/tasbeeh", color: "text-emerald-500" },
         { label: "متابعة القضاء", icon: <ListTodo size={22} />, path: "/qada", color: "text-orange-500" },
         { label: "التقويم الهجري", icon: <Calendar size={22} />, path: "/calendar", color: "text-blue-500" },

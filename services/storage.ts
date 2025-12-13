@@ -21,8 +21,10 @@ const ALKAHF_PROMPT_KEY = 'nour_alkahf_prompt_v1';
 const DHIKR_ORDER_KEY = 'nour_dhikr_order_v1';
 const RADIO_FAVORITES_KEY = 'nour_radio_favorites_v1';
 const NAV_SETTINGS_KEY = 'nour_nav_settings_v1';
+const QURAN_THEME_KEY = 'nour_quran_theme_v1';
 
 export type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
+export type PageTheme = 'light' | 'sepia' | 'dark';
 
 export interface Reminder {
   id: string;
@@ -449,6 +451,20 @@ export const getHeatmapTheme = (): HeatmapTheme => {
 
 export const saveHeatmapTheme = (theme: HeatmapTheme) => {
   localStorage.setItem(HEATMAP_THEME_KEY, theme);
+};
+
+export const getQuranTheme = (): PageTheme => {
+  try {
+    const stored = localStorage.getItem(QURAN_THEME_KEY);
+    if (stored) return stored as PageTheme;
+    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
+};
+
+export const saveQuranTheme = (theme: PageTheme) => {
+  localStorage.setItem(QURAN_THEME_KEY, theme);
 };
 
 export interface StatsData {

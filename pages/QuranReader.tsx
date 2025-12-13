@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import * as quranService from '../services/quranService';
+import * as storage from '../services/storage';
 import { SurahData, Ayah, SearchResult, ReadingMode } from '../types';
 import { QURAN_META } from '../data/quranMeta';
 import { 
@@ -13,8 +14,6 @@ import {
 import ErrorState from '../components/ErrorState';
 import { toArabicNumerals, applyTajweed, normalizeArabic, getHighlightRegex } from '../utils';
 import MushafPagesViewer from '../components/MushafPagesViewer';
-
-type PageTheme = 'light' | 'sepia' | 'dark';
 
 const QuranReader: React.FC = () => {
   const { surahId } = useParams<{ surahId: string }>();
@@ -31,10 +30,7 @@ const QuranReader: React.FC = () => {
   
   // Reading Mode State
   const [readingMode, setReadingMode] = useState<ReadingMode>('text');
-  const [pageTheme, setPageTheme] = useState<PageTheme>(() => {
-      // Default to dark if system is dark, else light
-      return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-  });
+  const [pageTheme, setPageTheme] = useState<storage.PageTheme>(() => storage.getQuranTheme());
 
   // Track page for Mushaf mode sync
   const [currentMushafPage, setCurrentMushafPage] = useState<number>(1);
@@ -198,6 +194,12 @@ const QuranReader: React.FC = () => {
       });
   }, [surahNumber, activeAyahId, currentMushafPage, readingMode, surah]);
 
+  // Update theme handling
+  const handleThemeChange = (newTheme: storage.PageTheme) => {
+      setPageTheme(newTheme);
+      storage.saveQuranTheme(newTheme);
+  };
+
   // Search Logic
   useEffect(() => {
       if (!searchQuery.trim()) {
@@ -290,7 +292,8 @@ const QuranReader: React.FC = () => {
       setUsingFallback(useFallback);
       
       // Update page tracking for continuity if switching modes
-      if (readingMode === 'text') {
+      // Or simply to sync Mushaf viewer
+      if (ayah.page) {
           setCurrentMushafPage(ayah.page);
       }
       
@@ -338,6 +341,16 @@ const QuranReader: React.FC = () => {
           playAyah(activeAyahId);
       } else {
           playAyah(1);
+      }
+  };
+
+  const handleReciterChange = (id: string) => {
+      setReciterId(id);
+      quranService.savePreferredReciter(id);
+      // Stop current playback if switching reciter
+      if (isPlaying && audioRef.current) {
+          audioRef.current.pause();
+          setIsPlaying(false);
       }
   };
 
@@ -646,6 +659,23 @@ const QuranReader: React.FC = () => {
                 initialPage={currentMushafPage}
                 onPageChange={setCurrentMushafPage}
                 onClose={() => setReadingMode('text')}
+                highlightedAyah={activeAyahId ? { surah: surahNumber, ayah: activeAyahId } : null}
+                onAyahClick={(s, a) => {
+                    // Handle click in Mushaf mode
+                    // If playing, start from here
+                    // If not playing, just select
+                    if (s === surahNumber) {
+                        handleVerseClick(a);
+                        if (!isPlaying) playAyah(a);
+                    } else {
+                        // Different surah, just navigate for now
+                        navigate(`/quran/read/${s}`, { state: { scrollToAyah: a } });
+                    }
+                }}
+                isPlaying={isPlaying}
+                onTogglePlay={togglePlay}
+                reciterId={reciterId}
+                onReciterChange={handleReciterChange}
             />
         )}
         
@@ -678,30 +708,30 @@ const QuranReader: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Theme Mode */}
-                        <div>
-                            <label className="text-sm font-bold opacity-70 mb-3 block">نمط القراءة</label>
-                            <div className="flex gap-2 bg-gray-50 dark:bg-dark-bg p-1.5 rounded-xl">
+                        {/* Theme Selection */}
+                        <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-bold text-gray-500">لون الصفحة:</span>
+                            <div className={`flex gap-1 p-1 rounded-lg ${pageTheme === 'dark' ? 'bg-[#333]' : 'bg-gray-100'}`}>
                                 <button 
-                                    onClick={() => setPageTheme('light')}
+                                    onClick={() => handleThemeChange('light')}
                                     className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${pageTheme === 'light' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
                                 >
                                     <Sun size={16} />
                                     أبيض
                                 </button>
                                 <button 
-                                    onClick={() => setPageTheme('sepia')}
-                                    className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${pageTheme === 'sepia' ? 'bg-[#F4ECD8] text-[#433422] shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                                    onClick={() => handleThemeChange('sepia')}
+                                    className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${pageTheme === 'sepia' ? 'bg-[#fbf0d6] text-[#5c4b37] shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
                                 >
                                     <Coffee size={16} />
                                     كريمي
                                 </button>
                                 <button 
-                                    onClick={() => setPageTheme('dark')}
+                                    onClick={() => handleThemeChange('dark')}
                                     className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${pageTheme === 'dark' ? 'bg-[#1a1a1a] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
                                 >
                                     <Moon size={16} />
-                                    ليلي
+                                    داكن
                                 </button>
                             </div>
                         </div>
@@ -711,10 +741,7 @@ const QuranReader: React.FC = () => {
                             <label className="text-sm font-bold opacity-70 mb-3 block">القارئ</label>
                             <select 
                                 value={reciterId}
-                                onChange={(e) => {
-                                    setReciterId(e.target.value);
-                                    quranService.savePreferredReciter(e.target.value);
-                                }}
+                                onChange={(e) => handleReciterChange(e.target.value)}
                                 className="w-full p-3 rounded-xl bg-gray-50 dark:bg-dark-bg border-none focus:ring-2 focus:ring-emerald-500 font-arabic"
                             >
                                 {quranService.RECITERS.map(r => (
