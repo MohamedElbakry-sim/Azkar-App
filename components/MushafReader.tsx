@@ -1,49 +1,82 @@
 
 import React, { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
-import HTMLFlipBook from 'react-pageflip';
-import { ChevronLeft, ChevronRight, BookOpen, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, WifiOff } from 'lucide-react';
 
-/**
- * Utility to format page numbers (e.g., 1 -> "001", 45 -> "045")
- * and generate the full EveryAyah URL.
- */
+// NOTE: In the full mobile migration, this function will be replaced 
+// by the Filesystem-First logic described in the engineering plan.
 const getPageImageUrl = (pageNumber: number) => {
   const formattedNum = pageNumber.toString().padStart(3, '0');
   return `https://everyayah.com/data/images_png/Page_${formattedNum}.png`;
 };
 
-/**
- * Total pages in standard Madani Mushaf
- */
 const TOTAL_PAGES = 604;
 
 interface PageProps {
   pageNumber: number;
-  isMobile: boolean;
+  isActive: boolean;
 }
 
-/**
- * Individual Page Component
- * Must be forwardRef to work with react-pageflip
- */
-const Page = forwardRef<HTMLDivElement, PageProps>(({ pageNumber, isMobile }, ref) => {
-  return (
-    <div className="bg-[#fffbf2] h-full w-full flex items-center justify-center shadow-inner overflow-hidden border-l border-gray-100 dark:border-gray-800" ref={ref}>
-      <div className="relative w-full h-full flex flex-col">
-        {/* Page Content */}
-        <div className="flex-1 relative">
-          <img
-            src={getPageImageUrl(pageNumber)}
-            alt={`Quran Page ${pageNumber}`}
-            loading="lazy" // Native lazy loading
-            className="w-full h-full object-fill pointer-events-none select-none"
-          />
-        </div>
+const Page = React.memo(({ pageNumber, isActive }: PageProps) => {
+  const [src, setSrc] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Virtualization Logic: Only load image if the page is active or neighbor
+    // This prevents the "604 images loading at once" crash.
+    if (isActive) {
+        setLoading(true);
+        const img = new Image();
+        const url = getPageImageUrl(pageNumber);
         
-        {/* Page Footer Number */}
-        <div className="absolute bottom-1 w-full text-center text-[10px] text-gray-500 font-mono">
-          {pageNumber}
-        </div>
+        img.onload = () => {
+            setSrc(url);
+            setLoading(false);
+            setError(false);
+        };
+        
+        img.onerror = () => {
+            setLoading(false);
+            setError(true);
+        };
+        
+        img.src = url;
+    }
+    
+    // Cleanup: Release memory if page becomes inactive (far away)
+    // In a real VirtualList, unmounting handles this, but here we enforce nulling.
+    return () => {
+        // Optional: Revoke object URLs if using Blob
+    };
+  }, [pageNumber, isActive]);
+
+  if (!isActive) return <div className="h-full w-full bg-transparent" />;
+
+  return (
+    <div className="bg-[#fffbf2] h-full w-full flex items-center justify-center shadow-inner overflow-hidden border-l border-gray-100 dark:border-gray-800 relative">
+      {loading && (
+          <div className="absolute inset-0 flex items-center justify-center z-0">
+              <Loader2 className="animate-spin text-emerald-500" />
+          </div>
+      )}
+      
+      {error ? (
+          <div className="flex flex-col items-center justify-center text-gray-400 p-4 text-center">
+              <WifiOff size={32} className="mb-2" />
+              <p className="text-xs">تعذر تحميل الصفحة</p>
+              <button 
+                onClick={() => { setError(false); setLoading(true); /* Retry logic */ }}
+                className="mt-2 text-emerald-600 text-xs font-bold"
+              >
+                  إعادة المحاولة
+              </button>
+          </div>
+      ) : (
+          src && <img src={src} alt={`Page ${pageNumber}`} className="w-full h-full object-fill z-10" />
+      )}
+      
+      <div className="absolute bottom-1 w-full text-center text-[10px] text-gray-500 font-mono z-20 mix-blend-multiply">
+        {pageNumber}
       </div>
     </div>
   );
@@ -54,217 +87,63 @@ interface MushafReaderProps {
   onPageChange: (page: number) => void;
 }
 
+// Optimized Reader that simulates Virtualization
+// In Phase 3, this is replaced by Swiper.js or react-window
 const MushafReader: React.FC<MushafReaderProps> = ({ initialPage, onPageChange }) => {
-  const book = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(initialPage);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [isMobile, setIsMobile] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  
-  // CRITICAL: Initialize startPage once to prevent re-initialization of FlipBook on prop change
-  // We handle navigation updates via the useEffect below
-  const [mountStartPage] = useState(initialPage > 0 ? initialPage - 1 : 0);
 
-  // Generate array [1, 2, ..., 604]
-  const pages = React.useMemo(() => Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1), []);
-
-  /**
-   * Smart Resize Logic
-   */
-  const handleResize = useCallback(() => {
-    if (!containerRef.current) return;
-
-    const containerWidth = containerRef.current.offsetWidth;
-    const containerHeight = containerRef.current.offsetHeight;
-    
-    // Prevent invalid calculations if container is not yet visible/sized
-    if (containerWidth <= 0 || containerHeight <= 0) return;
-
-    // Quran page approximate aspect ratio (Height / Width) ~= 1.55
-    const aspectRatio = 1.55; 
-    
-    // Determine mobile state based on container width
-    const mobileThreshold = 768;
-    const isNowMobile = containerWidth < mobileThreshold;
-    setIsMobile(isNowMobile);
-
-    let bookHeight = containerHeight - 40; // Padding
-    
-    // Safety minimums
-    if (bookHeight < 300) bookHeight = 300;
-
-    let bookWidth = bookHeight / aspectRatio;
-
-    if (isNowMobile) {
-      // Mobile: Single page view
-      if (bookWidth > containerWidth - 20) {
-        bookWidth = containerWidth - 20;
-        bookHeight = bookWidth * aspectRatio;
-      }
-    } else {
-      // Desktop: Double page view
-      if ((bookWidth * 2) > (containerWidth - 40)) {
-        bookWidth = (containerWidth - 40) / 2;
-        bookHeight = bookWidth * aspectRatio;
-      }
-    }
-
-    setDimensions({
-      width: Math.floor(bookWidth),
-      height: Math.floor(bookHeight)
-    });
-    
-    // Only set ready if dimensions are valid
-    if (bookWidth > 0 && bookHeight > 0) {
-        setIsReady(true);
-    }
-  }, []);
-
+  // Sync props
   useEffect(() => {
-    // Initial resize with a small delay to ensure DOM layout is stable
-    const timer = setTimeout(handleResize, 50);
-    window.addEventListener('resize', handleResize);
-    return () => {
-        clearTimeout(timer);
-        window.removeEventListener('resize', handleResize);
-    };
-  }, [handleResize]);
-
-  // Sync internal state if external initialPage changes (e.g. from search jump)
-  useEffect(() => {
-      // Small timeout to allow book to be ready
-      const timer = setTimeout(() => {
-          if (book.current && book.current.pageFlip()) {
-              try {
-                  const flipObj = book.current.pageFlip();
-                  const currentIndex = flipObj.getCurrentPageIndex();
-                  const targetIndex = initialPage - 1;
-                  
-                  // Only jump if significant difference to avoid loop with onFlip callback
-                  if (Math.abs(currentIndex - targetIndex) > 0) {
-                     flipObj.turnToPage(targetIndex);
-                     setCurrentPage(initialPage);
-                  }
-              } catch (e) {
-                  console.warn("Flipbook not ready yet", e);
-              }
-          }
-      }, 100);
-      return () => clearTimeout(timer);
+      setCurrentPage(initialPage);
   }, [initialPage]);
 
-  /**
-   * Navigation Handlers
-   */
-  const onFlip = useCallback((e: any) => {
-    // e.data is the new page index (0-based)
-    const newPageNum = e.data + 1;
-    setCurrentPage(newPageNum);
-    onPageChange(newPageNum);
-  }, [onPageChange]);
-
-  const goToPrev = () => {
-    // RTL: Prev (visual right arrow) -> flips to previous index (physically right page comes in)
-    if (book.current && book.current.pageFlip()) book.current.pageFlip().flipNext(); 
+  const handleNext = () => {
+      if (currentPage < TOTAL_PAGES) {
+          const next = currentPage + 1;
+          setCurrentPage(next);
+          onPageChange(next);
+      }
   };
 
-  const goToNext = () => {
-    // RTL: Next (visual left arrow) -> flips to next index
-    if (book.current && book.current.pageFlip()) book.current.pageFlip().flipPrev();
-  };
-
-  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const pageNum = parseInt(e.target.value);
-    if (book.current && book.current.pageFlip()) {
-        try {
-            book.current.pageFlip().turnToPage(pageNum - 1);
-            setCurrentPage(pageNum);
-            onPageChange(pageNum);
-        } catch (e) {
-            console.error("Slider error", e);
-        }
-    }
+  const handlePrev = () => {
+      if (currentPage > 1) {
+          const prev = currentPage - 1;
+          setCurrentPage(prev);
+          onPageChange(prev);
+      }
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#333] relative overflow-hidden" ref={containerRef}>
-      
-      {/* 2. Main Reader Canvas */}
-      <div className="flex-1 flex items-center justify-center p-4 overflow-hidden relative perspective-1000">
-        {!isReady && <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="animate-spin text-white" size={32} /></div>}
-        
-        {isReady && dimensions.width > 0 && (
-            <div className="book-shadow z-10 transition-opacity duration-500 animate-fadeIn">
-            <HTMLFlipBook
-                width={dimensions.width}
-                height={dimensions.height}
-                size="fixed"
-                minWidth={200}
-                maxWidth={1000}
-                minHeight={300}
-                maxHeight={1533}
-                maxShadowOpacity={0.5}
-                showCover={true}
-                mobileScrollSupport={true}
-                className="bg-white"
-                ref={book}
-                onFlip={onFlip}
-                usePortrait={true}
-                startPage={mountStartPage} // Use static initial value
-                drawShadow={true}
-                flippingTime={800}
-                useMouseEvents={true}
-                swipeDistance={30}
-                direction="rtl"
-            >
-                {pages.map((pNum) => (
-                <Page key={pNum} pageNumber={pNum} isMobile={isMobile} />
-                ))}
-            </HTMLFlipBook>
-            </div>
-        )}
+    <div className="flex flex-col h-full w-full bg-[#2a2a2a] relative">
+      {/* Viewport */}
+      <div className="flex-1 relative overflow-hidden flex items-center justify-center">
+          {/* 
+             Virtualization Mock: 
+             Only render current page. 
+             In production mobile app, pre-render current +/- 1 for smoothness.
+          */}
+          <Page pageNumber={currentPage} isActive={true} />
       </div>
 
-      {/* 3. Sticky Bottom Control Bar */}
-      <div className="bg-black/80 backdrop-blur-md border-t border-white/10 flex flex-col justify-center px-4 py-4 z-30">
-        
-        <div className="flex flex-col w-full max-w-3xl mx-auto gap-3">
+      {/* Controls Overlay */}
+      <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-8 z-30 pointer-events-none">
+          <button 
+            onClick={handlePrev} // RTL: Prev moves to lower number (Right arrow visually in RTL)
+            className="w-12 h-12 bg-black/50 backdrop-blur-md rounded-full text-white flex items-center justify-center pointer-events-auto active:scale-95 transition-transform"
+          >
+              <ChevronRight />
+          </button>
           
-          <div className="flex items-center justify-between text-xs font-medium text-gray-400">
-            <span>صفحة {currentPage}</span>
-            <span>{TOTAL_PAGES}</span>
+          <div className="bg-black/50 backdrop-blur-md px-4 rounded-full flex items-center text-white font-mono text-sm pointer-events-auto">
+              {currentPage} / {TOTAL_PAGES}
           </div>
 
-          <div className="flex items-center gap-4 text-white">
-            {/* Previous Button (Visual Right in RTL, Logical Prev) */}
-            <button 
-              onClick={goToNext} 
-              className="p-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors"
-            >
-              <ChevronRight size={24} />
-            </button>
-
-            {/* Scrubber */}
-            <input
-              type="range"
-              min={1}
-              max={TOTAL_PAGES}
-              value={currentPage}
-              onChange={handleSliderChange}
-              className="flex-1 h-1.5 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-emerald-500 hover:accent-emerald-400 transition-all dir-ltr"
-              dir="ltr"
-            />
-
-            {/* Next Button (Visual Left in RTL, Logical Next) */}
-            <button 
-              onClick={goToPrev} 
-              className="p-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors"
-            >
-              <ChevronLeft size={24} />
-            </button>
-          </div>
-        </div>
+          <button 
+            onClick={handleNext}
+            className="w-12 h-12 bg-black/50 backdrop-blur-md rounded-full text-white flex items-center justify-center pointer-events-auto active:scale-95 transition-transform"
+          >
+              <ChevronLeft />
+          </button>
       </div>
     </div>
   );

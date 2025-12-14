@@ -1,6 +1,9 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { App as CapacitorApp } from '@capacitor/app';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import NotificationManager from './components/NotificationManager';
@@ -32,6 +35,33 @@ const NotFound = React.lazy(() => import('./pages/NotFound'));
 const MoreMenu = React.lazy(() => import('./pages/MoreMenu'));
 const AthkarIndex = React.lazy(() => import('./pages/AthkarIndex'));
 
+// Component to handle back button logic which needs access to Router hooks
+const AppUrlListener: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Only register listener on native platforms
+    if (!Capacitor.isNativePlatform()) return;
+
+    CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      // Exit app if on main tabs or home
+      if (['/', '/home', '/quran', '/athkar', '/prayers', '/more'].includes(location.pathname)) {
+        CapacitorApp.exitApp();
+      } else {
+        // Otherwise go back in history
+        navigate(-1);
+      }
+    });
+
+    return () => {
+      CapacitorApp.removeAllListeners();
+    };
+  }, [navigate, location]);
+
+  return null;
+};
+
 const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(false);
 
@@ -46,14 +76,27 @@ const App: React.FC = () => {
 
   useEffect(() => {
     storage.resetTodayProgress();
+    
+    // Initial Status Bar Config for Android
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+    }
   }, []);
 
   useEffect(() => {
     const root = window.document.documentElement;
     if (darkMode) {
       root.classList.add('dark');
+      if (Capacitor.isNativePlatform()) {
+        StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+        StatusBar.setBackgroundColor({ color: '#1A1A1A' }).catch(() => {});
+      }
     } else {
       root.classList.remove('dark');
+      if (Capacitor.isNativePlatform()) {
+        StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+        StatusBar.setBackgroundColor({ color: '#F9FAFB' }).catch(() => {});
+      }
     }
   }, [darkMode]);
 
@@ -75,6 +118,7 @@ const App: React.FC = () => {
       
       <RadioProvider>
         <Router>
+            <AppUrlListener />
             <NotificationManager />
             
             <Layout darkMode={darkMode} toggleTheme={toggleTheme}>

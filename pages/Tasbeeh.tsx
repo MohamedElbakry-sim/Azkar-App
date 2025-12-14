@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { RotateCcw, Check } from 'lucide-react';
 import * as storage from '../services/storage';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Capacitor } from '@capacitor/core';
 
 const Tasbeeh: React.FC = () => {
   const [count, setCount] = useState(0);
@@ -12,6 +14,31 @@ const Tasbeeh: React.FC = () => {
     setCount(storage.getTasbeehCount());
   }, []);
 
+  const triggerHaptic = async () => {
+    if (Capacitor.isNativePlatform()) {
+        try {
+            await Haptics.impact({ style: ImpactStyle.Light });
+        } catch (e) {
+            // Fallback
+            if (navigator.vibrate) navigator.vibrate(10);
+        }
+    } else {
+        if (navigator.vibrate) navigator.vibrate(10);
+    }
+  };
+
+  const triggerSuccessHaptic = async () => {
+    if (Capacitor.isNativePlatform()) {
+        try {
+            await Haptics.notification({ type: 'SUCCESS' as any }); // Type casting if needed for ESM shim
+        } catch (e) {
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        }
+    } else {
+        if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+    }
+  };
+
   const increment = () => {
     const newCount = count + 1;
     setCount(newCount);
@@ -20,6 +47,14 @@ const Tasbeeh: React.FC = () => {
     // Trigger animation
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 150);
+
+    // Haptic Feedback
+    triggerHaptic();
+
+    // Specific Milestones
+    if (newCount % 33 === 0) {
+        triggerSuccessHaptic();
+    }
   };
 
   const handleReset = () => {
@@ -27,8 +62,10 @@ const Tasbeeh: React.FC = () => {
       setCount(0);
       storage.saveTasbeehCount(0);
       setResetConfirm(false);
+      triggerSuccessHaptic();
     } else {
       setResetConfirm(true);
+      triggerHaptic();
       
       // Auto dismiss after 3s
       setTimeout(() => setResetConfirm(false), 3000);
@@ -108,3 +145,4 @@ const Tasbeeh: React.FC = () => {
 };
 
 export default Tasbeeh;
+    

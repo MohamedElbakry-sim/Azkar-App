@@ -1,10 +1,9 @@
 
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { SurahData, Ayah, SearchResult, Reciter, Word } from '../types';
 
-const QURAN_CACHE_PREFIX = 'nour_quran_surah_full_v3_';
-const PAGE_CACHE_PREFIX = 'nour_quran_page_uthmani_v1_';
-const BOOKMARK_KEY = 'nour_quran_bookmark_v1'; // Now acts as "Saved/Favorite Verses"
-const LAST_READ_KEY = 'nour_quran_last_read_v1'; // New key for auto-save
+const BOOKMARK_KEY = 'nour_quran_bookmark_v1';
+const LAST_READ_KEY = 'nour_quran_last_read_v1';
 const PREFERRED_RECITER_KEY = 'nour_preferred_reciter_v1';
 
 export interface Bookmark {
@@ -27,46 +26,78 @@ export const RECITERS: Reciter[] = [
 ];
 
 /**
- * Helper: Fetch with exponential backoff retry
+ * Reads a JSON file from the device filesystem.
+ * Returns null if file does not exist or plugin is unavailable (web fallback).
  */
-const fetchWithRetry = async (url: string, retries = 3, backoff = 500): Promise<Response> => {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url);
-      if (response.ok) return response;
-      
-      // If 404 or client error, don't retry, just throw
-      if (response.status >= 400 && response.status < 500) {
-        throw new Error(`Client error: ${response.status}`);
-      }
-      
-      throw new Error(`Server error: ${response.status}`);
-    } catch (err) {
-      if (i === retries - 1) throw err;
-      console.warn(`Fetch failed, retrying (${i + 1}/${retries})...`, err);
-      await new Promise(resolve => setTimeout(resolve, backoff * Math.pow(1.5, i)));
-    }
+const readJsonFile = async (filename: string) => {
+  try {
+    const content = await Filesystem.readFile({
+      path: filename,
+      directory: Directory.Data,
+      encoding: Encoding.UTF8,
+    });
+    // Capacitor returns data in 'data' field
+    return JSON.parse(content.data as string);
+  } catch (e) {
+    return null;
   }
-  throw new Error('Max retries reached');
 };
 
 /**
- * Fetches Surah data including Uthmani text, Translation, Tafsir, and Word-by-Word.
+ * Writes a JSON file to the device filesystem.
+ */
+const writeJsonFile = async (filename: string, data: any) => {
+  try {
+    await Filesystem.writeFile({
+      path: filename,
+      data: JSON.stringify(data),
+      directory: Directory.Data,
+      encoding: Encoding.UTF8,
+    });
+  } catch (e) {
+    console.warn('Filesystem Write Error:', e);
+  }
+};
+
+/**
+ * Fetches Surah data with offline caching strategy.
  */
 export const getSurah = async (surahNumber: number): Promise<SurahData> => {
-  const cacheKey = `${QURAN_CACHE_PREFIX}${surahNumber}`;
+  const filename = `surah_${surahNumber}_v2.json`;
 
-  try {
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      return JSON.parse(cached);
-    }
-  } catch (e) {
-    console.warn('Failed to read Quran cache', e);
+  // 1. Try Disk Cache (Filesystem)
+  const diskData = await readJsonFile(filename);
+  if (diskData) {
+    return diskData;
   }
 
+  // 2. Try Web LocalStorage (Fallback for PWA mode)
+  const cacheKey = `nour_quran_surah_${surahNumber}`;
   try {
-    const response = await fetchWithRetry(`https://api.alquran.cloud/v1/surah/${surahNumber}/editions/quran-uthmani,en.sahih,ar.muyassar,quran-wordbyword-2`);
+    const webCached = localStorage.getItem(cacheKey);
+    if (webCached) {
+      // Migrate to Disk if possible
+      const parsed = JSON.parse(webCached);
+      writeJsonFile(filename, parsed); 
+      return parsed;
+    }
+  } catch (e) { /* Ignore */ }
+
+  // 3. Fetch from Network
+  try {
+    // Retry logic handled by simple loop
+    let response;
+    let attempts = 0;
+    while (attempts < 3) {
+      try {
+        response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/editions/quran-uthmani,en.sahih,ar.muyassar,quran-wordbyword-2`);
+        if (response.ok) break;
+      } catch (err) {}
+      attempts++;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+
+    if (!response || !response.ok) throw new Error("Network Error");
     
     const json = await response.json();
     const editions = json.data;
@@ -97,11 +128,8 @@ export const getSurah = async (surahNumber: number): Promise<SurahData> => {
         ayahs: mergedAyahs
     };
 
-    try {
-      localStorage.setItem(cacheKey, JSON.stringify(finalData));
-    } catch (e) {
-      console.warn('LocalStorage full', e);
-    }
+    // 4. Save to Disk
+    await writeJsonFile(filename, finalData);
 
     return finalData;
   } catch (error) {
@@ -111,55 +139,56 @@ export const getSurah = async (surahNumber: number): Promise<SurahData> => {
 };
 
 /**
- * Fetches specific page content (Ayahs) for Mushaf View.
+ * Fetches Page content (Ayahs) with offline caching strategy.
  */
 export const getPageContent = async (pageNumber: number): Promise<Ayah[]> => {
-  const cacheKey = `${PAGE_CACHE_PREFIX}${pageNumber}`;
-  
-  try {
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) return JSON.parse(cached);
-  } catch (e) { /* ignore */ }
+  const filename = `page_${pageNumber}_v1.json`;
+
+  const diskData = await readJsonFile(filename);
+  if (diskData) {
+    return diskData;
+  }
 
   try {
-    // Fetch specifically the Uthmani script for the page
-    const response = await fetchWithRetry(`https://api.alquran.cloud/v1/page/${pageNumber}/quran-uthmani`);
+    const response = await fetch(`https://api.alquran.cloud/v1/page/${pageNumber}/editions/quran-uthmani,en.sahih,ar.muyassar,quran-wordbyword-2`);
+    if (!response.ok) throw new Error("Network Error");
     
     const json = await response.json();
-    const ayahs = json.data.ayahs;
+    const editions = json.data;
+    
+    const uthmaniData = editions.find((e: any) => e.edition.identifier === 'quran-uthmani');
+    const translationData = editions.find((e: any) => e.edition.identifier === 'en.sahih');
+    const tafsirData = editions.find((e: any) => e.edition.identifier === 'ar.muyassar');
+    
+    if (!uthmaniData) throw new Error("Base Quran text missing");
 
-    if (!ayahs || !Array.isArray(ayahs)) throw new Error("Invalid page data");
+    const mergedAyahs: Ayah[] = uthmaniData.ayahs.map((ayah: any, index: number) => {
+        const words: Word[] = ayah.text.split(' ').map((w: string) => ({
+            text: w,
+            translation: '',
+            transliteration: ''
+        }));
 
-    try {
-      localStorage.setItem(cacheKey, JSON.stringify(ayahs));
-    } catch (e) {
-      // If quota exceeded, clear old page caches to make room
-      console.warn("Storage full, clearing page cache");
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith(PAGE_CACHE_PREFIX) && key !== cacheKey) {
-          localStorage.removeItem(key);
-        }
-      });
-      try { localStorage.setItem(cacheKey, JSON.stringify(ayahs)); } catch(e2) {}
-    }
+        return {
+            ...ayah,
+            translation: translationData?.ayahs[index]?.text || '',
+            tafsir: tafsirData?.ayahs[index]?.text || '',
+            words: words
+        };
+    });
 
-    return ayahs;
-  } catch (e) {
-    console.error(`Failed to fetch page ${pageNumber}`, e);
-    throw e; // Throw so UI handles error state
+    await writeJsonFile(filename, mergedAyahs);
+
+    return mergedAyahs;
+  } catch (error) {
+    console.error(error);
+    throw error;
   }
 };
 
-export const getJuz = async (juzNumber: number) => {
-    try {
-        const response = await fetchWithRetry(`https://api.alquran.cloud/v1/juz/${juzNumber}/quran-uthmani`);
-        return await response.json();
-    } catch (e) {
-        console.error(e);
-        return null;
-    }
-}
-
+/**
+ * Global Search
+ */
 export const searchGlobal = async (query: string): Promise<SearchResult[]> => {
   if (!query || query.trim().length < 2) return [];
   try {
@@ -172,6 +201,9 @@ export const searchGlobal = async (query: string): Promise<SearchResult[]> => {
   }
 };
 
+/**
+ * Search within a specific Surah
+ */
 export const searchSurah = async (query: string, surahNumber: number): Promise<SearchResult[]> => {
   if (!query || query.trim().length < 2) return [];
   try {
@@ -189,17 +221,7 @@ export const searchSurah = async (query: string, surahNumber: number): Promise<S
 export const getBookmarks = (): Bookmark[] => {
   try {
     const stored = localStorage.getItem(BOOKMARK_KEY);
-    if (!stored) return [];
-    const parsed = JSON.parse(stored);
-    
-    // Migration helper
-    if (!Array.isArray(parsed) && parsed.surahNumber) {
-        const migrated = [parsed];
-        localStorage.setItem(BOOKMARK_KEY, JSON.stringify(migrated));
-        return migrated;
-    }
-    
-    return Array.isArray(parsed) ? parsed.sort((a, b) => b.timestamp - a.timestamp) : [];
+    return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
   }
@@ -211,13 +233,9 @@ export const addBookmark = (bookmark: Bookmark) => {
     
     let newBookmarks;
     if (existingIndex >= 0) {
-        const existing = bookmarks[existingIndex];
-        newBookmarks = [
-            { ...existing, timestamp: Date.now() }, 
-            ...bookmarks.filter((_, i) => i !== existingIndex)
-        ];
+        newBookmarks = [...bookmarks]; // Already exists
     } else {
-        newBookmarks = [bookmark, ...bookmarks].slice(0, 100);
+        newBookmarks = [bookmark, ...bookmarks];
     }
     
     localStorage.setItem(BOOKMARK_KEY, JSON.stringify(newBookmarks));
@@ -240,19 +258,11 @@ export const saveLastRead = (bookmark: Bookmark) => {
 export const getLastRead = (): Bookmark | null => {
     try {
         const stored = localStorage.getItem(LAST_READ_KEY);
-        // Fallback to legacy single bookmark if LAST_READ_KEY is empty
-        if (!stored) {
-             const legacy = getBookmarks();
-             return legacy.length > 0 ? legacy[0] : null;
-        }
-        return JSON.parse(stored);
+        return stored ? JSON.parse(stored) : null;
     } catch {
         return null;
     }
 };
-
-// Legacy compatibility
-export const getBookmark = (): Bookmark | null => getLastRead();
 
 export const getPreferredReciter = (): string => {
     return localStorage.getItem(PREFERRED_RECITER_KEY) || DEFAULT_RECITER_ID;
@@ -260,9 +270,4 @@ export const getPreferredReciter = (): string => {
 
 export const savePreferredReciter = (id: string) => {
     localStorage.setItem(PREFERRED_RECITER_KEY, id);
-};
-
-export const getPageUrl = (pageNumber: number) => {
-    const paddedPage = pageNumber.toString().padStart(3, '0');
-    return `https://static.quran.com/images/v4/pages/${paddedPage}.png`;
 };
