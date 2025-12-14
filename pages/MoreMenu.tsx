@@ -87,7 +87,7 @@ const MoreMenu: React.FC = () => {
         <div className="flex justify-center mb-2 opacity-50">
             <Smartphone size={24} />
         </div>
-        <p className="text-caption font-english">Rayyan v1.5.0</p>
+        <p className="text-caption font-english">Rayyan v1.6.0</p>
       </div>
     </div>
   );

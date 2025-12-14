@@ -44,18 +44,24 @@ const AppUrlListener: React.FC = () => {
     // Only register listener on native platforms
     if (!Capacitor.isNativePlatform()) return;
 
-    CapacitorApp.addListener('backButton', ({ canGoBack }) => {
-      // Exit app if on main tabs or home
-      if (['/', '/home', '/quran', '/athkar', '/prayers', '/more'].includes(location.pathname)) {
-        CapacitorApp.exitApp();
-      } else {
-        // Otherwise go back in history
-        navigate(-1);
-      }
-    });
+    try {
+        CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+        // Exit app if on main tabs or home
+        if (['/', '/home', '/quran', '/athkar', '/prayers', '/more'].includes(location.pathname)) {
+            CapacitorApp.exitApp();
+        } else {
+            // Otherwise go back in history
+            navigate(-1);
+        }
+        });
+    } catch (e) {
+        console.warn('Back button listener failed', e);
+    }
 
     return () => {
-      CapacitorApp.removeAllListeners();
+      try {
+        CapacitorApp.removeAllListeners();
+      } catch(e) {}
     };
   }, [navigate, location]);
 
@@ -79,7 +85,9 @@ const App: React.FC = () => {
     
     // Initial Status Bar Config for Android
     if (Capacitor.isNativePlatform()) {
-      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+      try {
+        StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+      } catch (e) { console.warn('StatusBar error', e); }
     }
   }, []);
 
@@ -88,14 +96,18 @@ const App: React.FC = () => {
     if (darkMode) {
       root.classList.add('dark');
       if (Capacitor.isNativePlatform()) {
-        StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
-        StatusBar.setBackgroundColor({ color: '#1A1A1A' }).catch(() => {});
+        try {
+            StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+            StatusBar.setBackgroundColor({ color: '#1A1A1A' }).catch(() => {});
+        } catch(e) {}
       }
     } else {
       root.classList.remove('dark');
       if (Capacitor.isNativePlatform()) {
-        StatusBar.setStyle({ style: Style.Light }).catch(() => {});
-        StatusBar.setBackgroundColor({ color: '#F9FAFB' }).catch(() => {});
+        try {
+            StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+            StatusBar.setBackgroundColor({ color: '#F9FAFB' }).catch(() => {});
+        } catch(e) {}
       }
     }
   }, [darkMode]);
