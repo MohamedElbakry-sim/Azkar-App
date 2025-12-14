@@ -61,9 +61,10 @@ const writeJsonFile = async (filename: string, data: any) => {
 
 /**
  * Fetches Surah data with offline caching strategy.
+ * Optimized to only fetch Arabic text for navigation/metadata.
  */
 export const getSurah = async (surahNumber: number): Promise<SurahData> => {
-  const filename = `surah_${surahNumber}_v2.json`;
+  const filename = `surah_${surahNumber}_v3.json`; // Incremented version for new structure
 
   // 1. Try Disk Cache (Filesystem)
   const diskData = await readJsonFile(filename);
@@ -71,26 +72,14 @@ export const getSurah = async (surahNumber: number): Promise<SurahData> => {
     return diskData;
   }
 
-  // 2. Try Web LocalStorage (Fallback for PWA mode)
-  const cacheKey = `nour_quran_surah_${surahNumber}`;
+  // 2. Fetch from Network (Single Edition for speed)
   try {
-    const webCached = localStorage.getItem(cacheKey);
-    if (webCached) {
-      // Migrate to Disk if possible
-      const parsed = JSON.parse(webCached);
-      writeJsonFile(filename, parsed); 
-      return parsed;
-    }
-  } catch (e) { /* Ignore */ }
-
-  // 3. Fetch from Network
-  try {
-    // Retry logic handled by simple loop
+    // Retry logic
     let response;
     let attempts = 0;
     while (attempts < 3) {
       try {
-        response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/editions/quran-uthmani,en.sahih,ar.muyassar,quran-wordbyword-2`);
+        response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/quran-uthmani`);
         if (response.ok) break;
       } catch (err) {}
       attempts++;
@@ -100,35 +89,30 @@ export const getSurah = async (surahNumber: number): Promise<SurahData> => {
     if (!response || !response.ok) throw new Error("Network Error");
     
     const json = await response.json();
-    const editions = json.data;
+    const data = json.data;
     
-    const uthmaniData = editions.find((e: any) => e.edition.identifier === 'quran-uthmani');
-    const translationData = editions.find((e: any) => e.edition.identifier === 'en.sahih');
-    const tafsirData = editions.find((e: any) => e.edition.identifier === 'ar.muyassar');
-    
-    if (!uthmaniData) throw new Error("Base Quran text missing");
+    // Validate data structure
+    if (!data || !data.ayahs) throw new Error("Invalid API Response");
 
-    const mergedAyahs: Ayah[] = uthmaniData.ayahs.map((ayah: any, index: number) => {
-        const words: Word[] = ayah.text.split(' ').map((w: string) => ({
-            text: w,
-            translation: '',
-            transliteration: ''
-        }));
-
-        return {
-            ...ayah,
-            translation: translationData?.ayahs[index]?.text || '',
-            tafsir: tafsirData?.ayahs[index]?.text || '',
-            words: words
-        };
-    });
+    // Transform to Ayah interface
+    const ayahs: Ayah[] = data.ayahs.map((ayah: any) => ({
+        ...ayah,
+        translation: '', // Not needed for navigation context
+        tafsir: '',      // Not needed for navigation context
+        words: []
+    }));
 
     const finalData: SurahData = {
-        ...uthmaniData,
-        ayahs: mergedAyahs
+        number: data.number,
+        name: data.name,
+        englishName: data.englishName,
+        englishNameTranslation: data.englishNameTranslation,
+        revelationType: data.revelationType,
+        numberOfAyahs: data.numberOfAyahs,
+        ayahs: ayahs
     };
 
-    // 4. Save to Disk
+    // 3. Save to Disk
     await writeJsonFile(filename, finalData);
 
     return finalData;
@@ -140,9 +124,10 @@ export const getSurah = async (surahNumber: number): Promise<SurahData> => {
 
 /**
  * Fetches Page content (Ayahs) with offline caching strategy.
+ * Optimized to fetch only Arabic text to reduce network load.
  */
 export const getPageContent = async (pageNumber: number): Promise<Ayah[]> => {
-  const filename = `page_${pageNumber}_v1.json`;
+  const filename = `page_${pageNumber}_v3.json`; // Incremented version
 
   const diskData = await readJsonFile(filename);
   if (diskData) {
@@ -150,19 +135,31 @@ export const getPageContent = async (pageNumber: number): Promise<Ayah[]> => {
   }
 
   try {
-    const response = await fetch(`https://api.alquran.cloud/v1/page/${pageNumber}/editions/quran-uthmani,en.sahih,ar.muyassar,quran-wordbyword-2`);
-    if (!response.ok) throw new Error("Network Error");
+    // Retry logic
+    let response;
+    let attempts = 0;
+    while (attempts < 3) {
+      try {
+        // Fetch ONLY Uthmani text. 
+        // Previously fetched translations/tafsir which caused large payloads and timeouts.
+        response = await fetch(`https://api.alquran.cloud/v1/page/${pageNumber}/quran-uthmani`);
+        if (response.ok) break;
+      } catch (err) {
+        console.warn(`Page fetch attempt ${attempts + 1} failed`);
+      }
+      attempts++;
+      await new Promise(r => setTimeout(r, 1000 * attempts));
+    }
+
+    if (!response || !response.ok) throw new Error("Network Error");
     
     const json = await response.json();
-    const editions = json.data;
+    const data = json.data;
     
-    const uthmaniData = editions.find((e: any) => e.edition.identifier === 'quran-uthmani');
-    const translationData = editions.find((e: any) => e.edition.identifier === 'en.sahih');
-    const tafsirData = editions.find((e: any) => e.edition.identifier === 'ar.muyassar');
-    
-    if (!uthmaniData) throw new Error("Base Quran text missing");
+    if (!data || !data.ayahs) throw new Error("Invalid API Response");
 
-    const mergedAyahs: Ayah[] = uthmaniData.ayahs.map((ayah: any, index: number) => {
+    const mergedAyahs: Ayah[] = data.ayahs.map((ayah: any) => {
+        // Lightweight processing
         const words: Word[] = ayah.text.split(' ').map((w: string) => ({
             text: w,
             translation: '',
@@ -171,8 +168,8 @@ export const getPageContent = async (pageNumber: number): Promise<Ayah[]> => {
 
         return {
             ...ayah,
-            translation: translationData?.ayahs[index]?.text || '',
-            tafsir: tafsirData?.ayahs[index]?.text || '',
+            translation: '',
+            tafsir: '',
             words: words
         };
     });

@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, AlertTriangle, Menu, ArrowUp, ArrowDown, X, RefreshCw, Smartphone, Globe } from 'lucide-react';
+import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, AlertTriangle, Menu, ArrowUp, ArrowDown, X } from 'lucide-react';
 import * as storage from '../services/storage';
 import { CATEGORIES } from '../data';
 import { ALL_NAV_ITEMS } from '../components/Layout';
-import { Capacitor } from '@capacitor/core';
 
 interface SettingsProps {
   darkMode: boolean;
@@ -647,56 +646,32 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           </div>
         </div>
 
-        {/* Danger Zone: Force Reload & Clear Data */}
-        <div className="my-8 border-t border-gray-200 dark:border-dark-border pt-8">
-            <h4 className="text-red-500 font-bold mb-4 px-2 text-sm uppercase tracking-wider opacity-80">منطقة الخطر</h4>
-            
-            <div className="space-y-4">
-                {/* Force Reload */}
-                <SettingsItem 
-                    icon={RefreshCw}
-                    label="تحديث التطبيق"
-                    description="إعادة تحميل التطبيق (لحل مشاكل العرض)"
-                    action={
-                        <button 
-                        onClick={() => window.location.reload()}
-                        className="px-4 py-2 text-btn font-bold text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors border border-blue-200 dark:border-blue-900/50"
-                        >
-                        تحديث
-                        </button>
-                    }
-                />
-
-                {/* Clear Data */}
-                <SettingsItem 
-                    icon={Trash2}
-                    label="حذف البيانات"
-                    description="مسح كافة السجلات والمفضلة"
-                    danger={true}
-                    action={
-                        <button 
-                        onClick={clearData}
-                        className="px-4 py-2 text-btn font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-400"
-                        aria-label="حذف جميع البيانات"
-                        >
-                        حذف
-                        </button>
-                    }
-                />
-            </div>
-        </div>
+        {/* Clear Data Section */}
+        <SettingsItem 
+            icon={Trash2}
+            label="حذف البيانات"
+            description="مسح كافة السجلات والمفضلة"
+            danger={true}
+            action={
+                <button 
+                onClick={clearData}
+                className="px-4 py-2 text-btn font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-400"
+                aria-label="حذف جميع البيانات"
+                >
+                حذف
+                </button>
+            }
+        />
       </div>
 
       <div className="mt-12 text-center flex flex-col items-center gap-2">
          <p className="text-caption text-gray-400 dark:text-dark-muted font-english font-bold">
-           Rayyan App v1.6.0
+           Rayyan v1.0.0
          </p>
-         <span className={`text-[10px] px-2 py-0.5 rounded-full ${Capacitor.isNativePlatform() ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-             {Capacitor.isNativePlatform() ? (Capacitor.getPlatform() === 'ios' ? 'iOS App' : 'Android App') : 'Web App'}
-         </span>
       </div>
     </div>
   );
 };
 
 export default Settings;
+    

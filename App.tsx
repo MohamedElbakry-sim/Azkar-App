@@ -34,6 +34,7 @@ const NotFound = React.lazy(() => import('./pages/NotFound'));
 // New Pages
 const MoreMenu = React.lazy(() => import('./pages/MoreMenu'));
 const AthkarIndex = React.lazy(() => import('./pages/AthkarIndex'));
+const Habits = React.lazy(() => import('./pages/Habits'));
 
 // Component to handle back button logic which needs access to Router hooks
 const AppUrlListener: React.FC = () => {
@@ -159,6 +160,7 @@ const App: React.FC = () => {
                   <Route path="/qada" element={<MissedPrayers />} />
                   <Route path="/duas" element={<Duas />} />
                   <Route path="/stats" element={<Stats />} />
+                  <Route path="/habits" element={<Habits />} />
                   <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
                   <Route path="/contact" element={<Contact />} />
                   

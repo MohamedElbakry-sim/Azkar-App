@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, ChevronLeft, ChevronRight, Loader2, AlertCircle, Bookmark, Eye, EyeOff, Type, Settings, Sun, Moon, Coffee, Hash, Play, Pause, Copy, Share2, Palette, Search } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Loader2, AlertCircle, Bookmark, Eye, EyeOff, Type, Settings, Sun, Moon, Coffee, Hash, Play, Pause, Copy, Share2, Palette, Search, Maximize2, Info } from 'lucide-react';
 import * as quranService from '../services/quranService';
 import * as storage from '../services/storage';
 import { toArabicNumerals, applyTajweed, normalizeArabic, getHighlightRegex } from '../utils';
@@ -20,6 +19,8 @@ interface MushafPagesViewerProps {
   onTogglePlay?: () => void;
   reciterId?: string;
   onReciterChange?: (id: string) => void;
+  initialHighlightTerm?: string;
+  onClearHighlight?: () => void;
 }
 
 const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({ 
@@ -31,7 +32,9 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
   isPlaying = false,
   onTogglePlay,
   reciterId,
-  onReciterChange
+  onReciterChange,
+  initialHighlightTerm,
+  onClearHighlight
 }) => {
   const navigate = useNavigate();
   const [page, setPage] = useState(initialPage);
@@ -47,6 +50,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
   const [tajweedMode, setTajweedMode] = useState(false);
   const [pageTheme, setPageTheme] = useState<storage.PageTheme>(() => storage.getQuranTheme());
   const [bookmarks, setBookmarks] = useState<quranService.Bookmark[]>([]);
+  const [infoModalSurah, setInfoModalSurah] = useState<any | null>(null);
   
   // Search State
   const [showSearch, setShowSearch] = useState(false);
@@ -54,7 +58,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
   const [searchScope, setSearchScope] = useState<'global' | 'surah'>('global');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [highlightTerm, setHighlightTerm] = useState('');
+  const [highlightTerm, setHighlightTerm] = useState(initialHighlightTerm || '');
 
   // Context Menu State
   const [selectedAyah, setSelectedAyah] = useState<{surah: number, ayah: number, text: string} | null>(null);
@@ -77,6 +81,11 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
     fetchPage(initialPage);
     setBookmarks(quranService.getBookmarks());
   }, []);
+
+  // Update Highlight term from props (e.g. navigation)
+  useEffect(() => {
+      setHighlightTerm(initialHighlightTerm || '');
+  }, [initialHighlightTerm]);
 
   // Update theme handling
   const handleThemeChange = (newTheme: storage.PageTheme) => {
@@ -105,16 +114,29 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
       }
   }, [highlightedAyah, loading]);
 
+  // Auto-save Last Read position whenever page content is loaded
+  useEffect(() => {
+      if (ayahs.length > 0) {
+          const firstAyah = ayahs[0];
+          quranService.saveLastRead({
+              surahNumber: firstAyah.surah.number,
+              ayahNumber: firstAyah.numberInSurah,
+              pageNumber: page,
+              timestamp: Date.now()
+          });
+      }
+  }, [ayahs, page]);
+
   // Auto-hide overlay logic
   const resetOverlayTimer = useCallback(() => {
     if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current);
-    if (showOverlay && !isEditingPage && !selectedAyah && !showSearch) {
+    if (showOverlay && !isEditingPage && !selectedAyah && !showSearch && !infoModalSurah) {
         overlayTimerRef.current = setTimeout(() => {
             setShowOverlay(false);
             setShowSettings(false);
         }, 4000);
     }
-  }, [showOverlay, isEditingPage, selectedAyah, showSearch]);
+  }, [showOverlay, isEditingPage, selectedAyah, showSearch, infoModalSurah]);
 
   useEffect(() => {
     resetOverlayTimer();
@@ -212,10 +234,9 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
 
   const handleSearchResultClick = (result: SearchResult) => {
       setShowSearch(false);
-      setHighlightTerm(searchQuery); // Set text highlighting
-      // Navigate to the surah/ayah. 
-      // The QuranReader will handle locating the page for this ayah and updating the view.
-      navigate(`/quran/read/${result.surah.number}`, { state: { scrollToAyah: result.numberInSurah }});
+      // setHighlightTerm(searchQuery); // Set text highlighting locally, but navigation will reset it without state
+      // Navigate with state
+      navigate(`/quran/read/${result.surah.number}`, { state: { scrollToAyah: result.numberInSurah, highlightTerm: searchQuery }});
   };
 
   // Keyboard Nav
@@ -417,9 +438,16 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                                       
                                       <div className="flex items-center gap-4 px-2 relative z-10">
                                           <span className={`${themeStyles.secondaryText} text-2xl shrink-0`}>۞</span>
-                                          <h3 className={`font-quran text-2xl md:text-3xl font-bold drop-shadow-sm leading-relaxed text-center px-2 py-1 ${themeStyles.surahHeaderText}`}>
+                                          <button 
+                                              onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setInfoModalSurah(group.surah);
+                                              }}
+                                              className={`font-quran text-2xl md:text-3xl font-bold drop-shadow-sm leading-relaxed text-center px-4 py-1 cursor-pointer hover:scale-105 hover:opacity-80 transition-all duration-200 ${themeStyles.surahHeaderText}`}
+                                              title="معلومات السورة"
+                                          >
                                               {group.surah.name}
-                                          </h3>
+                                          </button>
                                           <span className={`${themeStyles.secondaryText} text-2xl shrink-0`}>۞</span>
                                       </div>
                                   </div>
@@ -446,7 +474,9 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                                   }
 
                                   const isSelected = selectedAyah?.surah === group.surah.number && selectedAyah?.ayah === ayah.numberInSurah;
-                                  
+                                  const isHighlightedAyah = highlightedAyah?.surah === group.surah.number && highlightedAyah?.ayah === ayah.numberInSurah;
+                                  const isActive = isSelected || isHighlightedAyah;
+
                                   // Subtle Juz Indicator
                                   // Check if Juz changes. Initialize lastJuz with first ayah's juz if not set
                                   if (lastJuz === -1) lastJuz = ayahs[0].juz;
@@ -459,7 +489,8 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                                   if (highlightTerm) {
                                       const regex = getHighlightRegex(highlightTerm);
                                       if (regex) {
-                                          displayText = text.replace(regex, (match) => `<span class="bg-yellow-300/60 dark:bg-yellow-600/60 rounded px-0.5">${match}</span>`);
+                                          // Enhanced search highlight: Opaque color for better visibility over blue background
+                                          displayText = text.replace(regex, (match) => `<span class="bg-yellow-400 text-black rounded box-decoration-clone px-0.5 shadow-sm">${match}</span>`);
                                       }
                                   } else if (tajweedMode) {
                                       // Render HTML with Tajweed
@@ -476,8 +507,8 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                                           <span 
                                             id={`ayah-${group.surah.number}-${ayah.numberInSurah}`}
                                             className={`
-                                                inline relative rounded px-0.5 transition-all duration-200 cursor-pointer
-                                                ${isSelected ? 'bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-300 dark:ring-blue-700' : ''}
+                                                inline relative rounded px-1 transition-all duration-200 cursor-pointer
+                                                ${isActive ? 'bg-blue-100/80 dark:bg-blue-900/30 box-decoration-clone ring-2 ring-blue-300 dark:ring-blue-700' : ''}
                                                 ${hideText ? 'blur-[6px] hover:blur-none active:blur-none transition-filter' : ''}
                                             `}
                                             style={{ fontSize: `${fontSize}px` }}
@@ -486,11 +517,21 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                                                 if (!isDrag.current) {
                                                     // Clear highlight on click if it exists to allow normal interaction
                                                     if (highlightTerm) setHighlightTerm('');
-                                                    setSelectedAyah({
-                                                        surah: group.surah.number,
-                                                        ayah: ayah.numberInSurah,
-                                                        text: text
-                                                    });
+                                                    // Attempt to clear parent highlighting (e.g. search result or paused audio)
+                                                    if (onClearHighlight) onClearHighlight();
+                                                    
+                                                    if (isSelected) {
+                                                        setSelectedAyah(null);
+                                                    } else {
+                                                        setSelectedAyah({
+                                                            surah: group.surah.number,
+                                                            ayah: ayah.numberInSurah,
+                                                            text: text
+                                                        });
+                                                        // Automatically hide header/footer when a verse is selected to show context menu cleanly
+                                                        setShowOverlay(false);
+                                                        setShowSettings(false);
+                                                    }
                                                 }
                                             }}
                                           >
@@ -517,7 +558,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
               })}
           </div>
       );
-  }, [ayahs, page, fontSize, hideText, tajweedMode, highlightTerm, pageTheme, highlightedAyah, selectedAyah, themeStyles]);
+  }, [ayahs, page, fontSize, hideText, tajweedMode, highlightTerm, pageTheme, highlightedAyah, selectedAyah, themeStyles, onClearHighlight]);
 
   return (
     <div className={`fixed inset-0 z-[100] flex flex-col h-full w-full overflow-hidden select-text transition-colors duration-300 ${themeStyles.container}`}>
@@ -543,16 +584,25 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                     </button>
                 </div>
                 
-                <div className="flex flex-col items-center">
+                <button 
+                    onClick={() => {
+                        if (ayahs.length > 0) setInfoModalSurah(ayahs[0].surah);
+                        resetOverlayTimer();
+                    }}
+                    className="flex flex-col items-center group cursor-pointer"
+                >
                     <span className={`font-bold font-arabicHead text-sm ${pageTheme === 'dark' ? 'text-white' : 'text-gray-800'}`}>القرآن الكريم</span>
                     {ayahs.length > 0 && (
-                        <div className={`flex gap-2 text-[10px] ${pageTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <div className={`flex gap-2 text-[10px] items-center ${pageTheme === 'dark' ? 'text-gray-400 group-hover:text-white' : 'text-gray-500 group-hover:text-black'} transition-colors`}>
                             <span>جزء {toArabicNumerals(ayahs[0].juz)}</span>
                             <span>•</span>
-                            <span>{ayahs[0].surah.name}</span>
+                            <span className="flex items-center gap-1">
+                                {ayahs[0].surah.name}
+                                <Info size={10} className="opacity-50" />
+                            </span>
                         </div>
                     )}
-                </div>
+                </button>
 
                 <div className="flex items-center gap-1">
                     <button 
@@ -575,6 +625,13 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                         title="الإعدادات"
                     >
                         <Settings size={18} />
+                    </button>
+                    <button 
+                        onClick={() => setShowOverlay(false)}
+                        className={`p-2 rounded-full transition-colors ${pageTheme === 'dark' ? 'bg-[#333] text-gray-300' : 'bg-gray-100 text-gray-600')}`}
+                        title="إخفاء القوائم"
+                    >
+                        <Maximize2 size={18} />
                     </button>
                 </div>
             </div>
@@ -677,9 +734,13 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
             onClick={() => {
                 if (isDrag.current) return;
                 if (selectedAyah) setSelectedAyah(null); // Click outside deselects
-                else if (!isEditingPage && !showSearch) {
-                    setShowOverlay(prev => !prev);
-                    setShowSettings(false);
+                else {
+                    // Clicking background should clear any external highlight (search/audio focus) unless we are just toggling overlay
+                    if (onClearHighlight) onClearHighlight();
+                    if (!isEditingPage && !showSearch && !infoModalSurah) {
+                        setShowOverlay(prev => !prev);
+                        setShowSettings(false);
+                    }
                 }
             }}
         >
@@ -732,37 +793,88 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
             </div>
         </div>
 
+        {/* --- Surah Info Overlay --- */}
+        {infoModalSurah && (
+            <div 
+                className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-fadeIn" 
+                onClick={() => setInfoModalSurah(null)}
+            >
+                <div 
+                    className="bg-white dark:bg-[#2a2a2a] w-full max-w-sm rounded-3xl shadow-2xl p-8 text-center border border-gray-100 dark:border-[#444] animate-popIn relative" 
+                    onClick={e => e.stopPropagation()}
+                >
+                    <button 
+                        onClick={() => setInfoModalSurah(null)}
+                        className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-500"
+                    >
+                        <X size={20} />
+                    </button>
+
+                    <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 mx-auto mb-6 font-bold text-2xl border-4 border-white dark:border-[#2a2a2a] shadow-lg">
+                        {toArabicNumerals(infoModalSurah.number)}
+                    </div>
+                    
+                    <h2 className="text-3xl font-bold text-gray-800 dark:text-white font-arabicHead mb-2">
+                        {infoModalSurah.name}
+                    </h2>
+                    
+                    <p className="text-gray-400 font-english text-lg mb-6">
+                        {infoModalSurah.englishName}
+                    </p>
+                    
+                    <div className="flex justify-center gap-3 text-xs font-bold text-gray-600 dark:text-gray-300">
+                        <span className="bg-gray-100 dark:bg-black/20 px-4 py-2 rounded-xl border border-gray-200 dark:border-white/5">
+                            {infoModalSurah.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}
+                        </span>
+                        <span className="bg-gray-100 dark:bg-black/20 px-4 py-2 rounded-xl border border-gray-200 dark:border-white/5">
+                            {infoModalSurah.numberOfAyahs} آيات
+                        </span>
+                    </div>
+
+                    {/* Simple Decoration */}
+                    <div className="mt-8 pt-8 border-t border-gray-100 dark:border-white/5 opacity-50">
+                        <p className="font-quran text-xl text-gray-800 dark:text-white">
+                            {BISMILLAH}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        )}
+
         {/* --- Context Menu for Selected Ayah --- */}
         {selectedAyah && (
-            <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 animate-slideUp">
-                <div className="flex items-center gap-2 bg-gray-900/90 dark:bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-xl text-white dark:text-gray-900 border border-white/10">
+            <div 
+                className="absolute bottom-10 left-0 right-0 z-50 flex justify-center px-4 animate-slideUp pointer-events-none" 
+                style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+            >
+                <div className="pointer-events-auto flex items-center gap-1 bg-gray-900/95 dark:bg-white/95 backdrop-blur-xl p-2 rounded-2xl shadow-2xl text-white dark:text-gray-900 border border-white/10 dark:border-gray-200/20 max-w-full overflow-x-auto no-scrollbar">
                     <button 
                         onClick={handleAyahPlay}
-                        className="p-3 rounded-xl hover:bg-white/10 dark:hover:bg-black/10 transition-colors flex flex-col items-center gap-1 min-w-[50px]"
+                        className="p-3 rounded-xl hover:bg-white/10 dark:hover:bg-black/10 transition-colors flex flex-col items-center gap-1 min-w-[44px]"
                     >
                         <Play size={20} fill="currentColor" />
-                        <span className="text-[10px] font-bold">استماع</span>
+                        <span className="text-[10px] font-bold whitespace-nowrap">استماع</span>
                     </button>
-                    <div className="w-px h-8 bg-white/20 dark:bg-black/20"></div>
+                    <div className="w-px h-8 bg-white/20 dark:bg-black/20 mx-1"></div>
                     <button 
                         onClick={handleAyahCopy}
-                        className="p-3 rounded-xl hover:bg-white/10 dark:hover:bg-black/10 transition-colors flex flex-col items-center gap-1 min-w-[50px]"
+                        className="p-3 rounded-xl hover:bg-white/10 dark:hover:bg-black/10 transition-colors flex flex-col items-center gap-1 min-w-[44px]"
                     >
                         <Copy size={20} />
-                        <span className="text-[10px] font-bold">نسخ</span>
+                        <span className="text-[10px] font-bold whitespace-nowrap">نسخ</span>
                     </button>
-                    <div className="w-px h-8 bg-white/20 dark:bg-black/20"></div>
+                    <div className="w-px h-8 bg-white/20 dark:bg-black/20 mx-1"></div>
                     <button 
                         onClick={handleAyahShare}
-                        className="p-3 rounded-xl hover:bg-white/10 dark:hover:bg-black/10 transition-colors flex flex-col items-center gap-1 min-w-[50px]"
+                        className="p-3 rounded-xl hover:bg-white/10 dark:hover:bg-black/10 transition-colors flex flex-col items-center gap-1 min-w-[44px]"
                     >
                         <Share2 size={20} />
-                        <span className="text-[10px] font-bold">مشاركة</span>
+                        <span className="text-[10px] font-bold whitespace-nowrap">مشاركة</span>
                     </button>
-                    <div className="w-px h-8 bg-white/20 dark:bg-black/20"></div>
+                    <div className="w-px h-8 bg-white/20 dark:bg-black/20 mx-1"></div>
                     <button 
                         onClick={() => setSelectedAyah(null)}
-                        className="p-3 rounded-xl hover:bg-white/10 dark:hover:bg-black/10 transition-colors text-red-400"
+                        className="p-3 rounded-xl hover:bg-white/10 dark:hover:bg-black/10 transition-colors text-red-400 min-w-[44px] flex items-center justify-center"
                     >
                         <X size={20} />
                     </button>

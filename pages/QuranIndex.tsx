@@ -2,8 +2,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QURAN_META } from '../data/quranMeta';
-import { normalizeArabic } from '../utils';
-import { Search, Book, Bookmark as BookmarkIcon, Layers, Grid, ChevronLeft, PlayCircle, Trash2, Clock } from 'lucide-react';
+import { normalizeArabic, getJuzInfo } from '../utils';
+import { Search, Book, Bookmark as BookmarkIcon, Grid, ChevronLeft, Trash2, Clock, ArrowRight } from 'lucide-react';
 import * as quranService from '../services/quranService';
 
 const QuranIndex: React.FC = () => {
@@ -24,7 +24,6 @@ const QuranIndex: React.FC = () => {
       setBookmarks(updated);
   };
 
-  // Generate Juz List (Static for now, 1-30)
   const juzList = Array.from({ length: 30 }, (_, i) => ({
       number: i + 1,
       name: `الجزء ${i + 1}`,
@@ -37,16 +36,73 @@ const QuranIndex: React.FC = () => {
     return QURAN_META.filter(surah => {
       const normArabic = normalizeArabic(surah.name);
       const normEnglish = surah.englishName.toLowerCase();
-      return normArabic.includes(normalizedQuery) || normEnglish.includes(normalizedQuery);
+      // Allow searching by number as well
+      const numberStr = surah.number.toString();
+      return normArabic.includes(normalizedQuery) || normEnglish.includes(normalizedQuery) || numberStr === normalizedQuery;
     });
   }, [searchQuery]);
 
+  // Quick Jump Logic (e.g. "2:255" or "Kahf 10")
+  const quickJumpResult = useMemo(() => {
+      if (!searchQuery.trim()) return null;
+      
+      const normalized = normalizeArabic(searchQuery.toLowerCase());
+      
+      // Pattern 1: "SurahNum:AyahNum" (e.g., 2:255)
+      const colonMatch = normalized.match(/^(\d+):(\d+)$/);
+      if (colonMatch) {
+          const surahNum = parseInt(colonMatch[1]);
+          const ayahNum = parseInt(colonMatch[2]);
+          if (surahNum >= 1 && surahNum <= 114) {
+              const meta = QURAN_META[surahNum - 1];
+              if (ayahNum >= 1 && ayahNum <= meta.numberOfAyahs) {
+                  return { surah: meta, ayah: ayahNum };
+              }
+          }
+      }
+
+      // Pattern 2: "SurahName AyahNum" (e.g., "kahf 10", "baqara 255")
+      const spaceMatch = normalized.match(/^(.+)\s+(\d+)$/);
+      if (spaceMatch) {
+          const namePart = spaceMatch[1].trim();
+          const ayahNum = parseInt(spaceMatch[2]);
+          
+          const foundSurah = QURAN_META.find(s => {
+              const normAr = normalizeArabic(s.name);
+              const normEn = s.englishName.toLowerCase();
+              return normAr.includes(namePart) || normEn.includes(namePart);
+          });
+
+          if (foundSurah && ayahNum >= 1 && ayahNum <= foundSurah.numberOfAyahs) {
+              return { surah: foundSurah, ayah: ayahNum };
+          }
+      }
+
+      return null;
+  }, [searchQuery]);
+
   const handleSurahClick = (number: number) => {
-    navigate(`/quran/detail/${number}`);
+    navigate(`/quran/read/${number}`);
+  };
+
+  const handleJuzClick = (juzNumber: number) => {
+      const info = getJuzInfo(juzNumber);
+      // Navigate to the Surah, but pass the specific page to start reading from
+      navigate(`/quran/read/${info.surah}`, { 
+          state: { initialPage: info.page } 
+      });
   };
 
   const handleContinueReading = (bookmark: quranService.Bookmark) => {
     navigate(`/quran/read/${bookmark.surahNumber}`, { state: { scrollToAyah: bookmark.ayahNumber }});
+  };
+
+  const handleQuickJump = () => {
+      if (quickJumpResult) {
+          navigate(`/quran/read/${quickJumpResult.surah.number}`, { 
+              state: { scrollToAyah: quickJumpResult.ayah, highlightTerm: searchQuery }
+          });
+      }
   };
 
   return (
@@ -77,7 +133,7 @@ const QuranIndex: React.FC = () => {
             <input
               type="text"
               className="w-full pl-4 pr-12 py-3 rounded-2xl bg-white dark:bg-dark-surface border-none shadow-sm focus:ring-2 focus:ring-emerald-500 dark:text-white font-arabic placeholder-gray-400"
-              placeholder={activeTab === 'surah' ? "بحث باسم السورة..." : "بحث عن جزء..."}
+              placeholder={activeTab === 'surah' ? "بحث باسم السورة أو رقم الآية (مثال: 2:255)" : "بحث عن جزء..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -85,8 +141,29 @@ const QuranIndex: React.FC = () => {
       </div>
 
       <div className="px-4 md:px-0 space-y-4">
+        
+        {/* Quick Jump Result Card */}
+        {quickJumpResult && (
+            <div 
+                onClick={handleQuickJump}
+                className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-800 cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-between animate-fadeIn"
+            >
+                <div className="flex items-center gap-3">
+                    <div className="bg-indigo-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold">
+                        <ArrowRight size={20} className="rtl:rotate-180" />
+                    </div>
+                    <div>
+                        <span className="text-xs text-indigo-600 dark:text-indigo-400 font-bold uppercase">انتقال سريع</span>
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-white font-arabicHead">
+                            سورة {quickJumpResult.surah.name} - الآية {quickJumpResult.ayah}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        )}
+
         {/* Last Read Banner */}
-        {lastRead && (
+        {!searchQuery && lastRead && (
             <div 
                 onClick={() => handleContinueReading(lastRead)}
                 className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-3xl p-5 text-white shadow-lg shadow-emerald-500/20 cursor-pointer relative overflow-hidden group"
@@ -120,7 +197,7 @@ const QuranIndex: React.FC = () => {
         )}
 
         {/* Saved Bookmarks List */}
-        {bookmarks.length > 0 && (
+        {!searchQuery && bookmarks.length > 0 && (
             <div className="space-y-2">
                 <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 px-2 flex items-center gap-2">
                     <BookmarkIcon size={14} />
@@ -194,10 +271,10 @@ const QuranIndex: React.FC = () => {
                 {juzList.map((juz) => (
                     <button
                         key={juz.number}
-                        className="bg-white dark:bg-dark-surface p-4 rounded-2xl border border-gray-100 dark:border-dark-border hover:border-emerald-200 dark:hover:border-emerald-900/50 transition-all shadow-sm text-center flex flex-col items-center justify-center gap-2"
-                        onClick={() => alert('ميزة التصفح بالأجزاء قادمة قريباً')}
+                        className="bg-white dark:bg-dark-surface p-4 rounded-2xl border border-gray-100 dark:border-dark-border hover:border-emerald-200 dark:hover:border-emerald-900/50 transition-all shadow-sm text-center flex flex-col items-center justify-center gap-2 group"
+                        onClick={() => handleJuzClick(juz.number)}
                     >
-                        <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-1">
+                        <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-1 group-hover:scale-110 transition-transform">
                             <Grid size={20} />
                         </div>
                         <h3 className="font-bold text-gray-800 dark:text-white font-arabicHead">{juz.name}</h3>

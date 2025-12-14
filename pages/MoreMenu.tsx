@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Settings, Clock, Activity, Heart, BookOpenText, 
   Radio, Calendar, Mail, Shield, BarChart2, 
-  ChevronLeft, Smartphone, ListTodo
+  ChevronLeft, Smartphone, ListTodo, ClipboardCheck
 } from 'lucide-react';
 import { TasbeehIcon, AllahIcon } from '../components/Layout';
 
@@ -16,6 +16,7 @@ const MoreMenu: React.FC = () => {
       title: "أدوات",
       items: [
         { label: "السبحة الإلكترونية", icon: <TasbeehIcon size={22} />, path: "/tasbeeh", color: "text-emerald-500" },
+        { label: "يومياتي (العادات)", icon: <ClipboardCheck size={22} />, path: "/habits", color: "text-indigo-500" },
         { label: "متابعة القضاء", icon: <ListTodo size={22} />, path: "/qada", color: "text-orange-500" },
         { label: "التقويم الهجري", icon: <Calendar size={22} />, path: "/calendar", color: "text-blue-500" },
         { label: "الإذاعة", icon: <Radio size={22} />, path: "/radio", color: "text-red-500" },
@@ -87,7 +88,7 @@ const MoreMenu: React.FC = () => {
         <div className="flex justify-center mb-2 opacity-50">
             <Smartphone size={24} />
         </div>
-        <p className="text-caption font-english">Rayyan v1.6.0</p>
+        <p className="text-caption font-english">Rayyan v1.0.0</p>
       </div>
     </div>
   );
