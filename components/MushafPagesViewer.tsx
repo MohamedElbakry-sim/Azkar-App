@@ -628,7 +628,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                     </button>
                     <button 
                         onClick={() => setShowOverlay(false)}
-                        className={`p-2 rounded-full transition-colors ${pageTheme === 'dark' ? 'bg-[#333] text-gray-300' : 'bg-gray-100 text-gray-600')}`}
+                        className={`p-2 rounded-full transition-colors ${pageTheme === 'dark' ? 'bg-[#333] text-gray-300' : 'bg-gray-100 text-gray-600'}`}
                         title="إخفاء القوائم"
                     >
                         <Maximize2 size={18} />
