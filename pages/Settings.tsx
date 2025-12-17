@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, AlertTriangle, Menu, ArrowUp, ArrowDown, X } from 'lucide-react';
+import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, AlertTriangle, Menu, ArrowUp, ArrowDown, X, User, LogOut, RefreshCw, CheckCircle } from 'lucide-react';
 import * as storage from '../services/storage';
 import { CATEGORIES } from '../data';
 import { ALL_NAV_ITEMS } from '../components/Layout';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface SettingsProps {
   darkMode: boolean;
@@ -13,22 +15,18 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   const [fontSize, setFontSize] = useState<storage.FontSize>('medium');
   const [hijriOffset, setHijriOffset] = useState<number>(0);
-  
-  // Reminder State
   const [reminders, setReminders] = useState<storage.Reminder[]>([]);
   const [isAddingReminder, setIsAddingReminder] = useState(false);
   const [newReminderTime, setNewReminderTime] = useState('');
   const [newReminderLabel, setNewReminderLabel] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-
-  // Nav Settings State
   const [navOrder, setNavOrder] = useState<string[]>([]);
+  const [notifSettings, setNotifSettings] = useState<storage.NotificationSettings>({ soundEnabled: true, vibrationType: 'default' });
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  // Notification Settings State
-  const [notifSettings, setNotifSettings] = useState<storage.NotificationSettings>({
-    soundEnabled: true,
-    vibrationType: 'default'
-  });
+  // Auth Context
+  const { currentUser, logout, syncData, isDemoMode } = useAuth();
+  const navigate = useNavigate();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -47,7 +45,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
 
   const changeHijriOffset = (delta: number) => {
     const newOffset = hijriOffset + delta;
-    // Limit offset between -5 and +5 days
     if (newOffset >= -5 && newOffset <= 5) {
       setHijriOffset(newOffset);
       storage.saveHijriOffset(newOffset);
@@ -66,6 +63,18 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
         localStorage.setItem('nour_theme', darkMode ? 'dark' : 'light');
         window.location.reload();
     }
+  };
+
+  const handleManualSync = async () => {
+      setIsSyncing(true);
+      try {
+          await syncData();
+          alert('تمت المزامنة بنجاح!');
+      } catch (e) {
+          alert('فشل المزامنة. تحقق من الاتصال.');
+      } finally {
+          setIsSyncing(false);
+      }
   };
 
   const handleExport = () => {
@@ -108,16 +117,13 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
         }
     };
     reader.readAsText(file);
-    // Reset input
     e.target.value = '';
   };
 
-  // --- Nav Settings Handlers ---
-  
+  // Nav Settings Handlers
   const handleMoveNav = (index: number, direction: 'up' | 'down') => {
       const newOrder = [...navOrder];
       const targetIndex = direction === 'up' ? index - 1 : index + 1;
-      
       if (targetIndex >= 0 && targetIndex < newOrder.length) {
           [newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
           setNavOrder(newOrder);
@@ -148,8 +154,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
       window.dispatchEvent(new Event('nav-settings-updated'));
   };
 
-  // --- Reminder Handlers ---
-
+  // Reminder Handlers
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) {
         alert("هذا المتصفح لا يدعم التنبيهات.");
@@ -165,13 +170,11 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
 
   const handleAddReminder = async () => {
     if (!newReminderTime || !newReminderLabel) return;
-    
     const hasPermission = await requestNotificationPermission();
     if (!hasPermission) {
         alert("يرجى السماح بالتنبيهات لتفعيل هذه الميزة.");
         return;
     }
-
     const newReminder: storage.Reminder = {
         id: Date.now().toString(),
         time: newReminderTime,
@@ -179,7 +182,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
         enabled: true,
         targetPath: selectedCategory ? `/category/${selectedCategory}` : undefined
     };
-    
     storage.addReminder(newReminder);
     setReminders(storage.getReminders());
     setIsAddingReminder(false);
@@ -201,8 +203,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     }
   };
 
-  // --- Render Helpers ---
-
   const getPreviewFontSizeClass = () => {
     switch (fontSize) {
       case 'small': return 'text-h3 md:text-h2';
@@ -213,19 +213,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     }
   };
 
-  const SettingsItem = ({ 
-    icon: Icon, 
-    label, 
-    description, 
-    action,
-    danger = false
-  }: { 
-    icon: any, 
-    label: string, 
-    description?: string, 
-    action: React.ReactNode,
-    danger?: boolean
-  }) => (
+  const SettingsItem = ({ icon: Icon, label, description, action, danger = false }: any) => (
     <div className="flex items-center justify-between p-4 bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
       <div className="flex items-center gap-4">
         <div className={`p-3 rounded-full ${danger ? 'bg-red-50 dark:bg-red-900/20 text-red-500' : 'bg-gray-100 dark:bg-dark-panel text-gray-600 dark:text-dark-secondary'}`}>
@@ -240,7 +228,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     </div>
   );
 
-  const Toggle = ({ checked, onChange, label }: { checked: boolean; onChange: () => void; label?: string }) => (
+  const Toggle = ({ checked, onChange, label }: any) => (
     <button 
       onClick={onChange}
       role="switch"
@@ -251,12 +239,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
         ${checked ? 'bg-gradient-to-r from-primary-500 to-primary-600' : 'bg-gray-300 dark:bg-gray-600'}
       `}
     >
-      <div 
-        className={`
-          absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300
-          ${checked ? 'left-1' : 'left-[calc(100%-1.75rem)]'}
-        `} 
-      />
+      <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 ${checked ? 'left-1' : 'left-[calc(100%-1.75rem)]'}`} />
     </button>
   );
 
@@ -268,6 +251,63 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
       </div>
 
       <div className="space-y-4">
+        
+        {/* Profile & Sync Section */}
+        <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm overflow-hidden">
+            <div className="p-6 bg-gradient-to-r from-emerald-600 to-teal-700 text-white">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-2xl font-bold border-2 border-white/30">
+                            {currentUser ? (currentUser.displayName ? currentUser.displayName[0] : currentUser.email ? currentUser.email[0].toUpperCase() : <User />) : <User />}
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-xl font-arabicHead">
+                                {currentUser ? (currentUser.displayName || 'مستخدم') : 'حساب زائر'}
+                            </h3>
+                            <p className="text-emerald-100 text-sm font-english">
+                                {currentUser ? currentUser.email : 'لم يتم تسجيل الدخول'}
+                            </p>
+                        </div>
+                    </div>
+                    {currentUser && (
+                        <button onClick={logout} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors" title="تسجيل الخروج">
+                            <LogOut size={20} />
+                        </button>
+                    )}
+                </div>
+            </div>
+            
+            <div className="p-4">
+                {currentUser ? (
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-bold">
+                            <CheckCircle size={16} />
+                            <span>المزامنة مفعلة</span>
+                        </div>
+                        <button 
+                            onClick={handleManualSync}
+                            disabled={isSyncing}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-xl text-sm font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+                        >
+                            <RefreshCw size={16} className={isSyncing ? "animate-spin" : ""} />
+                            {isSyncing ? 'جاري المزامنة...' : 'مزامنة الآن'}
+                        </button>
+                    </div>
+                ) : (
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">سجل دخولك لحفظ بياناتك ومزامنتها عبر الأجهزة.</p>
+                        <button 
+                            onClick={() => navigate('/auth')}
+                            className="w-full md:w-auto px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold transition-colors shadow-lg shadow-primary-500/20"
+                        >
+                            تسجيل الدخول / إنشاء حساب
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+
+        {/* ... Existing Settings Components ... */}
         
         {/* Customize Menu Section */}
         <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
@@ -281,7 +321,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                 </div>
             </div>
 
-            {/* Active Items List */}
             <div className="space-y-2 mb-6">
                 {navOrder.map((id, index) => {
                     const item = ALL_NAV_ITEMS[id];
@@ -324,7 +363,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                 })}
             </div>
 
-            {/* Available Items */}
             <div className="pt-4 border-t border-gray-100 dark:border-dark-border">
                 <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 px-1">عناصر متاحة للإضافة</h4>
                 <div className="flex flex-wrap gap-2">
@@ -341,9 +379,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                             </button>
                         ))
                     }
-                    {Object.entries(ALL_NAV_ITEMS).filter(([id]) => !navOrder.includes(id)).length === 0 && (
-                        <span className="text-sm text-gray-400 italic px-1">لا توجد عناصر إضافية</span>
-                    )}
                 </div>
             </div>
         </div>
@@ -371,7 +406,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                 )}
              </div>
 
-             {/* Reminder Customization (Sound & Vibration) */}
+             {/* Reminder Customization */}
              <div className="mb-6 p-4 bg-gray-50 dark:bg-dark-panel rounded-xl border border-gray-100 dark:border-dark-border">
                 <h4 className="text-caption font-bold text-gray-500 dark:text-dark-muted uppercase tracking-wider mb-3">تخصيص التنبيهات</h4>
                 
@@ -394,19 +429,12 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                         {(['default', 'short', 'long', 'pulse', 'none'] as storage.VibrationType[]).map((type) => {
-                            const labels: Record<string, string> = { 
-                                default: 'افتراضي', 
-                                short: 'قصير', 
-                                long: 'طويل', 
-                                pulse: 'نبضات', 
-                                none: 'بدون' 
-                            };
+                            const labels: Record<string, string> = { default: 'افتراضي', short: 'قصير', long: 'طويل', pulse: 'نبضات', none: 'بدون' };
                             return (
                                 <button
                                     key={type}
                                     onClick={() => {
                                         updateNotifSettings({ vibrationType: type });
-                                        // Preview vibration
                                         if (navigator.vibrate && type !== 'none') {
                                             navigator.vibrate(storage.getVibrationPattern(type));
                                         }
@@ -449,14 +477,12 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                                     className="px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white text-body-sm"
                                  />
                              </div>
-                             
                              <div className="flex flex-col gap-1 md:col-span-2">
                                  <label className="text-caption font-bold text-gray-500">ربط بقسم (اختياري)</label>
                                  <select 
                                     value={selectedCategory}
                                     onChange={(e) => {
                                         setSelectedCategory(e.target.value);
-                                        // Auto-fill label if empty
                                         if(!newReminderLabel && e.target.value) {
                                             const cat = CATEGORIES.find(c => c.id === e.target.value);
                                             if(cat) setNewReminderLabel(cat.title);
@@ -530,7 +556,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
              </div>
         </div>
 
-        {/* Data Management Section (Backup/Restore) */}
+        {/* Data Management Section (Manual Backup/Restore) */}
         <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
             <div className="flex items-center gap-4 mb-4">
                 <div className="p-3 rounded-full bg-gray-100 dark:bg-dark-panel text-gray-600 dark:text-dark-secondary">
@@ -538,7 +564,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                 </div>
                 <div>
                     <h3 className="font-bold text-body-lg text-gray-800 dark:text-dark-text font-arabic">إدارة البيانات</h3>
-                    <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">نسخ واستعادة بياناتك</p>
+                    <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">نسخ واستعادة بياناتك يدوياً (ملف)</p>
                 </div>
             </div>
 
@@ -564,10 +590,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                     accept=".json"
                     onChange={handleFileChange}
                 />
-            </div>
-            <div className="mt-3 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/10 p-2 rounded-lg">
-                <AlertTriangle size={14} />
-                <span>النسخة تشمل: السجل، المفضلة، الإعدادات، والعدادات المخصصة.</span>
             </div>
         </div>
 
@@ -602,7 +624,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           icon={darkMode ? Moon : Sun}
           label="المظهر"
           description={darkMode ? 'الوضع الليلي مفعل' : 'الوضع النهاري مفعل'}
-          action={<Toggle checked={darkMode} onChange={toggleTheme} label="تبديل المظهر (ليلي/نهاري)" />}
+          action={<Toggle checked={darkMode} onChange={toggleTheme} label="تبديل المظهر" />}
         />
 
         {/* Font Size Settings */}
@@ -637,7 +659,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
             })}
           </div>
 
-          {/* Font Preview Box */}
           <div className="p-6 bg-gray-50 dark:bg-dark-panel rounded-xl border border-dashed border-gray-200 dark:border-dark-border text-center transition-all">
              <p className={`font-arabic text-gray-800 dark:text-dark-text leading-loose transition-all duration-300 ${getPreviewFontSizeClass()}`}>
                بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
@@ -656,7 +677,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                 <button 
                 onClick={clearData}
                 className="px-4 py-2 text-btn font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-400"
-                aria-label="حذف جميع البيانات"
                 >
                 حذف
                 </button>
@@ -666,7 +686,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
 
       <div className="mt-12 text-center flex flex-col items-center gap-2">
          <p className="text-caption text-gray-400 dark:text-dark-muted font-english font-bold">
-           Rayyan v1.0.0
+           Rayyan v1.5.0
          </p>
       </div>
     </div>
@@ -674,4 +694,3 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
 };
 
 export default Settings;
-    

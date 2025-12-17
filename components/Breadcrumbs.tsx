@@ -15,8 +15,7 @@ const routeNameMap: Record<string, string> = {
   'settings': 'الإعدادات',
   'contact': 'تواصل معنا',
   'category': 'الأذكار',
-  'radio': 'الإذاعة',
-  'quran': 'القرآن الكريم'
+  'radio': 'الإذاعة'
 };
 
 const Breadcrumbs: React.FC = () => {

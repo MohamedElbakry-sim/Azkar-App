@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Book, Menu, Sun, Moon, ArrowRight, Maximize2, Square, Play, Pause, Radio, Calendar } from 'lucide-react';
+import { Home, Menu, Sun, Moon, ArrowRight, Maximize2, Square, Play, Pause, Radio, Calendar, BookOpen } from 'lucide-react';
 import Logo from './Logo';
 import { useRadio } from '../contexts/RadioContext';
 import * as storage from '../services/storage';
@@ -39,8 +39,8 @@ export const AllahIcon = ({ size = 24 }: { size?: number }) => (
 // Define All Possible Nav Items
 export const ALL_NAV_ITEMS: Record<string, { path: string; label: string; icon: React.ReactNode }> = {
     'home': { path: '/', label: 'الرئيسية', icon: <Home size={22} /> },
-    'quran': { path: '/quran', label: 'القرآن', icon: <Book size={22} /> },
     'athkar': { path: '/athkar', label: 'الأذكار', icon: <AthkarIcon size={22} /> },
+    'quran': { path: '/quran', label: 'المصحف', icon: <BookOpen size={22} /> },
     'prayers': { path: '/prayers', label: 'الصلاة', icon: <PrayerIcon size={22} /> },
     'tasbeeh': { path: '/tasbeeh', label: 'السبحة', icon: <TasbeehIcon size={22} /> },
     'radio': { path: '/radio', label: 'الإذاعة', icon: <Radio size={22} /> },
@@ -58,8 +58,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentStation, isPlaying, togglePlay, stop, isBuffering } = useRadio();
-  const showMiniPlayer = currentStation && location.pathname !== '/radio';
-
+  
   // State for dynamic navigation items
   const [activeNavIds, setActiveNavIds] = useState<string[]>(storage.getNavOrder());
 
@@ -73,135 +72,161 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
       return () => window.removeEventListener('nav-settings-updated', handleNavUpdate);
   }, []);
 
-  // Check if we are in Reading Mode (Quran Reader)
-  const isReadingMode = location.pathname.includes('/quran/read');
+  const isAuthPage = location.pathname === '/auth';
+  
+  // Immersive Mode Logic: Check if we are in Quran Reader with view=mushaf
+  const searchParams = new URLSearchParams(location.search);
+  const isMushafMode = location.pathname.startsWith('/quran/') && searchParams.get('view') === 'mushaf';
+
+  // Determine if we should show navigation
+  const showNav = !isAuthPage && !isMushafMode;
+  
+  const showMiniPlayer = currentStation && showNav && location.pathname !== '/radio';
 
   // Helper to determine if we are in a detail view (to show back button on mobile)
-  // Exclude isReadingMode because it handles its own UI
-  const isDetailView = !isReadingMode && (
-                       location.pathname.startsWith('/quran/detail') || // Fixed: detail, not read
+  const isDetailView = !isAuthPage && !isMushafMode && (
                        location.pathname.startsWith('/category/') ||
-                       location.pathname === '/settings');
+                       (location.pathname.startsWith('/quran/') && location.pathname !== '/quran') || 
+                       location.pathname === '/settings' ||
+                       location.pathname === '/favorites' ||
+                       location.pathname === '/stats' ||
+                       location.pathname === '/names' || 
+                       location.pathname === '/duas' ||
+                       location.pathname === '/contact'
+                       );
 
   const navTabs = activeNavIds.map(id => ALL_NAV_ITEMS[id]).filter(Boolean);
 
   return (
-    <div className="min-h-screen flex bg-[#F9FAFB] dark:bg-dark-bg transition-colors duration-200 font-arabic text-body text-gray-900 dark:text-dark-text">
+    <div className="min-h-screen flex bg-[#F9FAFB] dark:bg-[#121212] transition-colors duration-200 font-arabic text-body text-gray-900 dark:text-dark-text">
       
       {/* --- DESKTOP SIDEBAR --- */}
-      <aside className="hidden md:flex flex-col w-72 h-screen sticky top-0 bg-white dark:bg-dark-panel border-l border-gray-100 dark:border-dark-border z-50">
-        {/* Logo Area */}
-        <div className="p-8 flex items-center gap-3">
-           <Logo size={40} className="text-primary-600 dark:text-primary-500" />
-        </div>
-        
-        {/* Nav Links */}
-        <nav className="flex-1 px-4 space-y-2 py-4">
-          {navTabs.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => `
-                flex items-center gap-4 p-4 rounded-xl transition-all duration-200 font-bold
-                ${isActive 
-                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 shadow-sm' 
-                  : 'text-gray-500 dark:text-dark-muted hover:bg-gray-50 dark:hover:bg-dark-surface hover:text-gray-900 dark:hover:text-dark-text'}
-              `}
-            >
-              {item.icon}
-              <span className="text-lg">{item.label}</span>
-            </NavLink>
-          ))}
-        </nav>
+      {showNav && (
+        <aside className="hidden md:flex flex-col w-72 h-screen sticky top-0 bg-white dark:bg-[#1E1E1E] border-l border-gray-100 dark:border-[#2A2A2A] z-50 shadow-sm">
+            {/* Logo Area */}
+            <div className="p-8 flex items-center gap-3">
+            <Logo size={36} className="text-primary-600 dark:text-primary-500" />
+            </div>
+            
+            {/* Nav Links */}
+            <nav className="flex-1 px-4 space-y-2 py-4">
+            {navTabs.map((item) => (
+                <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) => `
+                    flex items-center gap-4 p-4 rounded-2xl transition-all duration-200 font-bold group
+                    ${isActive 
+                    ? 'bg-primary-50 dark:bg-primary-900/10 text-primary-600 dark:text-primary-400' 
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#2A2A2A] hover:text-gray-900 dark:hover:text-gray-200'}
+                `}
+                >
+                <div className={`transition-transform duration-200 group-hover:scale-110`}>
+                    {item.icon}
+                </div>
+                <span className="text-base">{item.label}</span>
+                {/* Active Indicator */}
+                <NavLink to={item.path} className={({ isActive }) => `absolute left-0 w-1 h-8 bg-primary-500 rounded-r-full transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-0'}`} />
+                </NavLink>
+            ))}
+            </nav>
 
-        {/* Theme Toggle */}
-        <div className="p-6 border-t border-gray-100 dark:border-dark-border">
-          <button 
-            onClick={toggleTheme}
-            className="flex items-center gap-3 w-full p-4 rounded-xl bg-gray-50 dark:bg-dark-surface text-gray-600 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors"
-          >
-              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-              <span className="font-bold">{darkMode ? 'الوضع النهاري' : 'الوضع الليلي'}</span>
-          </button>
-        </div>
-      </aside>
+            {/* Theme Toggle */}
+            <div className="p-6 border-t border-gray-100 dark:border-[#2A2A2A]">
+            <button 
+                onClick={toggleTheme}
+                className="flex items-center gap-3 w-full p-4 rounded-2xl bg-gray-50 dark:bg-[#2A2A2A] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333333] transition-colors"
+            >
+                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+                <span className="font-bold text-sm">{darkMode ? 'الوضع النهاري' : 'الوضع الليلي'}</span>
+            </button>
+            </div>
+        </aside>
+      )}
 
       {/* --- MAIN CONTENT --- */}
-      <div className={`flex-1 flex flex-col min-h-screen relative max-w-full ${isReadingMode ? 'h-screen overflow-hidden pb-0' : 'pb-24 md:pb-0'}`}>
+      <div className={`flex-1 flex flex-col min-h-screen relative max-w-full ${isAuthPage || isMushafMode ? 'h-screen overflow-hidden pb-0' : 'pb-24 md:pb-0'}`}>
         
-        {/* Mobile Header (Only on Detail Views or specific pages if needed) */}
+        {/* Mobile Header (Only on Detail Views) */}
         {isDetailView && (
-            <header className="md:hidden sticky top-0 z-40 bg-white/80 dark:bg-dark-panel/80 backdrop-blur-md border-b border-gray-100 dark:border-dark-border px-4 py-3 flex items-center justify-between">
+            <header className="md:hidden sticky top-0 z-40 bg-white/90 dark:bg-[#1E1E1E]/90 backdrop-blur-md border-b border-gray-100 dark:border-[#2A2A2A] px-4 py-3 flex items-center justify-between">
                 <button 
                     onClick={() => navigate(-1)} 
-                    className="p-2 -mr-2 text-gray-600 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-elevated rounded-full"
+                    className="p-2 -mr-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2A2A2A] rounded-full"
                 >
-                    <ArrowRight size={24} />
+                    <ArrowRight size={24} className="rtl:rotate-0" />
                 </button>
-                <div className="font-bold text-lg">ريان</div>
+                <div className="font-bold text-lg text-gray-800 dark:text-white">ريان</div>
                 <div className="w-8"></div> {/* Spacer */}
             </header>
         )}
 
-        {/* Desktop Header - Hide in reading mode */}
-        {!isReadingMode && (
-            <header className="hidden md:flex sticky top-0 z-40 bg-[#F9FAFB]/90 dark:bg-dark-bg/90 backdrop-blur px-8 py-6 justify-between items-center border-b border-transparent">
-                {/* Contextual Title could go here */}
-                <div className="text-gray-400 dark:text-dark-muted font-medium text-sm">
-                {new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        {/* Desktop Header - Hide in auth mode */}
+        {showNav && (
+            <header className="hidden md:flex sticky top-0 z-40 bg-[#F9FAFB]/95 dark:bg-[#121212]/95 backdrop-blur px-8 py-6 justify-between items-center border-b border-transparent">
+                <div className="text-gray-400 dark:text-gray-500 font-medium text-sm flex items-center gap-2">
+                    <Calendar size={16} />
+                    {new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
             </header>
         )}
 
-        {/* Adjust Main Container: Remove padding and max-width if reading mode */}
-        <main className={`flex-1 w-full mx-auto ${isReadingMode ? 'p-0 max-w-full h-full' : 'p-4 md:p-8 max-w-5xl'}`}>
+        {/* Adjust Main Container */}
+        <main 
+            className={`flex-1 w-full mx-auto transition-all duration-300 
+            ${isAuthPage || isMushafMode
+                ? 'p-0 max-w-full h-full overflow-y-auto overflow-x-hidden' 
+                : 'p-4 md:p-8 max-w-7xl'
+            }`}
+        >
           <div className="animate-fadeIn w-full h-full">
             {children}
           </div>
         </main>
 
-        {/* --- MOBILE BOTTOM TAB BAR - Hide in reading mode --- */}
-        {!isReadingMode && (
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-panel border-t border-gray-100 dark:border-dark-border z-50 safe-area-bottom shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
-                <div className="flex items-center justify-around">
-                    {navTabs.map((item) => (
-                        <NavLink
-                            key={item.path}
-                            to={item.path}
-                            className={({ isActive }) => `
-                                flex flex-col items-center justify-center py-3 px-2 w-full transition-all duration-200
-                                ${isActive 
-                                    ? 'text-primary-600 dark:text-primary-500' 
-                                    : 'text-gray-400 dark:text-dark-muted hover:text-gray-600 dark:hover:text-gray-400'}
-                            `}
-                        >
-                            {({ isActive }) => (
-                                <>
-                                    <div className={`mb-1 transition-transform ${isActive ? 'scale-110' : 'scale-100'}`}>
-                                        {item.icon}
-                                    </div>
-                                    <span className={`text-[10px] font-bold ${isActive ? 'opacity-100' : 'opacity-70'}`}>
-                                        {item.label}
-                                    </span>
-                                </>
-                            )}
-                        </NavLink>
-                    ))}
-                </div>
-            </nav>
+        {/* --- MOBILE BOTTOM TAB BAR --- */}
+        {showNav && (
+            <div className="md:hidden fixed bottom-4 left-4 right-4 z-50">
+                <nav className="bg-white/90 dark:bg-[#1E1E1E]/90 backdrop-blur-xl border border-gray-200 dark:border-[#333] rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-black/50 px-2 py-2">
+                    <div className="flex items-center justify-between">
+                        {navTabs.slice(0, 5).map((item) => (
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                className={({ isActive }) => `
+                                    flex flex-col items-center justify-center p-2 rounded-2xl w-full transition-all duration-200 relative overflow-hidden
+                                    ${isActive ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'}
+                                `}
+                            >
+                                {({ isActive }) => (
+                                    <>
+                                        {isActive && <div className="absolute inset-0 bg-primary-50 dark:bg-primary-500/10 rounded-2xl opacity-100 scale-100 transition-all duration-300"></div>}
+                                        <div className={`relative z-10 transition-transform duration-200 ${isActive ? '-translate-y-1' : ''}`}>
+                                            {item.icon}
+                                        </div>
+                                        {isActive && (
+                                            <span className="text-[9px] font-bold mt-0.5 absolute -bottom-1 opacity-0 animate-slideUp" style={{ opacity: 1, bottom: '4px' }}>
+                                                {item.label}
+                                            </span>
+                                        )}
+                                    </>
+                                )}
+                            </NavLink>
+                        ))}
+                    </div>
+                </nav>
+            </div>
         )}
 
-        {/* --- MINI PLAYER (Global) - Hide in reading mode --- */}
-        {showMiniPlayer && !isReadingMode && (
+        {/* --- MINI PLAYER (Global) --- */}
+        {showMiniPlayer && (
             <div 
                 onClick={() => navigate('/radio')}
-                className="fixed bottom-20 left-4 right-4 md:bottom-6 md:left-auto md:w-96 md:right-8 z-40 animate-slideUp cursor-pointer group"
+                className="fixed bottom-24 left-4 right-4 md:bottom-6 md:left-auto md:w-96 md:right-8 z-40 animate-slideUp cursor-pointer group"
             >
-                <div className="bg-white/95 dark:bg-dark-surface/95 backdrop-blur-xl border border-gray-200 dark:border-dark-border rounded-2xl p-3 shadow-2xl flex items-center justify-between hover:border-emerald-500/30 transition-colors">
+                <div className="bg-white/95 dark:bg-[#1E1E1E]/95 backdrop-blur-xl border border-gray-200 dark:border-[#333] rounded-2xl p-3 shadow-2xl flex items-center justify-between hover:border-emerald-500/30 transition-colors">
                     <div className="flex items-center gap-3 overflow-hidden flex-1">
-                        {/* Icon Box */}
                         <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/20 rounded-xl flex items-center justify-center text-primary-600 dark:text-primary-400 flex-shrink-0 relative">
-                             {/* Visualizer bars */}
                              <div className="flex gap-0.5 h-4 items-end">
                                 <div className={`w-1 bg-current rounded-sm ${isPlaying ? 'animate-[pulse_0.6s_ease-in-out_infinite]' : 'h-2'}`}></div>
                                 <div className={`w-1 bg-current rounded-sm ${isPlaying ? 'animate-[pulse_0.8s_ease-in-out_infinite]' : 'h-3'}`}></div>
@@ -209,7 +234,6 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                              </div>
                         </div>
                         
-                        {/* Info */}
                         <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider flex items-center gap-1">
@@ -223,12 +247,10 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                         </div>
                     </div>
 
-                    {/* Controls */}
                     <div className="flex items-center gap-2 pl-2 border-r border-gray-100 dark:border-gray-700 mr-2 pr-1" onClick={(e) => e.stopPropagation()}>
-                        {/* Play/Pause */}
                         <button 
                             onClick={togglePlay}
-                            className="w-10 h-10 rounded-full bg-gray-50 dark:bg-dark-elevated hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-gray-800 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center justify-center transition-all shadow-sm"
+                            className="w-10 h-10 rounded-full bg-gray-50 dark:bg-[#333] hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-gray-800 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center justify-center transition-all shadow-sm"
                         >
                             {isBuffering ? (
                                 <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
@@ -239,17 +261,14 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                             )}
                         </button>
 
-                        {/* Stop Button */}
                         <button 
                             onClick={stop}
                             className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 hover:text-red-600 flex items-center justify-center transition-all shadow-sm"
-                            title="إيقاف"
                         >
                             <Square size={16} fill="currentColor" />
                         </button>
                     </div>
 
-                    {/* Expand Icon */}
                     <div className="text-gray-300 dark:text-gray-600 group-hover:text-emerald-500 transition-colors">
                         <Maximize2 size={18} />
                     </div>

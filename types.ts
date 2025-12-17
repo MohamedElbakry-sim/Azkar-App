@@ -62,15 +62,6 @@ export interface NameOfAllah {
   meaning: string;
 }
 
-export interface MissedPrayers {
-  fajr: number;
-  dhuhr: number;
-  asr: number;
-  maghrib: number;
-  isha: number;
-  witr: number;
-}
-
 export interface SituationalDua {
   text: string;
   source?: string;
@@ -86,67 +77,46 @@ export interface DuaCategory {
 
 // --- Quran Types ---
 
-export interface SurahMeta {
-  number: number;
-  name: string;
-  englishName: string;
-  englishNameTranslation: string;
-  numberOfAyahs: number;
-  revelationType: string;
-}
-
-export interface Word {
-  text: string;
-  translation: string;
-  transliteration?: string;
-}
-
 export interface Ayah {
-  number: number; // Global number
+  number: number; // Global number (1-6236)
   text: string;
-  translation?: string;
-  tafsir?: string;
   numberInSurah: number;
   juz: number;
-  manzil: number;
   page: number;
-  ruku: number;
-  hizbQuarter: number;
-  sajda: boolean | any;
-  audio?: string; // URL for specific ayah audio
-  words?: Word[]; // Breakdown for word-by-word
-}
-
-export interface SurahData {
-  number: number;
-  name: string;
-  englishName: string;
-  englishNameTranslation: string;
-  revelationType: string;
-  numberOfAyahs: number;
-  ayahs: Ayah[];
-}
-
-export interface SearchResult {
-  number: number;
-  text: string;
+  translation?: string;
+  tafsir?: string;
+  audio?: string;
   surah: {
     number: number;
     name: string;
     englishName: string;
     englishNameTranslation: string;
     revelationType: string;
+    numberOfAyahs: number;
   };
-  numberInSurah: number;
 }
 
-export interface Reciter {
-  id: string; // EveryAyah identifier
+export interface SurahDetail {
+  number: number;
   name: string;
-  subpath?: string; // e.g. "Alafasy_128kbps"
+  englishName: string;
+  revelationType: string;
+  numberOfAyahs: number;
+  ayahs: Ayah[];
 }
 
-export type ReadingMode = 'text' | 'page';
+export interface SearchResult {
+  surah: {
+    number: number;
+    name: string;
+    englishName: string;
+  };
+  ayah: {
+    number: number;
+    text: string;
+    numberInSurah: number;
+  };
+}
 
 // --- Radio Types ---
 
@@ -155,50 +125,4 @@ export interface RadioStation {
   name: string;
   url: string;
   img?: string;
-}
-
-// --- Habit Types ---
-
-export type HabitType = 'boolean' | 'numeric' | 'timer';
-export type HabitCategory = 'spiritual' | 'health' | 'personal' | 'sunnah';
-export type SystemHabitType = 'none' | 'salah_fajr' | 'salah_dhuhr' | 'salah_asr' | 'salah_maghrib' | 'salah_isha' | 'quran_reading' | 'azkar_sabah' | 'azkar_masaa';
-
-export interface Habit {
-  id: string;
-  title: string;
-  type: HabitType;
-  category: HabitCategory;
-  systemType: SystemHabitType;
-  goal: number;
-  unit: string;
-  color: string;
-  icon: string;
-  frequency: number[];
-  streak: number;
-  bestStreak: number;
-  totalCompletions: number;
-  archived: boolean;
-  reminderTime?: string;
-}
-
-export interface HabitLog {
-  [dateKey: string]: {
-    [habitId: string]: number;
-  };
-}
-
-export interface HabitUserStats {
-  xp: number;
-  level: number;
-  totalCompletions: number;
-  badges: string[];
-}
-
-export interface Badge {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  condition: (stats: HabitUserStats) => boolean;
-  unlocked: boolean;
 }

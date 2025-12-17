@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { Flame, CheckCircle, BarChart3, ListTodo, X, Calendar, ChevronDown, RefreshCw, Info } from 'lucide-react';
+import { Flame, CheckCircle, BarChart3, Calendar, ChevronDown, RefreshCw, Info, X } from 'lucide-react';
 import * as storage from '../services/storage';
 import { AZKAR_DATA, CATEGORIES } from '../data';
 import { ProgressState } from '../types';
@@ -13,11 +13,9 @@ import Tooltip from '../components/Tooltip';
 const Stats: React.FC = () => {
   const [stats, setStats] = useState<storage.StatsData | null>(null);
   const [history, setHistory] = useState<ProgressState>({});
-  const [totalMissed, setTotalMissed] = useState(0);
 
   // Heatmap Customization State
   const [timeRange, setTimeRange] = useState<number>(30); // Default Last Month
-  // Removed 'orange' as requested, kept 'emerald' (default), 'blue', and 'flame'
   const [themeColor, setThemeColor] = useState<storage.HeatmapTheme>(() => storage.getHeatmapTheme());
   const [isRangeDropdownOpen, setIsRangeDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -26,11 +24,6 @@ const Stats: React.FC = () => {
     setStats(storage.getStats());
     setHistory(storage.getHistory());
     
-    // Calculate total missed prayers
-    const missed = storage.getMissedPrayers();
-    const missedSum = Object.values(missed).reduce((a, b) => a + b, 0);
-    setTotalMissed(missedSum);
-
     // Click outside to close dropdown
     const handleClickOutside = (event: MouseEvent) => {
         if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -56,7 +49,7 @@ const Stats: React.FC = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         {/* Streak */}
         <div className="bg-white dark:bg-dark-surface p-4 md:p-6 rounded-2xl shadow-sm border border-orange-100 dark:border-dark-border flex flex-col items-center justify-center transition-transform hover:scale-105">
             <div className="bg-orange-100 dark:bg-orange-900/30 p-3 md:p-4 rounded-full text-orange-600 dark:text-orange-400 mb-3">
@@ -82,15 +75,6 @@ const Stats: React.FC = () => {
             </div>
             <span className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">{stats.todayCount}</span>
             <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">ذكر اليوم</span>
-        </div>
-
-        {/* Missed Prayers (Qada) */}
-        <div className="bg-white dark:bg-dark-surface p-4 md:p-6 rounded-2xl shadow-sm border border-red-100 dark:border-dark-border flex flex-col items-center justify-center transition-transform hover:scale-105">
-             <div className="bg-red-100 dark:bg-red-900/30 p-3 md:p-4 rounded-full text-red-600 dark:text-red-400 mb-3">
-                <ListTodo size={24} className="md:w-8 md:h-8" />
-            </div>
-            <span className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">{totalMissed}</span>
-            <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">صلاة فائتة</span>
         </div>
       </div>
 
@@ -213,7 +197,7 @@ interface TooltipData {
 interface DetailModalData {
     date: string;
     count: number;
-    categories: { title: string; count: number; isQada: boolean }[];
+    categories: { title: string; count: number }[];
 }
 
 interface ContributionGraphProps {
@@ -280,28 +264,24 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({ history, daysCoun
         const dateStr = new Intl.DateTimeFormat('ar-SA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date);
         
         const dayData = history[dateKey] || {};
-        const catCounts: { [key: string]: { count: number, isQada: boolean } } = {};
+        const catCounts: { [key: string]: { count: number } } = {};
         
         Object.entries(dayData).forEach(([dhikrIdStr, val]) => {
             const value = val as number;
             const dhikrId = parseInt(dhikrIdStr);
             if (value <= 0) return;
             
-            if (dhikrId === 9999) {
-                catCounts['صلوات مقضية'] = { count: value, isQada: true };
-            } else {
-                const dhikr = AZKAR_DATA.find(d => d.id === dhikrId);
-                if (dhikr) {
-                    const cat = CATEGORIES.find(c => c.id === dhikr.category);
-                    const title = cat ? cat.title : 'أخرى';
-                    const current = catCounts[title] || { count: 0, isQada: false };
-                    catCounts[title] = { count: current.count + value, isQada: false };
-                }
+            const dhikr = AZKAR_DATA.find(d => d.id === dhikrId);
+            if (dhikr) {
+                const cat = CATEGORIES.find(c => c.id === dhikr.category);
+                const title = cat ? cat.title : 'أخرى';
+                const current = catCounts[title] || { count: 0 };
+                catCounts[title] = { count: current.count + value };
             }
         });
 
         const sortedCategories = Object.entries(catCounts)
-            .map(([title, data]) => ({ title, count: data.count, isQada: data.isQada }))
+            .map(([title, data]) => ({ title, count: data.count }))
             .sort((a, b) => b.count - a.count);
 
         setSelectedDay({
@@ -429,7 +409,7 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({ history, daysCoun
                             <div className="space-y-3">
                                 {selectedDay.categories.map((cat, idx) => (
                                     <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-dark-bg border border-gray-100 dark:border-dark-border">
-                                        <span className={`font-medium ${cat.isQada ? 'text-red-500' : 'text-gray-700 dark:text-gray-200'}`}>
+                                        <span className="font-medium text-gray-700 dark:text-gray-200">
                                             {cat.title}
                                         </span>
                                         <span className={`font-mono font-bold text-lg ${

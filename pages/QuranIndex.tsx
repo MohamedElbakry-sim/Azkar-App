@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QURAN_META } from '../data/quranMeta';
@@ -82,34 +81,30 @@ const QuranIndex: React.FC = () => {
   }, [searchQuery]);
 
   const handleSurahClick = (number: number) => {
-    navigate(`/quran/read/${number}`);
+    navigate(`/quran/${number}`);
   };
 
   const handleJuzClick = (juzNumber: number) => {
       const info = getJuzInfo(juzNumber);
-      // Navigate to the Surah, but pass the specific page to start reading from
-      navigate(`/quran/read/${info.surah}`, { 
-          state: { initialPage: info.page } 
-      });
+      // Navigate to the Surah, but pass the specific ayah to start reading from via search params
+      navigate(`/quran/${info.surah}?ayah=${info.ayah || 1}`);
   };
 
   const handleContinueReading = (bookmark: quranService.Bookmark) => {
-    navigate(`/quran/read/${bookmark.surahNumber}`, { state: { scrollToAyah: bookmark.ayahNumber }});
+    navigate(`/quran/${bookmark.surahNumber}?ayah=${bookmark.ayahNumber}`);
   };
 
   const handleQuickJump = () => {
       if (quickJumpResult) {
-          navigate(`/quran/read/${quickJumpResult.surah.number}`, { 
-              state: { scrollToAyah: quickJumpResult.ayah, highlightTerm: searchQuery }
-          });
+          navigate(`/quran/${quickJumpResult.surah.number}?ayah=${quickJumpResult.ayah}`);
       }
   };
 
   return (
-    <div className="max-w-3xl mx-auto pb-20 space-y-6">
+    <div className="max-w-3xl mx-auto pb-20 space-y-6 animate-fadeIn">
       
-      {/* Header & Search */}
-      <div className="sticky top-0 bg-gray-50/95 dark:bg-dark-bg/95 backdrop-blur-xl z-20 pt-4 pb-2 px-4 -mx-4">
+      {/* Header & Search - Cleaned up to be more seamless */}
+      <div className="sticky top-0 bg-[#F9FAFB]/95 dark:bg-[#121212]/95 backdrop-blur-xl z-20 pt-4 pb-4 px-2">
           <div className="flex items-center justify-between mb-4">
               <h1 className="text-2xl font-bold text-gray-800 dark:text-white font-arabicHead">القرآن الكريم</h1>
               <div className="flex bg-gray-200 dark:bg-dark-surface p-1 rounded-lg">
@@ -132,7 +127,7 @@ const QuranIndex: React.FC = () => {
             <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              className="w-full pl-4 pr-12 py-3 rounded-2xl bg-white dark:bg-dark-surface border-none shadow-sm focus:ring-2 focus:ring-emerald-500 dark:text-white font-arabic placeholder-gray-400"
+              className="w-full pl-4 pr-12 py-3 rounded-2xl bg-white dark:bg-dark-surface border border-gray-100 dark:border-dark-border shadow-sm focus:ring-2 focus:ring-emerald-500 dark:text-white font-arabic placeholder-gray-400"
               placeholder={activeTab === 'surah' ? "بحث باسم السورة أو رقم الآية (مثال: 2:255)" : "بحث عن جزء..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -140,7 +135,7 @@ const QuranIndex: React.FC = () => {
           </div>
       </div>
 
-      <div className="px-4 md:px-0 space-y-4">
+      <div className="px-2 space-y-4">
         
         {/* Quick Jump Result Card */}
         {quickJumpResult && (
@@ -237,7 +232,7 @@ const QuranIndex: React.FC = () => {
       </div>
 
       {/* Content List */}
-      <div className="px-4 md:px-0">
+      <div className="px-2">
         {activeTab === 'surah' ? (
             <div className="space-y-3">
                 {filteredSurahs.map((surah) => (

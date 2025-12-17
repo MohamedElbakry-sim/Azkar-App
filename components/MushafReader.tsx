@@ -1,9 +1,6 @@
-
-import React, { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Loader2, WifiOff } from 'lucide-react';
 
-// NOTE: In the full mobile migration, this function will be replaced 
-// by the Filesystem-First logic described in the engineering plan.
 const getPageImageUrl = (pageNumber: number) => {
   const formattedNum = pageNumber.toString().padStart(3, '0');
   return `https://everyayah.com/data/images_png/Page_${formattedNum}.png`;
@@ -22,8 +19,6 @@ const Page = React.memo(({ pageNumber, isActive }: PageProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Virtualization Logic: Only load image if the page is active or neighbor
-    // This prevents the "604 images loading at once" crash.
     if (isActive) {
         setLoading(true);
         const img = new Image();
@@ -42,12 +37,6 @@ const Page = React.memo(({ pageNumber, isActive }: PageProps) => {
         
         img.src = url;
     }
-    
-    // Cleanup: Release memory if page becomes inactive (far away)
-    // In a real VirtualList, unmounting handles this, but here we enforce nulling.
-    return () => {
-        // Optional: Revoke object URLs if using Blob
-    };
   }, [pageNumber, isActive]);
 
   if (!isActive) return <div className="h-full w-full bg-transparent" />;
@@ -65,7 +54,7 @@ const Page = React.memo(({ pageNumber, isActive }: PageProps) => {
               <WifiOff size={32} className="mb-2" />
               <p className="text-xs">تعذر تحميل الصفحة</p>
               <button 
-                onClick={() => { setError(false); setLoading(true); /* Retry logic */ }}
+                onClick={() => { setError(false); setLoading(true); }}
                 className="mt-2 text-emerald-600 text-xs font-bold"
               >
                   إعادة المحاولة
@@ -87,12 +76,9 @@ interface MushafReaderProps {
   onPageChange: (page: number) => void;
 }
 
-// Optimized Reader that simulates Virtualization
-// In Phase 3, this is replaced by Swiper.js or react-window
 const MushafReader: React.FC<MushafReaderProps> = ({ initialPage, onPageChange }) => {
   const [currentPage, setCurrentPage] = useState(initialPage);
 
-  // Sync props
   useEffect(() => {
       setCurrentPage(initialPage);
   }, [initialPage]);
@@ -115,20 +101,13 @@ const MushafReader: React.FC<MushafReaderProps> = ({ initialPage, onPageChange }
 
   return (
     <div className="flex flex-col h-full w-full bg-[#2a2a2a] relative">
-      {/* Viewport */}
       <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-          {/* 
-             Virtualization Mock: 
-             Only render current page. 
-             In production mobile app, pre-render current +/- 1 for smoothness.
-          */}
           <Page pageNumber={currentPage} isActive={true} />
       </div>
 
-      {/* Controls Overlay */}
       <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-8 z-30 pointer-events-none">
           <button 
-            onClick={handlePrev} // RTL: Prev moves to lower number (Right arrow visually in RTL)
+            onClick={handlePrev}
             className="w-12 h-12 bg-black/50 backdrop-blur-md rounded-full text-white flex items-center justify-center pointer-events-auto active:scale-95 transition-transform"
           >
               <ChevronRight />

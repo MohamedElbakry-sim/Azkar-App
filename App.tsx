@@ -12,6 +12,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { Loader2 } from 'lucide-react';
 import * as storage from './services/storage';
 import { RadioProvider } from './contexts/RadioContext';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Lazy load pages
 const CategoryView = React.lazy(() => import('./pages/CategoryView'));
@@ -23,18 +24,16 @@ const PrayerTimes = React.lazy(() => import('./pages/PrayerTimes'));
 const CalendarPage = React.lazy(() => import('./pages/Calendar'));
 const NamesOfAllah = React.lazy(() => import('./pages/NamesOfAllah'));
 const Contact = React.lazy(() => import('./pages/Contact'));
-const MissedPrayers = React.lazy(() => import('./pages/MissedPrayers'));
 const Duas = React.lazy(() => import('./pages/Duas'));
-const QuranIndex = React.lazy(() => import('./pages/QuranIndex')); 
-const SurahDetail = React.lazy(() => import('./pages/SurahDetail')); 
-const QuranReader = React.lazy(() => import('./pages/QuranReader')); 
 const Radio = React.lazy(() => import('./pages/Radio'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
+const Auth = React.lazy(() => import('./pages/Auth'));
 
 // New Pages
 const MoreMenu = React.lazy(() => import('./pages/MoreMenu'));
 const AthkarIndex = React.lazy(() => import('./pages/AthkarIndex'));
-const Habits = React.lazy(() => import('./pages/Habits'));
+const QuranIndex = React.lazy(() => import('./pages/QuranIndex'));
+const QuranReader = React.lazy(() => import('./pages/QuranReader'));
 
 // Component to handle back button logic which needs access to Router hooks
 const AppUrlListener: React.FC = () => {
@@ -48,7 +47,7 @@ const AppUrlListener: React.FC = () => {
     try {
         CapacitorApp.addListener('backButton', ({ canGoBack }) => {
         // Exit app if on main tabs or home
-        if (['/', '/home', '/quran', '/athkar', '/prayers', '/more'].includes(location.pathname)) {
+        if (['/', '/home', '/athkar', '/prayers', '/more', '/quran'].includes(location.pathname)) {
             CapacitorApp.exitApp();
         } else {
             // Otherwise go back in history
@@ -126,51 +125,52 @@ const App: React.FC = () => {
   );
 
   return (
-    <ErrorBoundary>
-      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
-      
+    <AuthProvider>
       <RadioProvider>
         <Router>
+          <ErrorBoundary>
+            {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
             <AppUrlListener />
             <NotificationManager />
             
             <Layout darkMode={darkMode} toggleTheme={toggleTheme}>
-            <Suspense fallback={<PageLoader />}>
+              <Suspense fallback={<PageLoader />}>
                 <Routes>
                   {/* Tab Routes */}
                   <Route path="/" element={<Home />} />
-                  <Route path="/quran" element={<QuranIndex />} />
                   <Route path="/athkar" element={<AthkarIndex />} />
+                  <Route path="/quran" element={<QuranIndex />} />
                   <Route path="/prayers" element={<PrayerTimes />} />
                   <Route path="/more" element={<MoreMenu />} />
-
-                  {/* Quran Sub-routes */}
-                  <Route path="/quran/detail/:id" element={<SurahDetail />} />
-                  <Route path="/quran/read/:surahId" element={<QuranReader />} />
 
                   {/* Athkar Sub-routes */}
                   <Route path="/category/:id" element={<CategoryView />} />
                   <Route path="/favorites" element={<Favorites />} />
 
-                  {/* Feature Routes (Accessible via More) */}
+                  {/* Quran Sub-routes */}
+                  <Route path="/quran/:surahId" element={<QuranReader />} />
+
+                  {/* Feature Routes */}
                   <Route path="/radio" element={<Radio />} />
                   <Route path="/calendar" element={<CalendarPage />} />
                   <Route path="/tasbeeh" element={<Tasbeeh />} />
                   <Route path="/names" element={<NamesOfAllah />} />
-                  <Route path="/qada" element={<MissedPrayers />} />
                   <Route path="/duas" element={<Duas />} />
                   <Route path="/stats" element={<Stats />} />
-                  <Route path="/habits" element={<Habits />} />
                   <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
                   <Route path="/contact" element={<Contact />} />
                   
+                  {/* Auth Route */}
+                  <Route path="/auth" element={<Auth />} />
+                  
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-            </Suspense>
+              </Suspense>
             </Layout>
+          </ErrorBoundary>
         </Router>
       </RadioProvider>
-    </ErrorBoundary>
+    </AuthProvider>
   );
 };
 

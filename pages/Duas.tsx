@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SITUATIONAL_DUAS, CATEGORIES, AZKAR_DATA } from '../data';
@@ -164,10 +163,10 @@ const Duas: React.FC = () => {
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-10">
       
-      {/* Sticky Search Bar */}
-      <div className="sticky top-0 z-30 pt-2 pb-1 -mx-4 px-4 md:mx-0 md:px-0 bg-gray-50/95 dark:bg-dark-bg/95 backdrop-blur-md transition-all duration-300">
+      {/* Sticky Search Bar Container */}
+      <div className="sticky top-0 z-30 pt-4 pb-2 transition-all duration-300">
         <div className="max-w-2xl mx-auto">
-          <div className="relative mb-3">
+          <div className="relative">
             <label htmlFor="duas-search" className="sr-only">ابحث في حصن المسلم</label>
             <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
@@ -175,7 +174,7 @@ const Duas: React.FC = () => {
             <input
               id="duas-search"
               type="text"
-              className="block w-full p-4 pr-11 text-base rounded-2xl border-none bg-white dark:bg-dark-surface shadow-sm focus:ring-2 focus:ring-primary-400 placeholder-gray-400 dark:text-white transition-shadow font-arabic"
+              className="block w-full p-4 pr-11 text-base rounded-2xl border border-gray-100 dark:border-dark-border bg-white dark:bg-dark-surface shadow-md focus:ring-2 focus:ring-primary-400 placeholder-gray-400 dark:text-white transition-all font-arabic"
               placeholder="ابحث عن ذكر، دعاء، أو شعور..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
