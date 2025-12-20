@@ -13,7 +13,7 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in the component tree.
  */
-// Use Component from named imports to ensure the class correctly inherits setState and props from React
+// Fix: Use named import Component for reliable inheritance typing
 class ErrorBoundary extends Component<Props, State> {
   // Initialize state using property initializer.
   public state: State = {
@@ -34,8 +34,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   // Reset error state and reload the app
   private handleRetry = () => {
-    // Fix: setState is a method on the base Component class. 
-    // Using explicit inheritance ensures the property is found on the instance.
+    // Fix: Access setState from the inherited Component base class
     this.setState({ hasError: false, error: null });
     window.location.reload();
   };
@@ -56,7 +55,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Fix: props is inherited from Component. Using the correct base class ensures children is accessible.
+    // Fix: Access children from the inherited props of the Component class
     return this.props.children;
   }
 }

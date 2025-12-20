@@ -1,7 +1,7 @@
-
 import { DailyContent, QuranVerse, Hadith } from '../types';
 
 // --- Verified Authentic Verses ---
+// Note: Surah names here are kept as names only, prefix "سورة" is added in UI
 const FALLBACK_VERSES: QuranVerse[] = [
   {
     text: "فَإِنَّ مَعَ الْعُسْرِ يُسْرًا * إِنَّ مَعَ الْعُسْرِ يُسْرًا",
@@ -52,7 +52,7 @@ const FALLBACK_VERSES: QuranVerse[] = [
     tafsir: "تشريف للنبي صلى الله عليه وسلم، وأمر للمؤمنين بالصلاة عليه لنيل الأجر."
   },
   {
-    text: "وَعِبَادُ الرَّحْمَٰنِ الَّذِينَ يَمْشُونَ عَلَى الْأَرْضِ هَوْنًا وَإِذَا خَاطَبَهُمُ الْجَاهِلُونَ قَالُوا سَلَامًا",
+    text: "وَعِبَادُ الرَّحْمَٰنِ الَّذِينَ يَمْشُونَ عَلَى الْأَرْضِ هَوْنًا وَإِذَا خَاطَبَهُمُ الْجَالهُونَ قَالُوا سَلَامًا",
     surah: "الفرقان",
     ayahNumber: 63,
     tafsir: "صفات عباد الرحمن: التواضع في مشيتهم، والحلم عند التعامل مع الجاهلين."
@@ -215,9 +215,13 @@ const fetchDailyVerse = async (): Promise<QuranVerse> => {
     const uthmani = data.data[0];
     const tafsir = data.data[1];
 
+    // Clean Surah name: API often returns "سُورَةُ الفَاتِحَةِ"
+    // We strip the prefix to prevent duplication with the UI's "سورة" prefix
+    const cleanSurahName = uthmani.surah.name.replace(/^(سُورَةُ |سورة )/, "").trim();
+
     return {
       text: uthmani.text,
-      surah: uthmani.surah.name,
+      surah: cleanSurahName,
       ayahNumber: uthmani.numberInSurah,
       tafsir: tafsir.text
     };
@@ -230,24 +234,18 @@ const fetchDailyVerse = async (): Promise<QuranVerse> => {
 
 const fetchDailyHadith = async (): Promise<Hadith> => {
     // Determine source to use (Primary vs Secondary) for variety
-    // Using a simple 50/50 split or random selection
     const useSecondary = Math.random() > 0.5;
     const sourceArray = useSecondary ? SECONDARY_HADITHS : FALLBACK_HADITHS;
     
     // Pick a random Hadith from the selected source
     const index = getRandomIndex(sourceArray.length);
     
-    // We can simulate an async delay here if we want to mimic a real fetch,
-    // but resolving immediately is fine.
     return Promise.resolve(sourceArray[index]);
 };
 
 // --- Main Service ---
 
 export const getDailyContent = async (): Promise<DailyContent> => {
-  // We no longer check localStorage for a cached daily item.
-  // Instead, we fetch new random authentic content every time this function is called.
-  
   const [verse, hadith] = await Promise.all([
     fetchDailyVerse(),
     fetchDailyHadith()

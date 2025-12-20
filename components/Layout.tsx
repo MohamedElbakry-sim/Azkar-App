@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Menu, Sun, Moon, ArrowRight, Maximize2, Square, Play, Pause, Radio, Calendar, BookOpen } from 'lucide-react';
@@ -74,17 +73,17 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
 
   const isAuthPage = location.pathname === '/auth';
   
-  // Immersive Mode Logic: Check if we are in Quran Reader with view=mushaf
-  const searchParams = new URLSearchParams(location.search);
-  const isMushafMode = location.pathname.startsWith('/quran/') && searchParams.get('view') === 'mushaf';
+  // Immersive Mode Logic: Hide nav when inside a Surah (Reader)
+  // Check if path is /quran/:id (id being any value)
+  const isReaderMode = location.pathname.startsWith('/quran/') && location.pathname !== '/quran';
 
   // Determine if we should show navigation
-  const showNav = !isAuthPage && !isMushafMode;
+  const showNav = !isAuthPage && !isReaderMode;
   
   const showMiniPlayer = currentStation && showNav && location.pathname !== '/radio';
 
   // Helper to determine if we are in a detail view (to show back button on mobile)
-  const isDetailView = !isAuthPage && !isMushafMode && (
+  const isDetailView = !isAuthPage && !isReaderMode && (
                        location.pathname.startsWith('/category/') ||
                        (location.pathname.startsWith('/quran/') && location.pathname !== '/quran') || 
                        location.pathname === '/settings' ||
@@ -145,7 +144,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
       )}
 
       {/* --- MAIN CONTENT --- */}
-      <div className={`flex-1 flex flex-col min-h-screen relative max-w-full ${isAuthPage || isMushafMode ? 'h-screen overflow-hidden pb-0' : 'pb-24 md:pb-0'}`}>
+      <div className={`flex-1 flex flex-col min-h-screen relative max-w-full ${isAuthPage || isReaderMode ? 'h-screen overflow-hidden pb-0' : 'pb-24 md:pb-0'}`}>
         
         {/* Mobile Header (Only on Detail Views) */}
         {isDetailView && (
@@ -161,7 +160,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
             </header>
         )}
 
-        {/* Desktop Header - Hide in auth mode */}
+        {/* Desktop Header - Hide in auth or reader mode */}
         {showNav && (
             <header className="hidden md:flex sticky top-0 z-40 bg-[#F9FAFB]/95 dark:bg-[#121212]/95 backdrop-blur px-8 py-6 justify-between items-center border-b border-transparent">
                 <div className="text-gray-400 dark:text-gray-500 font-medium text-sm flex items-center gap-2">
@@ -174,7 +173,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
         {/* Adjust Main Container */}
         <main 
             className={`flex-1 w-full mx-auto transition-all duration-300 
-            ${isAuthPage || isMushafMode
+            ${isAuthPage || isReaderMode
                 ? 'p-0 max-w-full h-full overflow-y-auto overflow-x-hidden' 
                 : 'p-4 md:p-8 max-w-7xl'
             }`}

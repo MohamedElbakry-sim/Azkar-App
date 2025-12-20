@@ -1,10 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Play, Share2, Copy, Bookmark, BookOpen, Quote, Edit3, Save, Trash2, X, ArrowUp, ChevronLeft } from 'lucide-react';
 import { SurahDetail, Ayah } from '../services/quranService';
 import * as storage from '../services/storage';
-import { toArabicNumerals } from '../utils';
+import { toArabicNumerals, applyTajweed, normalizeArabic, getHighlightRegex } from '../utils';
 import { QURAN_META } from '../data/quranMeta';
 import { useNavigate } from 'react-router-dom';
+
+/**
+ * Highlight Layer Priorities
+ */
+enum HighlightPriority {
+    PLAYBACK = 1,
+    SELECTION = 2,
+    SEARCH = 3,
+    BOOKMARK = 4,
+    NONE = 99
+}
 
 interface TextModeViewerProps {
   surah: SurahDetail;
@@ -17,32 +28,38 @@ interface TextModeViewerProps {
   fontSize: storage.FontSize;
   onCopy: (text: string) => void;
   onShare: (text: string) => void;
+  // New props from parity spec
+  tajweedMode?: boolean;
+  hideText?: boolean;
+  pageTheme?: storage.PageTheme;
+  highlightTerm?: string;
 }
 
-// Corrected Basmala string to match typical API output for quran-uthmani
 const BISMILLAH_TEXT = "بِسْم. ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
 
-/**
- * Bracketed Ayah marker style (﴿ ﴾) as seen in traditional Mushaf layouts.
- */
-const VerseMarker: React.FC<{ number: number }> = ({ number }) => (
-  <span className="font-quran text-[1.1em] mx-1 select-none text-emerald-700/80 dark:text-emerald-400/80 inline-block translate-y-[0.02em]">
+const VerseMarker: React.FC<{ number: number; classes?: string }> = ({ number, classes = "" }) => (
+  <span className={`font-quran text-[1.1em] mx-1 select-none inline-block translate-y-[0.02em] ${classes}`}>
     ﴿{toArabicNumerals(number)}﴾
   </span>
 );
 
 const TextModeViewer: React.FC<TextModeViewerProps> = ({
   surah, activeAyahIndex, isPlaying, onPlayAyah, onToggleBookmark,
-  bookmarks, showTranslation, fontSize, onCopy, onShare
+  bookmarks, showTranslation, fontSize, onCopy, onShare,
+  tajweedMode = false, hideText = false, pageTheme = 'light', highlightTerm = ''
 }) => {
   const navigate = useNavigate();
   const [reflections, setReflections] = useState<storage.AyahReflection[]>([]);
   const [editingRefId, setEditingRefId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState('');
   const [showTafsirAyah, setShowTafsirAyah] = useState<Record<number, boolean>>({});
+  
+  // Selection state (L2 highlight)
+  const [selectedAyahs, setSelectedAyahs] = useState<Set<string>>(new Set());
+  
   const lastScrolledIndex = useRef<number | null>(null);
 
-  // Robust Auto-scroll logic: Scroll active verse into view
+  // Auto-scroll logic
   useEffect(() => {
     if (activeAyahIndex !== null && activeAyahIndex !== lastScrolledIndex.current) {
       const timer = setTimeout(() => {
@@ -62,6 +79,75 @@ const TextModeViewer: React.FC<TextModeViewerProps> = ({
   useEffect(() => {
     setReflections(storage.getAyahReflections());
   }, []);
+
+  /**
+   * Resolves visual style based on layered priority
+   */
+  const getAyahHighlight = useCallback((surahNum: number, ayahNum: number, text: string) => {
+      const id = `${surahNum}:${ayahNum}`;
+      
+      // L1: Playback
+      if (activeAyahIndex !== null && surah.ayahs[activeAyahIndex].numberInSurah === ayahNum) {
+          return {
+              priority: HighlightPriority.PLAYBACK,
+              cardClasses: 'border-blue-400 dark:border-blue-600 bg-blue-50/20 dark:bg-blue-900/10 shadow-xl shadow-blue-500/10',
+              textClasses: 'text-blue-900 dark:text-blue-100',
+              markerClasses: 'text-blue-600 dark:text-blue-400'
+          };
+      }
+
+      // L2: User Selection
+      if (selectedAyahs.has(id)) {
+          return {
+              priority: HighlightPriority.SELECTION,
+              cardClasses: 'border-emerald-400 dark:border-emerald-600 bg-emerald-50/30 dark:bg-emerald-900/10 shadow-lg',
+              textClasses: 'text-emerald-900 dark:text-emerald-100',
+              markerClasses: 'text-emerald-600 dark:text-emerald-400'
+          };
+      }
+
+      // L3: Search Match
+      if (highlightTerm) {
+          const normalizedAyah = normalizeArabic(text);
+          const normalizedTerm = normalizeArabic(highlightTerm);
+          if (normalizedAyah.includes(normalizedTerm)) {
+              return {
+                  priority: HighlightPriority.SEARCH,
+                  cardClasses: 'border-amber-300 dark:border-amber-700 bg-amber-50/30 dark:bg-amber-900/10',
+                  textClasses: 'text-amber-900 dark:text-amber-100',
+                  markerClasses: 'text-amber-600 dark:text-amber-400'
+              };
+          }
+      }
+
+      // L4: Bookmark
+      const isBookmarked = bookmarks.some(b => b.surahNumber === surahNum && b.ayahNumber === ayahNum);
+      if (isBookmarked) {
+          return {
+              priority: HighlightPriority.BOOKMARK,
+              cardClasses: 'border-rose-200 dark:border-rose-900 bg-rose-50/10 dark:bg-rose-900/5',
+              textClasses: 'text-gray-800 dark:text-gray-200',
+              markerClasses: 'text-rose-500 dark:text-rose-400'
+          };
+      }
+
+      return { 
+          priority: HighlightPriority.NONE, 
+          cardClasses: 'border-gray-100 dark:border-dark-border/50 bg-white/60 dark:bg-dark-surface/40',
+          textClasses: 'text-gray-900 dark:text-gray-100',
+          markerClasses: 'text-emerald-700/80 dark:text-emerald-400/80'
+      };
+  }, [activeAyahIndex, surah, selectedAyahs, highlightTerm, bookmarks]);
+
+  const handleAyahClick = (ayah: Ayah) => {
+      const id = `${surah.number}:${ayah.numberInSurah}`;
+      setSelectedAyahs(prev => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+      });
+  };
 
   const getFontSizeClass = () => {
     switch (fontSize) {
@@ -101,7 +187,7 @@ const TextModeViewer: React.FC<TextModeViewerProps> = ({
   const nextSurah = surah.number < 114 ? QURAN_META[surah.number] : null;
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto px-2">
+    <div className={`space-y-8 max-w-4xl mx-auto px-2 ${pageTheme === 'sepia' ? 'text-[#5c4b37]' : ''}`}>
       {surah.number !== 1 && surah.number !== 9 && (
         <div className="flex flex-col items-center py-8 opacity-80">
           <div className="flex items-center gap-4 w-full max-w-xs mb-4">
@@ -109,7 +195,7 @@ const TextModeViewer: React.FC<TextModeViewerProps> = ({
              <span className="text-gray-400">﷽</span>
              <div className="h-px bg-gradient-to-l from-transparent to-gray-300 dark:to-gray-700 flex-1"></div>
           </div>
-          <div className="font-quran text-4xl text-gray-800 dark:text-gray-200">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+          <div className={`font-quran text-4xl ${pageTheme === 'sepia' ? 'text-[#5c4b37]' : 'text-gray-800 dark:text-gray-200'}`}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
         </div>
       )}
 
@@ -118,57 +204,65 @@ const TextModeViewer: React.FC<TextModeViewerProps> = ({
         const isBookmarked = bookmarks.some(b => b.surahNumber === surah.number && b.ayahNumber === ayah.numberInSurah);
         const reflection = reflections.find(r => r.surahNumber === surah.number && r.ayahNumber === ayah.numberInSurah);
         const isTafsirOpen = showTafsirAyah[ayah.numberInSurah];
-
+        
         let ayahDisplay = ayah.text;
         if (surah.number !== 1 && ayah.numberInSurah === 1) {
             if (ayahDisplay.includes(BISMILLAH_TEXT)) {
                 ayahDisplay = ayahDisplay.replace(BISMILLAH_TEXT, "").trim();
             }
         }
-        
+
+        const highlights = getAyahHighlight(surah.number, ayah.numberInSurah, ayahDisplay);
+
+        let finalAyahContent: React.ReactNode = ayahDisplay;
+        if (highlightTerm) {
+            const regex = getHighlightRegex(highlightTerm);
+            if (regex) {
+                const parts = ayahDisplay.split(regex);
+                finalAyahContent = parts.map((part, i) => 
+                    regex.test(part) ? <span key={i} className="bg-amber-400/30 text-amber-900 dark:text-amber-100 rounded px-0.5">{part}</span> : part
+                );
+            }
+        } else if (tajweedMode) {
+            finalAyahContent = <span dangerouslySetInnerHTML={{ __html: applyTajweed(ayahDisplay) }} />;
+        }
+
         return (
           <div 
             key={ayah.number} 
             id={`ayah-${index}`} 
             className={`
               relative rounded-[2rem] p-6 md:p-8 transition-all duration-500 border 
-              ${isActive 
-                ? 'bg-white dark:bg-dark-surface border-emerald-400 dark:border-emerald-600 shadow-xl shadow-emerald-500/10 scale-[1.02] z-10 ring-4 ring-emerald-50 dark:ring-emerald-900/10' 
-                : 'bg-white/60 dark:bg-dark-surface/40 border-gray-100 dark:border-dark-border/50 hover:bg-white dark:hover:bg-dark-surface hover:border-gray-200 dark:hover:border-dark-border shadow-sm'
-              }
+              ${highlights.cardClasses}
+              ${isActive ? 'scale-[1.02] z-10 ring-4 ring-blue-50 dark:ring-blue-900/10' : 'hover:scale-[1.005]'}
             `}
           >
             <div className={`flex items-center justify-between mb-6 border-b border-gray-100 dark:border-dark-border/50 pb-4 transition-opacity ${isActive ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`}>
-                {/* Ayah Meta Info */}
                 <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] leading-none mb-1">الآية</span>
-                    <span className="text-xs font-bold text-amber-700 dark:text-amber-500 font-english opacity-60">{surah.number}:{ayah.numberInSurah}</span>
+                    <span className={`text-xs font-bold font-english opacity-60 ${highlights.markerClasses}`}>{surah.number}:{ayah.numberInSurah}</span>
                 </div>
                 
-                {/* Actions */}
                 <div className="flex gap-1">
                     <button onClick={() => toggleTafsir(ayah.numberInSurah)} className={`p-2 rounded-full transition-all ${isTafsirOpen ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg'}`} title="التفسير"><BookOpen size={20} /></button>
                     <button onClick={() => startEditing(ayah)} className={`p-2 rounded-full transition-all ${reflection ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg'}`} title="تدبر وملاحظات"><Edit3 size={20} /></button>
                     <button onClick={() => onToggleBookmark(ayah)} className={`p-2 rounded-full transition-all active:scale-90 ${isBookmarked ? 'bg-rose-50 text-rose-500 dark:bg-rose-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg'}`} title="حفظ العلامة"><Bookmark size={20} fill={isBookmarked ? "currentColor" : "none"} /></button>
                     <button onClick={() => onCopy(ayahDisplay)} className="p-2 rounded-full text-gray-400 hover:text-emerald-500 hover:bg-gray-100 dark:hover:bg-dark-bg transition-all" title="نسخ"><Copy size={20} /></button>
-                    <button onClick={() => onShare(ayahDisplay)} className="p-2 rounded-full text-gray-400 hover:text-emerald-500 hover:bg-gray-100 dark:hover:bg-dark-bg transition-all" title="مشاركة"><Share2 size={20} /></button>
-                    <button onClick={() => onPlayAyah(index)} className={`p-2 rounded-full transition-all active:scale-90 ${isActive && isPlaying ? 'bg-emerald-500 text-white shadow-lg' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg'}`} title="استماع"><Play size={20} fill={isActive && isPlaying ? "currentColor" : "none"} /></button>
+                    <button onClick={() => onPlayAyah(index)} className={`p-2 rounded-full transition-all active:scale-90 ${isActive && isPlaying ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg'}`} title="استماع"><Play size={20} fill={isActive && isPlaying ? "currentColor" : "none"} /></button>
                 </div>
             </div>
 
-            <div className="relative mb-8">
-              {isActive && <div className="absolute -right-4 top-0 bottom-0 w-1 bg-emerald-500 rounded-full animate-pulse"></div>}
+            <div className="relative mb-4">
               <p 
-                className={`font-quran text-right text-gray-900 dark:text-gray-100 cursor-pointer select-text transition-colors ${getFontSizeClass()} ${isActive ? 'text-black dark:text-white' : 'opacity-90'}`} 
-                onClick={() => onPlayAyah(index)} 
+                className={`font-quran text-right cursor-pointer select-text transition-all duration-300 ${getFontSizeClass()} ${highlights.textClasses} ${hideText ? 'blur-[8px] hover:blur-none active:blur-none' : ''}`} 
+                onClick={() => handleAyahClick(ayah)} 
                 dir="rtl"
               >
-                  {ayahDisplay}
-                  <VerseMarker number={ayah.numberInSurah} />
+                  {finalAyahContent}
+                  <VerseMarker number={ayah.numberInSurah} classes={highlights.markerClasses} />
               </p>
             </div>
 
-            {/* Reflection / Note Editor */}
             {editingRefId === ayah.numberInSurah && (
                 <div className="mb-6 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-200 dark:border-blue-800 animate-slideUp">
                     <div className="flex items-center justify-between mb-2">
