@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Menu, Sun, Moon, ArrowRight, Maximize2, Square, Play, Pause, Radio, Calendar, BookOpen } from 'lucide-react';
@@ -60,6 +61,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   
   // State for dynamic navigation items
   const [activeNavIds, setActiveNavIds] = useState<string[]>(storage.getNavOrder());
+  const [headerDate, setHeaderDate] = useState<string>('');
 
   // Listen for navigation updates from Settings page
   useEffect(() => {
@@ -67,6 +69,33 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
           setActiveNavIds(storage.getNavOrder());
       };
       
+      const updateHeaderDate = () => {
+          const date = new Date();
+          const offset = storage.getHijriOffset();
+          const hijriDate = new Date();
+          hijriDate.setDate(hijriDate.getDate() + offset);
+
+          try {
+              const miladi = new Intl.DateTimeFormat('ar-SA', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+              }).format(date);
+
+              const hijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', { 
+                  day: 'numeric', 
+                  month: 'long', 
+                  year: 'numeric' 
+              }).format(hijriDate);
+
+              setHeaderDate(`${miladi} | ${hijri}`);
+          } catch (e) {
+              setHeaderDate(date.toLocaleDateString('ar-SA'));
+          }
+      };
+
+      updateHeaderDate();
       window.addEventListener('nav-settings-updated', handleNavUpdate);
       return () => window.removeEventListener('nav-settings-updated', handleNavUpdate);
   }, []);
@@ -74,7 +103,6 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   const isAuthPage = location.pathname === '/auth';
   
   // Immersive Mode Logic: Hide nav when inside a Surah (Reader)
-  // Check if path is /quran/:id (id being any value)
   const isReaderMode = location.pathname.startsWith('/quran/') && location.pathname !== '/quran';
 
   // Determine if we should show navigation
@@ -165,7 +193,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
             <header className="hidden md:flex sticky top-0 z-40 bg-[#F9FAFB]/95 dark:bg-[#121212]/95 backdrop-blur px-8 py-6 justify-between items-center border-b border-transparent">
                 <div className="text-gray-400 dark:text-gray-500 font-medium text-sm flex items-center gap-2">
                     <Calendar size={16} />
-                    {new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    {headerDate}
                 </div>
             </header>
         )}
@@ -187,27 +215,32 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
         {showNav && (
             <div className="md:hidden fixed bottom-4 left-4 right-4 z-50">
                 <nav className="bg-white/90 dark:bg-[#1E1E1E]/90 backdrop-blur-xl border border-gray-200 dark:border-[#333] rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-black/50 px-2 py-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-around">
                         {navTabs.slice(0, 5).map((item) => (
                             <NavLink
                                 key={item.path}
                                 to={item.path}
                                 className={({ isActive }) => `
-                                    flex flex-col items-center justify-center p-2 rounded-2xl w-full transition-all duration-200 relative overflow-hidden
+                                    flex flex-col items-center justify-center py-2 px-1 rounded-2xl w-full transition-all duration-300 relative
                                     ${isActive ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'}
                                 `}
                             >
                                 {({ isActive }) => (
                                     <>
-                                        {isActive && <div className="absolute inset-0 bg-primary-50 dark:bg-primary-500/10 rounded-2xl opacity-100 scale-100 transition-all duration-300"></div>}
-                                        <div className={`relative z-10 transition-transform duration-200 ${isActive ? '-translate-y-1' : ''}`}>
+                                        {/* Background highlight for active tab */}
+                                        <div className={`absolute inset-x-1 inset-y-1 bg-primary-50 dark:bg-primary-500/10 rounded-2xl transition-all duration-300 ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}></div>
+                                        
+                                        <div className={`relative z-10 transition-all duration-300 ${isActive ? '-translate-y-1.5' : ''}`}>
                                             {item.icon}
                                         </div>
-                                        {isActive && (
-                                            <span className="text-[9px] font-bold mt-0.5 absolute -bottom-1 opacity-0 animate-slideUp" style={{ opacity: 1, bottom: '4px' }}>
-                                                {item.label}
-                                            </span>
-                                        )}
+                                        
+                                        <div className={`relative z-10 h-0 transition-all duration-300 ${isActive ? 'opacity-100 mt-0.5' : 'opacity-0'}`}>
+                                            {isActive && (
+                                                <span className="text-[10px] font-bold whitespace-nowrap animate-slideUp">
+                                                    {item.label}
+                                                </span>
+                                            )}
+                                        </div>
                                     </>
                                 )}
                             </NavLink>

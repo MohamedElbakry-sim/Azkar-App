@@ -44,6 +44,7 @@ const QuranReader: React.FC = () => {
   const [fontSize, setFontSize] = useState<storage.FontSize>('medium');
   const [tajweedMode, setTajweedMode] = useState(false);
   const [hideText, setHideText] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(true);
   const [pageTheme, setPageTheme] = useState<storage.PageTheme>(() => {
       const saved = localStorage.getItem('nour_quran_theme_v1');
       if (saved) return saved as storage.PageTheme;
@@ -75,6 +76,35 @@ const QuranReader: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
+
+  // Handle Global Overlay Toggle for Text Mode
+  const handleGlobalClick = useCallback((e: React.MouseEvent) => {
+    if (!isTextMode) return;
+    
+    // Don't toggle if clicking buttons, settings, or interactive elements
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') || 
+      target.closest('input') || 
+      target.closest('select') || 
+      target.closest('[role="dialog"]') ||
+      showSearch || 
+      showSettings
+    ) {
+      return;
+    }
+    
+    setShowOverlay(prev => !prev);
+  }, [isTextMode, showSearch, showSettings]);
+
+  // Sync background color with theme
+  const getThemeBgClass = useCallback(() => {
+      switch (pageTheme) {
+          case 'sepia': return 'bg-[#f4e4bc]';
+          case 'dark': return 'bg-[#0D0D0D]';
+          default: return 'bg-[#FDFDFD]';
+      }
+  }, [pageTheme]);
 
   // Handle Global Search logic (debounced)
   useEffect(() => {
@@ -237,14 +267,12 @@ const QuranReader: React.FC = () => {
   const handleSearchResultSelect = (result: any) => {
       setShowSearch(false);
       if (result.surah.number === surah?.number) {
-          // Same surah, just scroll/highlight
           setSearchParams(prev => {
               prev.set('ayah', result.numberInSurah.toString());
               prev.set('q', searchQuery);
               return prev;
           });
       } else {
-          // Jump to different surah
           navigate(`/quran/${result.surah.number}?ayah=${result.numberInSurah}&q=${encodeURIComponent(searchQuery)}`);
       }
   };
@@ -266,12 +294,15 @@ const QuranReader: React.FC = () => {
   );
 
   return (
-    <div className={`bg-[#FDFDFD] dark:bg-[#0D0D0D] min-h-screen relative flex flex-col ${viewMode === 'mushaf' ? 'h-screen overflow-hidden' : 'pb-32'}`}>
+    <div 
+        className={`${getThemeBgClass()} min-h-screen relative flex flex-col transition-colors duration-300 ${viewMode === 'mushaf' ? 'h-screen overflow-hidden' : 'pb-32'}`}
+        onClick={handleGlobalClick}
+    >
         <audio ref={audioRef} onEnded={handleAudioEnded} onTimeUpdate={handleTimeUpdate} onError={() => setIsPlaying(false)} />
         <audio ref={metadataAudioRef} crossOrigin="anonymous" preload="metadata" />
         
-        {/* Header */}
-        <div className="sticky top-0 z-50 transition-all duration-300">
+        {/* Header Overlay */}
+        <div className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-500 ${showOverlay ? 'translate-y-0' : '-translate-y-full'}`}>
             <div className="bg-white/95 dark:bg-[#1A1A1A]/95 backdrop-blur-xl border-b border-gray-100 dark:border-[#333] px-4 py-3 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
                     <button onClick={() => navigate('/quran')} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
@@ -283,7 +314,7 @@ const QuranReader: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1 bg-gray-100 dark:bg-dark-surface p-1 rounded-2xl">
+                <div className="flex items-center gap-1 bg-gray-100 dark:bg-dark-surface p-1 rounded-2xl" onClick={e => e.stopPropagation()}>
                     <button onClick={() => setViewMode('text')} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${isTextMode ? 'bg-white dark:bg-[#2A2A2A] shadow-sm text-emerald-600' : 'text-gray-400'}`}>
                         <AlignRight size={16} />
                         <span className="hidden md:inline">نص</span>
@@ -294,7 +325,7 @@ const QuranReader: React.FC = () => {
                     </button>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     {isTextMode && (
                         <button 
                             onClick={() => setShowSearch(true)} 
@@ -419,6 +450,30 @@ const QuranReader: React.FC = () => {
                             </button>
                         </div>
 
+                        <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-bold text-gray-500">لون الصفحة:</span>
+                            <div className={`flex gap-1 p-1 rounded-lg bg-gray-100 dark:bg-[#333]`}>
+                                <button 
+                                    onClick={() => { setPageTheme('light'); storage.saveQuranTheme('light'); }}
+                                    className={`p-2 rounded-md transition-colors flex items-center gap-2 text-xs font-bold ${pageTheme === 'light' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}
+                                >
+                                    أبيض
+                                </button>
+                                <button 
+                                    onClick={() => { setPageTheme('sepia'); storage.saveQuranTheme('sepia'); }}
+                                    className={`p-2 rounded-md transition-colors flex items-center gap-2 text-xs font-bold ${pageTheme === 'sepia' ? 'bg-[#fbf0d6] text-[#5c4b37] shadow-sm' : 'text-gray-500'}`}
+                                >
+                                    كريمي
+                                </button>
+                                <button 
+                                    onClick={() => { setPageTheme('dark'); storage.saveQuranTheme('dark'); }}
+                                    className={`p-2 rounded-md transition-colors flex items-center gap-2 text-xs font-bold ${pageTheme === 'dark' ? 'bg-[#1a1a1a] text-white shadow-sm' : 'text-gray-500'}`}
+                                >
+                                    داكن
+                                </button>
+                            </div>
+                        </div>
+
                         <button onClick={() => setHideText(!hideText)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${hideText ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-gray-50 border-transparent text-gray-500'}`}>
                             <div className="flex items-center gap-3"><EyeOff size={20} /><span className="font-bold">وضع الحفظ</span></div>
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${hideText ? 'border-indigo-600' : 'border-gray-300'}`}>{hideText && <div className="w-2.5 h-2.5 bg-indigo-600 rounded-full" />}</div>
@@ -444,7 +499,7 @@ const QuranReader: React.FC = () => {
             </div>
         )}
 
-        <div className={`flex-1 w-full mx-auto transition-all ${isTextMode ? 'py-8' : 'p-0 flex flex-col items-center justify-center overflow-hidden h-full'}`}>
+        <div className={`flex-1 w-full mx-auto transition-all ${isTextMode ? 'pt-20 py-8' : 'p-0 flex flex-col items-center justify-center overflow-hidden h-full'}`}>
             {isTextMode ? (
                 <TextModeViewer 
                     surah={surah} 
@@ -477,8 +532,8 @@ const QuranReader: React.FC = () => {
 
         {/* --- CENTERED PLAYER --- */}
         {activeAyahIndex !== null && (
-            <div className="fixed bottom-6 left-0 md:right-72 right-0 z-[60] flex justify-center px-4 animate-slideUp">
-                <div className="bg-white/95 dark:bg-[#1A1A1A]/95 backdrop-blur-2xl border border-gray-100 dark:border-white/10 rounded-[2.5rem] p-2 shadow-[0_20px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)] flex items-center gap-2 md:gap-8 min-w-[310px] max-w-2xl relative overflow-hidden">
+            <div className={`fixed bottom-6 left-0 md:right-72 right-0 z-[60] flex justify-center px-4 transition-transform duration-500 ${showOverlay ? 'translate-y-0' : 'translate-y-[150%]'}`}>
+                <div className="bg-white/95 dark:bg-[#1A1A1A]/95 backdrop-blur-2xl border border-gray-100 dark:border-white/10 rounded-[2.5rem] p-2 shadow-[0_20px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)] flex items-center gap-2 md:gap-8 min-w-[310px] max-w-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
                     <div className="absolute top-0 left-6 right-6 h-0.5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
                         <div className="h-full bg-emerald-500 transition-all duration-300 ease-linear" style={{ width: `${(currentAyahTime / (currentAyahDuration || 1)) * 100}%` }} />
                     </div>

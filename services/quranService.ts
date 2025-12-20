@@ -60,6 +60,7 @@ export const getSurah = async (surahId: number): Promise<SurahDetail> => {
       text: ayah.text,
       numberInSurah: ayah.numberInSurah,
       juz: ayah.juz,
+      hizbQuarter: ayah.hizbQuarter,
       page: ayah.page,
       translation: translation?.ayahs[index]?.text || '',
       tafsir: tafsir?.ayahs[index]?.text || '',

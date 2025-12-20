@@ -1,18 +1,36 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DailyWisdom from '../components/DailyWisdom';
 import RandomNameCard from '../components/RandomNameCard';
 import DailySahabi from '../components/DailySahabi';
 import SmartAzkarSuggestion from '../components/SmartAzkarSuggestion';
 import AlKahfAlert from '../components/AlKahfAlert';
+import { Sun, Moon } from 'lucide-react';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Capacitor } from '@capacitor/core';
+import * as storage from '../services/storage';
 
-const Home: React.FC = () => {
+interface HomeProps {
+    darkMode?: boolean;
+    onToggleTheme?: () => void;
+}
+
+const Home: React.FC<HomeProps> = ({ darkMode, onToggleTheme }) => {
+  const handleThemeToggle = async () => {
+    if (onToggleTheme) onToggleTheme();
+    
+    // Haptic feedback
+    if (Capacitor.isNativePlatform()) {
+        try { await Haptics.impact({ style: ImpactStyle.Medium }); } catch (e) {}
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fadeIn pb-8">
       <AlKahfAlert />
       
       {/* Welcome Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end px-2 pt-2 gap-4">
+      <div className="flex justify-between items-start px-2 pt-2 gap-4">
         <div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white font-arabicHead mb-2">
             السلام عليكم
@@ -22,9 +40,18 @@ const Home: React.FC = () => {
             </p>
         </div>
         
-        {/* Date Badge */}
-        <div className="bg-white dark:bg-[#1E1E1E] px-5 py-2.5 rounded-2xl border border-gray-100 dark:border-[#2A2A2A] shadow-sm text-sm font-bold text-gray-600 dark:text-gray-300 hidden md:block">
-            {new Intl.DateTimeFormat('ar-SA-u-ca-islamic', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())}
+        <div className="flex items-center gap-3">
+            {/* Quick Theme Toggle */}
+            <button 
+                onClick={handleThemeToggle}
+                className="w-12 h-12 md:w-14 md:h-14 bg-white dark:bg-dark-panel rounded-2xl flex items-center justify-center text-primary-50 text-emerald-500 dark:text-emerald-400 shadow-soft border border-gray-100 dark:border-dark-border transition-all active:scale-90 hover:shadow-md"
+                title={darkMode ? "تبديل للوضع النهاري" : "تبديل للوضع الليلي"}
+            >
+                <div className="relative w-6 h-6 flex items-center justify-center">
+                    <Sun className={`absolute transition-all duration-500 transform ${darkMode ? 'scale-0 rotate-90 opacity-0' : 'scale-100 rotate-0 opacity-100'}`} />
+                    <Moon className={`absolute transition-all duration-500 transform ${darkMode ? 'scale-100 rotate-0 opacity-100' : 'scale-0 -rotate-90 opacity-0'}`} />
+                </div>
+            </button>
         </div>
       </div>
 
@@ -37,7 +64,10 @@ const Home: React.FC = () => {
 
               {/* Daily Wisdom Section */}
               <div className="space-y-4">
-                 <h3 className="text-xl font-bold text-gray-900 dark:text-white px-2 font-arabicHead">قطوف اليوم</h3>
+                 <h3 className="text-xl font-bold text-gray-900 dark:text-white px-2 font-arabicHead flex items-center gap-2">
+                    <div className="w-1.5 h-6 bg-primary-500 rounded-full"></div>
+                    قطوف اليوم
+                 </h3>
                  <DailyWisdom />
               </div>
           </div>

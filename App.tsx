@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { HashRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { App as CapacitorApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -7,7 +6,6 @@ import { Capacitor } from '@capacitor/core';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import NotificationManager from './components/NotificationManager';
-import SplashScreen from './components/SplashScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Loader2 } from 'lucide-react';
 import * as storage from './services/storage';
@@ -54,7 +52,7 @@ const AppUrlListener: React.FC = () => {
             navigate(-1);
         }
         });
-    } catch (e) {
+  } catch (e) {
         console.warn('Back button listener failed', e);
     }
 
@@ -69,8 +67,6 @@ const AppUrlListener: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  const [showSplash, setShowSplash] = useState(false);
-
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('nour_theme');
@@ -80,8 +76,16 @@ const App: React.FC = () => {
     return false;
   });
 
+  const [accentTheme, setAccentTheme] = useState<storage.AccentTheme>(() => storage.getAccentTheme());
+
+  // Function to apply accent to DOM
+  const applyAccent = useCallback((theme: storage.AccentTheme) => {
+    document.documentElement.setAttribute('data-accent', theme);
+  }, []);
+
   useEffect(() => {
     storage.resetTodayProgress();
+    applyAccent(accentTheme);
     
     // Initial Status Bar Config for Android
     if (Capacitor.isNativePlatform()) {
@@ -89,7 +93,26 @@ const App: React.FC = () => {
         StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
       } catch (e) { console.warn('StatusBar error', e); }
     }
-  }, []);
+
+    // Listen for Home Screen Quick Toggles
+    const handleGlobalThemeToggle = () => {
+        const saved = localStorage.getItem('nour_theme');
+        setDarkMode(saved === 'dark');
+    };
+
+    const handleAccentThemeChange = () => {
+        const saved = storage.getAccentTheme();
+        setAccentTheme(saved);
+        applyAccent(saved);
+    };
+
+    window.addEventListener('appearance-changed', handleGlobalThemeToggle);
+    window.addEventListener('accent-changed', handleAccentThemeChange);
+    return () => {
+        window.removeEventListener('appearance-changed', handleGlobalThemeToggle);
+        window.removeEventListener('accent-changed', handleAccentThemeChange);
+    };
+  }, [accentTheme, applyAccent]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -98,7 +121,7 @@ const App: React.FC = () => {
       if (Capacitor.isNativePlatform()) {
         try {
             StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
-            StatusBar.setBackgroundColor({ color: '#1A1A1A' }).catch(() => {});
+            StatusBar.setBackgroundColor({ color: '#121212' }).catch(() => {});
         } catch(e) {}
       }
     } else {
@@ -116,6 +139,7 @@ const App: React.FC = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
     localStorage.setItem('nour_theme', newMode ? 'dark' : 'light');
+    window.dispatchEvent(new Event('appearance-changed'));
   };
 
   const PageLoader = () => (
@@ -129,7 +153,6 @@ const App: React.FC = () => {
       <RadioProvider>
         <Router>
           <ErrorBoundary>
-            {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
             <AppUrlListener />
             <NotificationManager />
             
@@ -137,7 +160,7 @@ const App: React.FC = () => {
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   {/* Tab Routes */}
-                  <Route path="/" element={<Home />} />
+                  <Route path="/" element={<Home darkMode={darkMode} onToggleTheme={toggleTheme} />} />
                   <Route path="/athkar" element={<AthkarIndex />} />
                   <Route path="/quran" element={<QuranIndex />} />
                   <Route path="/prayers" element={<PrayerTimes />} />
@@ -157,7 +180,7 @@ const App: React.FC = () => {
                   <Route path="/names" element={<NamesOfAllah />} />
                   <Route path="/duas" element={<Duas />} />
                   <Route path="/stats" element={<Stats />} />
-                  <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} />} />
+                  <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} currentAccent={accentTheme} />} />
                   <Route path="/contact" element={<Contact />} />
                   
                   {/* Auth Route */}

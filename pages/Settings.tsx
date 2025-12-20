@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, AlertTriangle, Menu, ArrowUp, ArrowDown, X, User, LogOut, RefreshCw, CheckCircle } from 'lucide-react';
+import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, AlertTriangle, Menu, ArrowUp, ArrowDown, X, User, LogOut, RefreshCw, CheckCircle, Palette, Check } from 'lucide-react';
 import * as storage from '../services/storage';
 import { CATEGORIES } from '../data';
 import { ALL_NAV_ITEMS } from '../components/Layout';
@@ -10,9 +9,10 @@ import { useNavigate } from 'react-router-dom';
 interface SettingsProps {
   darkMode: boolean;
   toggleTheme: () => void;
+  currentAccent: storage.AccentTheme;
 }
 
-const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
+const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccent }) => {
   const [fontSize, setFontSize] = useState<storage.FontSize>('medium');
   const [hijriOffset, setHijriOffset] = useState<number>(0);
   const [reminders, setReminders] = useState<storage.Reminder[]>([]);
@@ -23,6 +23,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
   const [navOrder, setNavOrder] = useState<string[]>([]);
   const [notifSettings, setNotifSettings] = useState<storage.NotificationSettings>({ soundEnabled: true, vibrationType: 'default' });
   const [isSyncing, setIsSyncing] = useState(false);
+  const [accent, setAccent] = useState<storage.AccentTheme>(currentAccent);
 
   // Auth Context
   const { currentUser, logout, syncData, isDemoMode } = useAuth();
@@ -36,6 +37,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     setHijriOffset(storage.getHijriOffset());
     setNotifSettings(storage.getNotificationSettings());
     setNavOrder(storage.getNavOrder());
+    setAccent(storage.getAccentTheme());
   }, []);
 
   const changeFontSize = (size: storage.FontSize) => {
@@ -55,6 +57,12 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     const updated = { ...notifSettings, ...newSettings };
     setNotifSettings(updated);
     storage.saveNotificationSettings(updated);
+  };
+
+  const changeAccent = (newAccent: storage.AccentTheme) => {
+    setAccent(newAccent);
+    storage.saveAccentTheme(newAccent);
+    window.dispatchEvent(new Event('accent-changed'));
   };
 
   const clearData = () => {
@@ -243,6 +251,14 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
     </button>
   );
 
+  const accentThemes: { id: storage.AccentTheme; color: string; label: string }[] = [
+    { id: 'emerald', color: 'bg-[#10B981]', label: 'أخضر' },
+    { id: 'blue', color: 'bg-[#3b82f6]', label: 'أزرق' },
+    { id: 'purple', color: 'bg-[#a855f7]', label: 'بنفسجي' },
+    { id: 'rose', color: 'bg-[#f43f5e]', label: 'وردي' },
+    { id: 'amber', color: 'bg-[#f59e0b]', label: 'كهرماني' },
+  ];
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-10">
       <div className="mb-8">
@@ -254,7 +270,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
         
         {/* Profile & Sync Section */}
         <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm overflow-hidden">
-            <div className="p-6 bg-gradient-to-r from-emerald-600 to-teal-700 text-white">
+            <div className="p-6 bg-gradient-to-r from-primary-600 to-primary-700 text-white">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-2xl font-bold border-2 border-white/30">
@@ -264,7 +280,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                             <h3 className="font-bold text-xl font-arabicHead">
                                 {currentUser ? (currentUser.displayName || 'مستخدم') : 'حساب زائر'}
                             </h3>
-                            <p className="text-emerald-100 text-sm font-english">
+                            <p className="text-primary-100 text-sm font-english">
                                 {currentUser ? currentUser.email : 'لم يتم تسجيل الدخول'}
                             </p>
                         </div>
@@ -280,14 +296,14 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
             <div className="p-4">
                 {currentUser ? (
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-bold">
+                        <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 text-sm font-bold">
                             <CheckCircle size={16} />
                             <span>المزامنة مفعلة</span>
                         </div>
                         <button 
                             onClick={handleManualSync}
                             disabled={isSyncing}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-xl text-sm font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 rounded-xl text-sm font-bold hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors"
                         >
                             <RefreshCw size={16} className={isSyncing ? "animate-spin" : ""} />
                             {isSyncing ? 'جاري المزامنة...' : 'مزامنة الآن'}
@@ -307,8 +323,48 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
             </div>
         </div>
 
-        {/* ... Existing Settings Components ... */}
-        
+        {/* --- App Theme Section --- */}
+        <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
+            <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 rounded-full bg-gray-100 dark:bg-dark-panel text-gray-600 dark:text-dark-secondary">
+                    <Palette size={24} />
+                </div>
+                <div>
+                    <h3 className="font-bold text-body-lg text-gray-800 dark:text-dark-text font-arabic">سمة التطبيق</h3>
+                    <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">اختر لونك المفضل لواجهة ريان</p>
+                </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-4 py-2">
+                {accentThemes.map((t) => (
+                    <button
+                        key={t.id}
+                        onClick={() => changeAccent(t.id)}
+                        className={`
+                            relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm
+                            ${t.color}
+                            ${accent === t.id ? 'ring-4 ring-offset-2 ring-primary-300 dark:ring-primary-700 scale-110 shadow-lg' : 'hover:scale-105'}
+                        `}
+                        title={t.label}
+                    >
+                        {accent === t.id && (
+                            <div className="bg-white/30 backdrop-blur rounded-full p-1 animate-scaleIn">
+                                <Check size={16} className="text-white" />
+                            </div>
+                        )}
+                    </button>
+                ))}
+            </div>
+
+            <div className="mt-6 flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-panel rounded-xl border border-gray-100 dark:border-dark-border transition-colors">
+                <div className="flex items-center gap-3">
+                    {darkMode ? <Moon size={20} className="text-primary-500" /> : <Sun size={20} className="text-primary-500" />}
+                    <span className="text-body-sm font-bold text-gray-700 dark:text-gray-200">الوضع {darkMode ? 'الليلي' : 'النهاري'}</span>
+                </div>
+                <Toggle checked={darkMode} onChange={toggleTheme} label="تبديل المظهر" />
+            </div>
+        </div>
+
         {/* Customize Menu Section */}
         <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
             <div className="flex items-center gap-4 mb-6">
@@ -372,7 +428,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
                             <button
                                 key={id}
                                 onClick={() => handleAddNav(id)}
-                                className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-dark-panel hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl border border-gray-100 dark:border-dark-border hover:border-emerald-200 dark:hover:border-emerald-800 transition-all"
+                                className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-dark-panel hover:bg-primary-50 dark:hover:bg-primary-900/20 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-xl border border-gray-100 dark:border-dark-border hover:border-primary-200 dark:hover:border-primary-800 transition-all"
                             >
                                 <Plus size={16} />
                                 <span className="font-bold text-sm">{item.label}</span>
@@ -619,14 +675,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
           }
         />
 
-        {/* Theme Toggle */}
-        <SettingsItem 
-          icon={darkMode ? Moon : Sun}
-          label="المظهر"
-          description={darkMode ? 'الوضع الليلي مفعل' : 'الوضع النهاري مفعل'}
-          action={<Toggle checked={darkMode} onChange={toggleTheme} label="تبديل المظهر" />}
-        />
-
         {/* Font Size Settings */}
         <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
           <div className="flex items-center gap-4 mb-4">
@@ -686,7 +734,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme }) => {
 
       <div className="mt-12 text-center flex flex-col items-center gap-2">
          <p className="text-caption text-gray-400 dark:text-dark-muted font-english font-bold">
-           Rayyan v1.5.0
+           Rayyan v1.6.0
          </p>
       </div>
     </div>

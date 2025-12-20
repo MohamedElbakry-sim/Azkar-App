@@ -7,7 +7,8 @@ import { toArabicNumerals, applyTajweed, normalizeArabic, getHighlightRegex } fr
 import { Ayah, SearchResult } from '../types';
 
 const TOTAL_PAGES = 604;
-const BISMILLAH = "بِسْم. ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
+// Fixed: Removed the period after 'بِسْم' to match the actual API text
+const BISMILLAH = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
 
 interface MushafPagesViewerProps {
   initialPage: number;
@@ -357,6 +358,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
       });
 
       let lastJuz = -1;
+      let lastHizb = -1;
 
       return (
           <div className="flex flex-col w-full h-full" dir="rtl">
@@ -415,6 +417,11 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                                   const showJuzIndicator = ayah.juz !== lastJuz;
                                   if (showJuzIndicator) lastJuz = ayah.juz;
 
+                                  const currentHizb = ayah.hizbQuarter ? Math.ceil(ayah.hizbQuarter / 4) : -1;
+                                  if (lastHizb === -1 && ayahs[0].hizbQuarter) lastHizb = Math.ceil(ayahs[0].hizbQuarter / 4);
+                                  const showHizbIndicator = currentHizb !== -1 && currentHizb !== lastHizb;
+                                  if (showHizbIndicator) lastHizb = currentHizb;
+
                                   let displayText = text;
                                   
                                   if (highlightTerm) {
@@ -431,6 +438,11 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                                           {showJuzIndicator && (
                                               <span className={`inline-block mx-1.5 px-2 py-0.5 text-[10px] font-bold rounded border ${themeStyles.indicator} select-none align-middle transform -translate-y-1`}>
                                                   الجزء {toArabicNumerals(ayah.juz)}
+                                              </span>
+                                          )}
+                                          {showHizbIndicator && (
+                                              <span className={`inline-block mx-1.5 px-2 py-0.5 text-[10px] font-bold rounded border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 select-none align-middle transform -translate-y-1`}>
+                                                  الحزب {toArabicNumerals(currentHizb)}
                                               </span>
                                           )}
                                           <span 
@@ -542,7 +554,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
         >
             <div className={`backdrop-blur-md border-b px-4 py-3 flex items-center justify-between shadow-sm ${pageTheme === 'dark' ? 'bg-[#1a1a1a]/95 border-[#333]' : 'bg-white/95 border-gray-200'}`}>
                 <div className="flex items-center gap-2">
-                    <button onClick={onClose} className={`p-2 rounded-full hover:opacity-80 transition-opacity ${pageTheme === 'dark' ? 'bg-[#333] text-white' : 'bg-gray-100 text-gray-800'}`}>
+                    <button onClick={onClose} className={`p-2 rounded-full hover:opacity-80 transition-opacity ${pageTheme === 'dark' ? 'bg-[#333] text-white' : 'bg-gray-100 text-white shadow-sm'}`}>
                         <X size={20} />
                     </button>
                     <button 

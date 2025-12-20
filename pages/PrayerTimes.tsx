@@ -22,7 +22,7 @@ const PrayerTimes: React.FC = () => {
   const [locationName, setLocationName] = useState('جاري تحديد الموقع...');
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [hijriDate, setHijriDate] = useState('');
+  const [currentDate, setCurrentDate] = useState('');
 
   // --- Dynamic Compass State ---
   const [heading, setHeading] = useState<number>(0);
@@ -75,20 +75,28 @@ const PrayerTimes: React.FC = () => {
   };
 
   useEffect(() => {
-    // Set Hijri Date with User Offset
+    // Set Combined Dates
     try {
-      const offset = storage.getHijriOffset();
       const date = new Date();
-      date.setDate(date.getDate() + offset);
+      const offset = storage.getHijriOffset();
+      const hijriDate = new Date();
+      hijriDate.setDate(hijriDate.getDate() + offset);
+
+      const miladi = new Intl.DateTimeFormat('ar-SA', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }).format(date);
 
       const hijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
         day: 'numeric',
         month: 'long',
         year: 'numeric'
-      }).format(date);
-      setHijriDate(hijri);
+      }).format(hijriDate);
+
+      setCurrentDate(`${miladi} | ${hijri}`);
     } catch (e) {
-      setHijriDate(new Date().toLocaleDateString('ar-SA'));
+      setCurrentDate(new Date().toLocaleDateString('ar-SA'));
     }
 
     fetchLocation();
@@ -209,17 +217,10 @@ const PrayerTimes: React.FC = () => {
     // Check if sensors are actually working after a short timeout
     setTimeout(() => {
         // If heading is still exactly 0 (initial) after 2 seconds, it might be a sensor issue
-        // Note: Actual North is 0, so this is a heuristic. 
-        // Better to just leave it active so user sees UI.
     }, 2000);
   };
 
   // Calculate rotation: 
-  // We rotate the compass disk so that 'North' on the disk points to True North.
-  // Disk Rotation = -Heading
-  // Kaaba Marker Rotation = Qibla Angle (It stays fixed relative to the North on the disk)
-  
-  // Calculate if aligned (within 5 degrees)
   let bearing = qiblaAngle - heading;
   // Normalize to -180 to +180
   while (bearing < -180) bearing += 360;
@@ -239,10 +240,10 @@ const PrayerTimes: React.FC = () => {
       <div className="text-center mb-6">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2 font-arabicHead">مواقيت الصلاة</h2>
         
-        {hijriDate && (
+        {currentDate && (
           <div className="flex items-center justify-center gap-2 text-primary-600 dark:text-primary-400 font-medium mb-4 bg-primary-50 dark:bg-primary-900/20 py-2 px-4 rounded-full inline-flex font-arabic">
             <Calendar size={18} />
-            <span>{hijriDate}</span>
+            <span>{currentDate}</span>
           </div>
         )}
 
@@ -393,8 +394,6 @@ const PrayerTimes: React.FC = () => {
                         <p className="text-xs text-gray-400 mt-1 font-mono font-english" dir="ltr">
                             Heading: {Math.round(heading)}° | Qibla: {Math.round(qiblaAngle)}°
                         </p>
-                        
-                        {/* Fallback msg if heading stays 0 for too long? Usually user notices if it doesn't move */}
                     </div>
                 </div>
             )}

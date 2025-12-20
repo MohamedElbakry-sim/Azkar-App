@@ -19,6 +19,7 @@ const ALKAHF_PROMPT_KEY = 'nour_alkahf_prompt_v1';
 const DHIKR_ORDER_KEY = 'nour_dhikr_order_v1';
 const RADIO_FAVORITES_KEY = 'nour_radio_favorites_v1';
 const NAV_SETTINGS_KEY = 'nour_nav_settings_v1';
+const ACCENT_THEME_KEY = 'nour_accent_theme_v1';
 
 // Quran Keys
 const QURAN_LAST_READ_KEY = 'nour_quran_last_read_v1';
@@ -28,6 +29,7 @@ const QURAN_REFLECTIONS_KEY = 'nour_quran_reflections_v1';
 
 export type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
 export type PageTheme = 'light' | 'sepia' | 'dark';
+export type AccentTheme = 'emerald' | 'blue' | 'purple' | 'rose' | 'amber';
 
 export interface Reminder {
   id: string;
@@ -60,6 +62,16 @@ export interface NotificationSettings {
 }
 
 export type HeatmapTheme = 'emerald' | 'blue' | 'flame';
+
+// --- App Appearance ---
+
+export const getAccentTheme = (): AccentTheme => {
+    return (localStorage.getItem(ACCENT_THEME_KEY) as AccentTheme) || 'emerald';
+};
+
+export const saveAccentTheme = (theme: AccentTheme) => {
+    localStorage.setItem(ACCENT_THEME_KEY, theme);
+};
 
 // --- Quran Storage ---
 
@@ -124,11 +136,10 @@ export const saveAyahReflection = (reflection: AyahReflection) => {
 
 export const deleteAyahReflection = (surahNumber: number, ayahNumber: number) => {
   const current = getAyahReflections();
-  const updated = current.filter(r => !(r.surahNumber === surahNumber && r.ayahNumber === ayahNumber));
+  const updated = current.filter(r => !(r.surahNumber === r.surahNumber && r.ayahNumber === ayahNumber));
   localStorage.setItem(QURAN_REFLECTIONS_KEY, JSON.stringify(updated));
 };
 
-// ... Rest of existing storage functions ...
 export const getFavorites = (): number[] => {
   try {
     const stored = localStorage.getItem(FAVORITES_KEY);
@@ -325,9 +336,10 @@ export const saveFontSize = (size: FontSize) => {
 export const getHijriOffset = (): number => {
   try {
     const stored = localStorage.getItem(HIJRI_OFFSET_KEY);
-    return stored ? parseInt(stored, 10) : 0;
+    // Changed default fallback from 0 to -1 to fix the date discrepancy reported by users
+    return stored ? parseInt(stored, 10) : -1;
   } catch {
-    return 0;
+    return -1;
   }
 };
 
@@ -367,14 +379,12 @@ export const addReminder = (reminder: Reminder) => {
 
 export const updateReminder = (reminder: Reminder) => {
   const current = getReminders();
-  // Fix: add const to declare updated
   const updated = current.map(r => r.id === reminder.id ? reminder : r);
   saveReminders(updated);
 };
 
 export const deleteReminder = (id: string) => {
   const current = getReminders();
-  // Fix: add const to declare updated
   const updated = current.filter(r => r.id !== id);
   saveReminders(updated);
 };
@@ -436,7 +446,7 @@ export const getStats = (): StatsData => {
   dates.forEach(date => {
     const dayData = history[date];
     const counts = Object.values(dayData);
-    const sum = counts.reduce((a, b) => (b > 0 ? a + b : a), 0);
+    const sum = (counts as number[]).reduce((a, b) => (b > 0 ? a + b : a), 0);
     totalDhikrCompleted += sum;
     if (date === today) todayCount = sum;
     if (new Date(date) >= oneWeekAgo) weeklyCount += sum;
@@ -459,7 +469,7 @@ export const getHeatmapData = () => {
   const data: { [date: string]: number } = {};
   Object.keys(history).forEach(date => {
     const dayData = history[date];
-    const total = Object.values(dayData).reduce((a, b) => (b > 0 ? a + b : a), 0);
+    const total = (Object.values(dayData) as number[]).reduce((a, b) => (b > 0 ? a + b : a), 0);
     if (total > 0) data[date] = total;
   });
   return data;
@@ -468,7 +478,6 @@ export const getHeatmapData = () => {
 export const hasSeenAlKahfPrompt = (): boolean => {
   try {
     const today = getTodayKey();
-    // Fix: Correct typo from ALKAFH_PROMPT_KEY to ALKAHF_PROMPT_KEY
     return localStorage.getItem(ALKAHF_PROMPT_KEY) === today;
   } catch {
     return false;
@@ -477,7 +486,6 @@ export const hasSeenAlKahfPrompt = (): boolean => {
 
 export const markAlKahfPromptSeen = () => {
   const today = getTodayKey();
-  // Fix: Correct typo from ALKAFH_PROMPT_KEY to ALKAHF_PROMPT_KEY
   localStorage.setItem(ALKAHF_PROMPT_KEY, today);
 };
 
