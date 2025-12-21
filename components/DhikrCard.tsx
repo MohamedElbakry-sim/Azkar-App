@@ -120,16 +120,16 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         onKeyDown={handleKeyDown}
         className={`
             w-full text-right relative overflow-hidden bg-white dark:bg-dark-surface rounded-[2rem] shadow-card border border-gray-100 dark:border-dark-border
-            transition-transform duration-100 outline-none select-none
+            transition-transform duration-100 outline-none select-none isolate
             ${isPressed ? 'scale-[0.98]' : 'scale-100'}
             ${!readonly && !isCompleted && !reorderMode ? 'active:ring-2 active:ring-primary-500 cursor-pointer' : 'cursor-default'}
             ${reorderMode ? 'border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-dark-bg' : ''}
         `}
       >
-        {/* Progress Background Fill */}
+        {/* Progress Background Fill - Improved colors and layering */}
         {!readonly && !reorderMode && (
             <div 
-                className="absolute bottom-0 right-0 top-0 bg-primary-50 dark:bg-primary-900/10 transition-all duration-300 ease-out z-0"
+                className="absolute bottom-0 right-0 top-0 bg-primary-50/80 dark:bg-emerald-500/5 transition-all duration-500 ease-out z-0 pointer-events-none"
                 style={{ width: `${progressPercent}%` }}
             />
         )}
