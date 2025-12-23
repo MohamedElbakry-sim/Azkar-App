@@ -1,4 +1,3 @@
-
 import { ProgressState, Dhikr, CategoryId, CustomCategory } from '../types';
 
 const FAVORITES_KEY = 'nour_favorites_v1';
@@ -22,6 +21,12 @@ const RADIO_FAVORITES_KEY = 'nour_radio_favorites_v1';
 const NAV_SETTINGS_KEY = 'nour_nav_settings_v1';
 const ACCENT_THEME_KEY = 'nour_accent_theme_v1';
 
+// New Adhan Keys
+const ADHAN_AUDIO_ENABLED_KEY = 'nour_adhan_audio_enabled_v1';
+const ADHAN_VOICE_KEY = 'nour_adhan_voice_v1';
+const ADHAN_FAJR_ONLY_KEY = 'nour_adhan_fajr_only_v1';
+const LAST_LOCATION_KEY = 'nour_last_location_v1';
+
 // Quran Keys
 const QURAN_LAST_READ_KEY = 'nour_quran_last_read_v1';
 const QURAN_BOOKMARKS_KEY = 'nour_quran_bookmarks_v1';
@@ -31,6 +36,7 @@ const QURAN_REFLECTIONS_KEY = 'nour_quran_reflections_v1';
 export type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
 export type PageTheme = 'light' | 'sepia' | 'dark';
 export type AccentTheme = 'emerald' | 'blue' | 'purple' | 'rose' | 'amber';
+export type AdhanVoice = 'mecca' | 'madina' | 'alaqsa' | 'standard';
 
 export interface Reminder {
   id: string;
@@ -63,6 +69,43 @@ export interface NotificationSettings {
 }
 
 export type HeatmapTheme = 'emerald' | 'blue' | 'flame';
+
+// --- Adhan Settings ---
+
+export const isAdhanAudioEnabled = (): boolean => {
+    return localStorage.getItem(ADHAN_AUDIO_ENABLED_KEY) === 'true';
+};
+
+export const setAdhanAudioEnabled = (enabled: boolean) => {
+    localStorage.setItem(ADHAN_AUDIO_ENABLED_KEY, String(enabled));
+};
+
+export const getAdhanVoice = (): AdhanVoice => {
+    return (localStorage.getItem(ADHAN_VOICE_KEY) as AdhanVoice) || 'mecca';
+};
+
+export const setAdhanVoice = (voice: AdhanVoice) => {
+    localStorage.setItem(ADHAN_VOICE_KEY, voice);
+};
+
+export const isAdhanFajrOnly = (): boolean => {
+    return localStorage.getItem(ADHAN_FAJR_ONLY_KEY) === 'true';
+};
+
+export const setAdhanFajrOnly = (only: boolean) => {
+    localStorage.setItem(ADHAN_FAJR_ONLY_KEY, String(only));
+};
+
+export const saveLastLocation = (lat: number, lng: number) => {
+    localStorage.setItem(LAST_LOCATION_KEY, JSON.stringify({ lat, lng, timestamp: Date.now() }));
+};
+
+export const getLastLocation = (): { lat: number, lng: number } | null => {
+    try {
+        const stored = localStorage.getItem(LAST_LOCATION_KEY);
+        return stored ? JSON.parse(stored) : null;
+    } catch { return null; }
+};
 
 // --- Custom Categories ---
 

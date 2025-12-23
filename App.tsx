@@ -19,10 +19,12 @@ const Stats = React.lazy(() => import('./pages/Stats'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 const PrayerTimes = React.lazy(() => import('./pages/PrayerTimes'));
 const CalendarPage = React.lazy(() => import('./pages/Calendar'));
+const DateConverter = React.lazy(() => import('./pages/DateConverter'));
 const NamesOfAllah = React.lazy(() => import('./pages/NamesOfAllah'));
 const Contact = React.lazy(() => import('./pages/Contact'));
 const Duas = React.lazy(() => import('./pages/Duas'));
 const Radio = React.lazy(() => import('./pages/Radio'));
+const ZakatCalculator = React.lazy(() => import('./pages/ZakatCalculator'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 // New Pages
@@ -177,10 +179,12 @@ const App: React.FC = () => {
                 {/* Feature Routes */}
                 <Route path="/radio" element={<Radio />} />
                 <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/date-converter" element={<DateConverter />} />
                 <Route path="/tasbeeh" element={<Tasbeeh />} />
                 <Route path="/names" element={<NamesOfAllah />} />
                 <Route path="/duas" element={<Duas />} />
                 <Route path="/stats" element={<Stats />} />
+                <Route path="/zakat" element={<ZakatCalculator />} />
                 <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} currentAccent={accentTheme} />} />
                 <Route path="/contact" element={<Contact />} />
                 

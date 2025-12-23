@@ -1,6 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, Flag } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar as CalendarIcon, ChevronLeft, Flag, RefreshCw } from 'lucide-react';
 import * as storage from '../services/storage';
 
 // Static list of major Islamic events (Hijri Month/Day)
@@ -17,6 +17,7 @@ const ISLAMIC_EVENTS = [
 ];
 
 const CalendarPage: React.FC = () => {
+  const navigate = useNavigate();
   const [today, setToday] = useState<Date>(new Date());
   const [hijriString, setHijriString] = useState('');
   const [hijriMonth, setHijriMonth] = useState(0);
@@ -108,6 +109,23 @@ const CalendarPage: React.FC = () => {
                 <p className="text-sm opacity-90">{hijriString}</p>
             </div>
         </div>
+
+        {/* Tools Shortcut */}
+        <button 
+            onClick={() => navigate('/date-converter')}
+            className="w-full bg-white dark:bg-dark-surface p-6 rounded-3xl border border-gray-100 dark:border-dark-border shadow-sm hover:border-primary-200 transition-all flex items-center justify-between group"
+        >
+            <div className="flex items-center gap-4">
+                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-2xl group-hover:scale-110 transition-transform">
+                    <RefreshCw size={24} />
+                </div>
+                <div className="text-right">
+                    <h4 className="font-bold text-gray-800 dark:text-white">محول التاريخ</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">تحويل بين الهجري والميلادي</p>
+                </div>
+            </div>
+            <ChevronLeft size={20} className="text-gray-300 group-hover:text-primary-500 transition-colors rtl:rotate-0" />
+        </button>
 
         {/* Upcoming Events List */}
         <div className="space-y-4">

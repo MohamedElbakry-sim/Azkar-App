@@ -238,29 +238,33 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
         {/* --- MOBILE BOTTOM TAB BAR --- */}
         {showNav && (
             <div className="md:hidden fixed bottom-4 left-4 right-4 z-50">
-                <nav className="bg-white/90 dark:bg-[#1E1E1E]/90 backdrop-blur-xl border border-gray-200 dark:border-[#333] rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-black/50 px-2 py-2">
-                    <div className="flex items-center justify-around">
+                <nav className="bg-white/95 dark:bg-[#1E1E1E]/95 backdrop-blur-2xl border border-gray-200 dark:border-[#333] rounded-[2.5rem] shadow-[0_12px_40px_rgba(0,0,0,0.15)] dark:shadow-black/50 px-2 py-2">
+                    <div className="flex items-center justify-around h-16">
                         {navTabs.slice(0, 5).map((item) => (
                             <NavLink
                                 key={item.path}
                                 to={item.path}
                                 className={({ isActive }) => `
-                                    flex flex-col items-center justify-center py-2 px-1 rounded-2xl w-full transition-all duration-300 relative
+                                    flex flex-col items-center justify-center h-full w-full rounded-3xl transition-all duration-300 relative
                                     ${isActive ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'}
                                 `}
                             >
                                 {({ isActive }) => (
                                     <>
-                                        <div className={`absolute inset-x-1 inset-y-1 bg-primary-50 dark:bg-primary-500/10 rounded-2xl transition-all duration-300 ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}></div>
-                                        <div className={`relative z-10 transition-all duration-300 ${isActive ? '-translate-y-1.5' : ''}`}>
-                                            {item.icon}
-                                        </div>
-                                        <div className={`relative z-10 h-0 transition-all duration-300 ${isActive ? 'opacity-100 mt-0.5' : 'opacity-0'}`}>
-                                            {isActive && (
-                                                <span className="text-[10px] font-bold whitespace-nowrap animate-slideUp">
+                                        {/* Active Background Bubble */}
+                                        <div className={`absolute inset-x-1 inset-y-1 bg-primary-50 dark:bg-primary-500/10 rounded-[2rem] transition-all duration-500 ease-out ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`}></div>
+                                        
+                                        <div className={`flex flex-col items-center justify-center relative z-10 transition-all duration-500 ${isActive ? '-translate-y-1' : ''}`}>
+                                            <div className={`transition-transform duration-500 ${isActive ? 'scale-110' : 'scale-100'}`}>
+                                                {item.icon}
+                                            </div>
+                                            
+                                            {/* Label specifically visible and properly positioned only when active */}
+                                            <div className={`overflow-hidden transition-all duration-500 ease-out flex flex-col items-center ${isActive ? 'max-h-6 opacity-100 mt-1' : 'max-h-0 opacity-0 mt-0'}`}>
+                                                <span className="text-[10px] font-extrabold whitespace-nowrap font-arabicHead">
                                                     {item.label}
                                                 </span>
-                                            )}
+                                            </div>
                                         </div>
                                     </>
                                 )}

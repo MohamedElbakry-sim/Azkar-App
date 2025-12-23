@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Settings, Heart, BookOpenText, 
   Radio, Calendar, Mail, BarChart2, 
-  ChevronLeft, Smartphone, BookOpen, Sparkles, Clock
+  ChevronLeft, Smartphone, BookOpen, Sparkles, Clock, Coins, RefreshCw
 } from 'lucide-react';
 import { TasbeehIcon, AllahIcon, PrayerIcon } from '../components/Layout';
 
@@ -16,7 +16,9 @@ const MoreMenu: React.FC = () => {
       items: [
         { label: "مواقيت الصلاة", icon: <PrayerIcon size={22} />, path: "/prayers", color: "text-amber-600" },
         { label: "السبحة الإلكترونية", icon: <TasbeehIcon size={22} />, path: "/tasbeeh", color: "text-emerald-500" },
+        { label: "حاسبة الزكاة", icon: <Coins size={22} />, path: "/zakat", color: "text-primary-600" },
         { label: "التقويم الهجري", icon: <Calendar size={22} />, path: "/calendar", color: "text-blue-500" },
+        { label: "محول التاريخ", icon: <RefreshCw size={22} />, path: "/date-converter", color: "text-purple-500" },
         { label: "الإذاعة", icon: <Radio size={22} />, path: "/radio", color: "text-red-500" },
       ]
     },

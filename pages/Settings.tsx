@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, Palette, Check, Menu, ArrowUp, ArrowDown, X } from 'lucide-react';
+import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, Palette, Check, Menu, ArrowUp, ArrowDown, X, Music } from 'lucide-react';
 import * as storage from '../services/storage';
 import { CATEGORIES } from '../data';
 import { ALL_NAV_ITEMS } from '../components/Layout';
@@ -23,6 +22,11 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
   const [notifSettings, setNotifSettings] = useState<storage.NotificationSettings>({ soundEnabled: true, vibrationType: 'default' });
   const [accent, setAccent] = useState<storage.AccentTheme>(currentAccent);
 
+  // Adhan States
+  const [adhanEnabled, setAdhanEnabled] = useState(false);
+  const [adhanVoice, setAdhanVoice] = useState<storage.AdhanVoice>('mecca');
+  const [fajrOnly, setFajrOnly] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -32,6 +36,11 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
     setNotifSettings(storage.getNotificationSettings());
     setNavOrder(storage.getNavOrder());
     setAccent(storage.getAccentTheme());
+    
+    // Load Adhan Settings
+    setAdhanEnabled(storage.isAdhanAudioEnabled());
+    setAdhanVoice(storage.getAdhanVoice());
+    setFajrOnly(storage.isAdhanFajrOnly());
   }, []);
 
   const changeFontSize = (size: storage.FontSize) => {
@@ -57,6 +66,12 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
     setAccent(newAccent);
     storage.saveAccentTheme(newAccent);
     window.dispatchEvent(new Event('accent-changed'));
+  };
+
+  const updateAdhanEnabled = (val: boolean) => {
+      setAdhanEnabled(val);
+      storage.setAdhanAudioEnabled(val);
+      if (val) requestNotificationPermission();
   };
 
   const clearData = () => {
@@ -218,7 +233,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
 
   const Toggle = ({ checked, onChange, label }: any) => (
     <button 
-      onClick={onChange}
+      onClick={() => onChange(!checked)}
       role="switch"
       aria-checked={checked}
       aria-label={label}
@@ -227,7 +242,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
         ${checked ? 'bg-gradient-to-r from-primary-500 to-primary-600' : 'bg-gray-300 dark:bg-gray-600'}
       `}
     >
-      <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 ${checked ? 'left-1' : 'left-[calc(100%-1.75rem)]'}`} />
+      <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 ${checked ? 'left-[calc(100%-1.75rem)]' : 'left-1'}`} />
     </button>
   );
 
@@ -239,6 +254,13 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
     { id: 'amber', color: 'bg-[#f59e0b]', label: 'كهرماني' },
   ];
 
+  const adhanVoices: { id: storage.AdhanVoice; name: string }[] = [
+      { id: 'mecca', name: 'أذان مكة' },
+      { id: 'madina', name: 'أذان المدينة' },
+      { id: 'alaqsa', name: 'أذان الأقصى' },
+      { id: 'standard', name: 'أذان منوع' }
+  ];
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-10">
       <div className="mb-8">
@@ -248,6 +270,50 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
 
       <div className="space-y-4">
         
+        {/* --- Adhan Settings Section --- */}
+        <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
+            <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
+                    <Music size={24} />
+                </div>
+                <div>
+                    <h3 className="font-bold text-body-lg text-gray-800 dark:text-dark-text font-arabic">صوت الأذان</h3>
+                    <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">تشغيل الأذان تلقائياً عند دخول الوقت</p>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-panel rounded-xl border border-gray-100 dark:border-dark-border">
+                    <span className="text-body-sm font-bold text-gray-700 dark:text-gray-200">تفعيل الأذان الصوتي</span>
+                    <Toggle checked={adhanEnabled} onChange={updateAdhanEnabled} label="تفعيل الأذان" />
+                </div>
+
+                {adhanEnabled && (
+                    <div className="animate-slideUp space-y-4">
+                        <div className="p-4 bg-gray-50 dark:bg-dark-panel rounded-xl border border-gray-100 dark:border-dark-border">
+                            <label className="block text-xs font-bold text-gray-400 uppercase mb-3 mr-1">اختر المؤذن</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {adhanVoices.map((v) => (
+                                    <button
+                                        key={v.id}
+                                        onClick={() => { setAdhanVoice(v.id); storage.setAdhanVoice(v.id); }}
+                                        className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${adhanVoice === v.id ? 'bg-primary-500 text-white border-primary-600' : 'bg-white dark:bg-dark-bg text-gray-600 dark:text-gray-400 border-gray-100 dark:border-dark-border'}`}
+                                    >
+                                        {v.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-panel rounded-xl border border-gray-100 dark:border-dark-border">
+                            <span className="text-body-sm font-bold text-gray-700 dark:text-gray-200">أذان الفجر فقط</span>
+                            <Toggle checked={fajrOnly} onChange={(val: boolean) => { setFajrOnly(val); storage.setAdhanFajrOnly(val); }} label="الفجر فقط" />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+
         {/* --- App Theme Section --- */}
         <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
             <div className="flex items-center gap-4 mb-6">

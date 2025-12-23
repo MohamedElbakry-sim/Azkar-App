@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { Compass, Clock, MapPin, Loader2, Calendar, Navigation, RefreshCw, AlertTriangle } from 'lucide-react';
 import * as AdhanLib from 'adhan';
@@ -45,6 +44,7 @@ const PrayerTimes: React.FC = () => {
     navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
+          storage.saveLastLocation(latitude, longitude); // Save for notification manager
           calculateTimes(latitude, longitude);
           setLocationName(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
           setLoading(false);
