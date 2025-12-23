@@ -1,14 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import DailyWisdom from '../components/DailyWisdom';
 import RandomNameCard from '../components/RandomNameCard';
 import DailySahabi from '../components/DailySahabi';
 import SmartAzkarSuggestion from '../components/SmartAzkarSuggestion';
 import AlKahfAlert from '../components/AlKahfAlert';
+import PrayerSummaryCard from '../components/PrayerSummaryCard';
 import { Sun, Moon } from 'lucide-react';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Capacitor } from '@capacitor/core';
-import * as storage from '../services/storage';
 
 interface HomeProps {
     darkMode?: boolean;
@@ -44,7 +44,7 @@ const Home: React.FC<HomeProps> = ({ darkMode, onToggleTheme }) => {
             {/* Quick Theme Toggle */}
             <button 
                 onClick={handleThemeToggle}
-                className="w-12 h-12 md:w-14 md:h-14 bg-white dark:bg-dark-panel rounded-2xl flex items-center justify-center text-primary-50 text-emerald-500 dark:text-emerald-400 shadow-soft border border-gray-100 dark:border-dark-border transition-all active:scale-90 hover:shadow-md"
+                className="w-12 h-12 md:w-14 md:h-14 bg-white dark:bg-dark-panel rounded-2xl flex items-center justify-center text-emerald-500 dark:text-emerald-400 shadow-soft border border-gray-100 dark:border-dark-border transition-all active:scale-90 hover:shadow-md"
                 title={darkMode ? "تبديل للوضع النهاري" : "تبديل للوضع الليلي"}
             >
                 <div className="relative w-6 h-6 flex items-center justify-center">
@@ -59,6 +59,9 @@ const Home: React.FC<HomeProps> = ({ darkMode, onToggleTheme }) => {
           {/* Main Column (2/3) */}
           <div className="lg:col-span-2 space-y-6">
               
+              {/* Prayer Times Summary (New) */}
+              <PrayerSummaryCard />
+
               {/* Smart Suggestion */}
               <SmartAzkarSuggestion />
 

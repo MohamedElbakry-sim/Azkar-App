@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { HashRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -10,7 +11,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { Loader2 } from 'lucide-react';
 import * as storage from './services/storage';
 import { RadioProvider } from './contexts/RadioContext';
-import { AuthProvider } from './contexts/AuthContext';
 
 // Lazy load pages
 const CategoryView = React.lazy(() => import('./pages/CategoryView'));
@@ -25,7 +25,6 @@ const Contact = React.lazy(() => import('./pages/Contact'));
 const Duas = React.lazy(() => import('./pages/Duas'));
 const Radio = React.lazy(() => import('./pages/Radio'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
-const Auth = React.lazy(() => import('./pages/Auth'));
 
 // New Pages
 const MoreMenu = React.lazy(() => import('./pages/MoreMenu'));
@@ -149,51 +148,46 @@ const App: React.FC = () => {
   );
 
   return (
-    <AuthProvider>
-      <RadioProvider>
-        <Router>
-          <ErrorBoundary>
-            <AppUrlListener />
-            <NotificationManager />
-            
-            <Layout darkMode={darkMode} toggleTheme={toggleTheme}>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  {/* Tab Routes */}
-                  <Route path="/" element={<Home darkMode={darkMode} onToggleTheme={toggleTheme} />} />
-                  <Route path="/athkar" element={<AthkarIndex />} />
-                  <Route path="/quran" element={<QuranIndex />} />
-                  <Route path="/prayers" element={<PrayerTimes />} />
-                  <Route path="/more" element={<MoreMenu />} />
+    <RadioProvider>
+      <Router>
+        <ErrorBoundary>
+          <AppUrlListener />
+          <NotificationManager />
+          
+          <Layout darkMode={darkMode} toggleTheme={toggleTheme}>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                {/* Tab Routes */}
+                <Route path="/" element={<Home darkMode={darkMode} onToggleTheme={toggleTheme} />} />
+                <Route path="/athkar" element={<AthkarIndex />} />
+                <Route path="/quran" element={<QuranIndex />} />
+                <Route path="/prayers" element={<PrayerTimes />} />
+                <Route path="/more" element={<MoreMenu />} />
 
-                  {/* Athkar Sub-routes */}
-                  <Route path="/category/:id" element={<CategoryView />} />
-                  <Route path="/favorites" element={<Favorites />} />
+                {/* Athkar Sub-routes */}
+                <Route path="/category/:id" element={<CategoryView />} />
+                <Route path="/favorites" element={<Favorites />} />
 
-                  {/* Quran Sub-routes */}
-                  <Route path="/quran/:surahId" element={<QuranReader />} />
+                {/* Quran Sub-routes */}
+                <Route path="/quran/:surahId" element={<QuranReader />} />
 
-                  {/* Feature Routes */}
-                  <Route path="/radio" element={<Radio />} />
-                  <Route path="/calendar" element={<CalendarPage />} />
-                  <Route path="/tasbeeh" element={<Tasbeeh />} />
-                  <Route path="/names" element={<NamesOfAllah />} />
-                  <Route path="/duas" element={<Duas />} />
-                  <Route path="/stats" element={<Stats />} />
-                  <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} currentAccent={accentTheme} />} />
-                  <Route path="/contact" element={<Contact />} />
-                  
-                  {/* Auth Route */}
-                  <Route path="/auth" element={<Auth />} />
-                  
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </Layout>
-          </ErrorBoundary>
-        </Router>
-      </RadioProvider>
-    </AuthProvider>
+                {/* Feature Routes */}
+                <Route path="/radio" element={<Radio />} />
+                <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/tasbeeh" element={<Tasbeeh />} />
+                <Route path="/names" element={<NamesOfAllah />} />
+                <Route path="/duas" element={<Duas />} />
+                <Route path="/stats" element={<Stats />} />
+                <Route path="/settings" element={<Settings darkMode={darkMode} toggleTheme={toggleTheme} currentAccent={accentTheme} />} />
+                <Route path="/contact" element={<Contact />} />
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </Layout>
+        </ErrorBoundary>
+      </Router>
+    </RadioProvider>
   );
 };
 

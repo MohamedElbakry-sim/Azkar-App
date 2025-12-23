@@ -1,10 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, AlertTriangle, Menu, ArrowUp, ArrowDown, X, User, LogOut, RefreshCw, CheckCircle, Palette, Check } from 'lucide-react';
+import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, Palette, Check, Menu, ArrowUp, ArrowDown, X } from 'lucide-react';
 import * as storage from '../services/storage';
 import { CATEGORIES } from '../data';
 import { ALL_NAV_ITEMS } from '../components/Layout';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 interface SettingsProps {
   darkMode: boolean;
@@ -22,12 +21,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [navOrder, setNavOrder] = useState<string[]>([]);
   const [notifSettings, setNotifSettings] = useState<storage.NotificationSettings>({ soundEnabled: true, vibrationType: 'default' });
-  const [isSyncing, setIsSyncing] = useState(false);
   const [accent, setAccent] = useState<storage.AccentTheme>(currentAccent);
-
-  // Auth Context
-  const { currentUser, logout, syncData, isDemoMode } = useAuth();
-  const navigate = useNavigate();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -73,18 +67,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
     }
   };
 
-  const handleManualSync = async () => {
-      setIsSyncing(true);
-      try {
-          await syncData();
-          alert('تمت المزامنة بنجاح!');
-      } catch (e) {
-          alert('فشل المزامنة. تحقق من الاتصال.');
-      } finally {
-          setIsSyncing(false);
-      }
-  };
-
   const handleExport = () => {
     const data = storage.exportUserData();
     const blob = new Blob([data], { type: 'application/json' });
@@ -128,7 +110,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
     e.target.value = '';
   };
 
-  // Nav Settings Handlers
   const handleMoveNav = (index: number, direction: 'up' | 'down') => {
       const newOrder = [...navOrder];
       const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -162,7 +143,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
       window.dispatchEvent(new Event('nav-settings-updated'));
   };
 
-  // Reminder Handlers
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) {
         alert("هذا المتصفح لا يدعم التنبيهات.");
@@ -213,11 +193,11 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
 
   const getPreviewFontSizeClass = () => {
     switch (fontSize) {
-      case 'small': return 'text-h3 md:text-h2';
-      case 'medium': return 'text-h2 md:text-h1';
-      case 'large': return 'text-[30px] md:text-[36px]';
-      case 'xlarge': return 'text-[34px] md:text-[42px]';
-      default: return 'text-h2 md:text-h1';
+      case 'small': return 'text-xl';
+      case 'medium': return 'text-2xl';
+      case 'large': return 'text-3xl';
+      case 'xlarge': return 'text-4xl';
+      default: return 'text-2xl';
     }
   };
 
@@ -268,61 +248,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
 
       <div className="space-y-4">
         
-        {/* Profile & Sync Section */}
-        <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm overflow-hidden">
-            <div className="p-6 bg-gradient-to-r from-primary-600 to-primary-700 text-white">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-2xl font-bold border-2 border-white/30">
-                            {currentUser ? (currentUser.displayName ? currentUser.displayName[0] : currentUser.email ? currentUser.email[0].toUpperCase() : <User />) : <User />}
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-xl font-arabicHead">
-                                {currentUser ? (currentUser.displayName || 'مستخدم') : 'حساب زائر'}
-                            </h3>
-                            <p className="text-primary-100 text-sm font-english">
-                                {currentUser ? currentUser.email : 'لم يتم تسجيل الدخول'}
-                            </p>
-                        </div>
-                    </div>
-                    {currentUser && (
-                        <button onClick={logout} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors" title="تسجيل الخروج">
-                            <LogOut size={20} />
-                        </button>
-                    )}
-                </div>
-            </div>
-            
-            <div className="p-4">
-                {currentUser ? (
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 text-sm font-bold">
-                            <CheckCircle size={16} />
-                            <span>المزامنة مفعلة</span>
-                        </div>
-                        <button 
-                            onClick={handleManualSync}
-                            disabled={isSyncing}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 rounded-xl text-sm font-bold hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors"
-                        >
-                            <RefreshCw size={16} className={isSyncing ? "animate-spin" : ""} />
-                            {isSyncing ? 'جاري المزامنة...' : 'مزامنة الآن'}
-                        </button>
-                    </div>
-                ) : (
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">سجل دخولك لحفظ بياناتك ومزامنتها عبر الأجهزة.</p>
-                        <button 
-                            onClick={() => navigate('/auth')}
-                            className="w-full md:w-auto px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold transition-colors shadow-lg shadow-primary-500/20"
-                        >
-                            تسجيل الدخول / إنشاء حساب
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
-
         {/* --- App Theme Section --- */}
         <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
             <div className="flex items-center gap-4 mb-6">
@@ -462,54 +387,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
                 )}
              </div>
 
-             {/* Reminder Customization */}
-             <div className="mb-6 p-4 bg-gray-50 dark:bg-dark-panel rounded-xl border border-gray-100 dark:border-dark-border">
-                <h4 className="text-caption font-bold text-gray-500 dark:text-dark-muted uppercase tracking-wider mb-3">تخصيص التنبيهات</h4>
-                
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        <Volume2 size={18} className="text-gray-400" />
-                        <span className="text-body-sm font-medium text-gray-700 dark:text-gray-200">صوت التنبيه (النظام)</span>
-                    </div>
-                    <Toggle 
-                        checked={notifSettings.soundEnabled} 
-                        onChange={() => updateNotifSettings({ soundEnabled: !notifSettings.soundEnabled })} 
-                        label="تفعيل الصوت"
-                    />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3 mb-1">
-                        <Vibrate size={18} className="text-gray-400" />
-                        <span className="text-body-sm font-medium text-gray-700 dark:text-gray-200">نمط الاهتزاز</span>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                        {(['default', 'short', 'long', 'pulse', 'none'] as storage.VibrationType[]).map((type) => {
-                            const labels: Record<string, string> = { default: 'افتراضي', short: 'قصير', long: 'طويل', pulse: 'نبضات', none: 'بدون' };
-                            return (
-                                <button
-                                    key={type}
-                                    onClick={() => {
-                                        updateNotifSettings({ vibrationType: type });
-                                        if (navigator.vibrate && type !== 'none') {
-                                            navigator.vibrate(storage.getVibrationPattern(type));
-                                        }
-                                    }}
-                                    className={`
-                                        px-2 py-2 text-caption font-bold rounded-lg transition-colors border
-                                        ${notifSettings.vibrationType === type 
-                                            ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-sm border-transparent' 
-                                            : 'bg-white dark:bg-dark-elevated text-gray-600 dark:text-dark-secondary border-gray-200 dark:border-dark-border hover:bg-gray-100 dark:hover:bg-dark-surface'}
-                                    `}
-                                >
-                                    {labels[type]}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-             </div>
-
              {isAddingReminder && (
                  <div className="bg-gray-50 dark:bg-dark-panel rounded-xl p-4 mb-4 animate-slideUp border border-gray-100 dark:border-dark-border">
                      <div className="flex flex-col gap-3">
@@ -533,40 +410,10 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
                                     className="px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white text-body-sm"
                                  />
                              </div>
-                             <div className="flex flex-col gap-1 md:col-span-2">
-                                 <label className="text-caption font-bold text-gray-500">ربط بقسم (اختياري)</label>
-                                 <select 
-                                    value={selectedCategory}
-                                    onChange={(e) => {
-                                        setSelectedCategory(e.target.value);
-                                        if(!newReminderLabel && e.target.value) {
-                                            const cat = CATEGORIES.find(c => c.id === e.target.value);
-                                            if(cat) setNewReminderLabel(cat.title);
-                                        }
-                                    }}
-                                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white text-body-sm font-arabic"
-                                 >
-                                     <option value="">عام (بدون رابط)</option>
-                                     {CATEGORIES.map(cat => (
-                                         <option key={cat.id} value={cat.id}>{cat.title}</option>
-                                     ))}
-                                 </select>
-                             </div>
                          </div>
                          <div className="flex gap-2 mt-2">
-                             <button 
-                                onClick={() => setIsAddingReminder(false)}
-                                className="flex-1 py-2 text-btn font-bold text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-elevated rounded-lg transition-colors"
-                             >
-                                 إلغاء
-                             </button>
-                             <button 
-                                onClick={handleAddReminder}
-                                disabled={!newReminderTime || !newReminderLabel}
-                                className="flex-1 py-2 text-btn font-bold bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50"
-                             >
-                                 حفظ
-                             </button>
+                             <button onClick={() => setIsAddingReminder(false)} className="flex-1 py-2 text-btn font-bold text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-elevated rounded-lg transition-colors">إلغاء</button>
+                             <button onClick={handleAddReminder} disabled={!newReminderTime || !newReminderLabel} className="flex-1 py-2 text-btn font-bold bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50">حفظ</button>
                          </div>
                      </div>
                  </div>
@@ -574,45 +421,24 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
 
              <div className="space-y-3">
                  {reminders.length === 0 && !isAddingReminder && (
-                     <div className="text-center py-4 text-gray-400 text-body-sm">
-                         لا توجد تنبيهات محفوظة
-                     </div>
+                     <div className="text-center py-4 text-gray-400 text-body-sm">لا توجد تنبيهات محفوظة</div>
                  )}
                  {reminders.map(reminder => (
                      <div key={reminder.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-panel rounded-xl border border-gray-100 dark:border-dark-border">
                          <div className="flex items-center gap-3">
-                            <span className="font-mono font-bold text-h4 text-primary-600 dark:text-primary-400 bg-white dark:bg-dark-bg px-2 py-1 rounded-lg border border-gray-100 dark:border-dark-border">
-                                {reminder.time}
-                            </span>
-                            <div className="flex flex-col">
-                                <span className="font-medium text-body-md text-gray-700 dark:text-dark-text font-arabic">{reminder.label}</span>
-                                {reminder.targetPath && (
-                                    <span className="text-[10px] text-primary-500 flex items-center gap-1">
-                                        <Book size={10} />
-                                        مرتبط بالقسم
-                                    </span>
-                                )}
-                            </div>
+                            <span className="font-mono font-bold text-h4 text-primary-600 dark:text-primary-400 bg-white dark:bg-dark-bg px-2 py-1 rounded-lg border border-gray-100 dark:border-dark-border">{reminder.time}</span>
+                            <span className="font-medium text-body-md text-gray-700 dark:text-dark-text font-arabic">{reminder.label}</span>
                          </div>
                          <div className="flex items-center gap-3">
-                             <Toggle 
-                                checked={reminder.enabled} 
-                                onChange={() => toggleReminder(reminder.id)}
-                                label={`تفعيل ${reminder.label}`} 
-                             />
-                             <button 
-                                onClick={() => handleDeleteReminder(reminder.id)}
-                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                             >
-                                 <Trash2 size={18} />
-                             </button>
+                             <Toggle checked={reminder.enabled} onChange={() => toggleReminder(reminder.id)} label={`تفعيل ${reminder.label}`} />
+                             <button onClick={() => handleDeleteReminder(reminder.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"><Trash2 size={18} /></button>
                          </div>
                      </div>
                  ))}
              </div>
         </div>
 
-        {/* Data Management Section (Manual Backup/Restore) */}
+        {/* Data Management Section */}
         <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
             <div className="flex items-center gap-4 mb-4">
                 <div className="p-3 rounded-full bg-gray-100 dark:bg-dark-panel text-gray-600 dark:text-dark-secondary">
@@ -625,27 +451,13 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
             </div>
 
             <div className="flex gap-3">
-                <button 
-                    onClick={handleExport}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-200 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-dark-surface transition-colors"
-                >
-                    <Download size={18} />
-                    تصدير نسخة
+                <button onClick={handleExport} className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-200 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-dark-surface transition-colors">
+                    <Download size={18} /> تصدير نسخة
                 </button>
-                <button 
-                    onClick={handleImportClick}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-200 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-dark-surface transition-colors"
-                >
-                    <Upload size={18} />
-                    استعادة نسخة
+                <button onClick={handleImportClick} className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-200 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-dark-surface transition-colors">
+                    <Upload size={18} /> استعادة نسخة
                 </button>
-                <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    accept=".json"
-                    onChange={handleFileChange}
-                />
+                <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleFileChange} />
             </div>
         </div>
 
@@ -656,21 +468,9 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
           description={`ضبط التاريخ يدوياً (${hijriOffset > 0 ? '+' : ''}${hijriOffset} يوم)`}
           action={
             <div className="flex items-center gap-3 bg-gray-100 dark:bg-dark-panel rounded-lg p-1">
-              <button 
-                onClick={() => changeHijriOffset(-1)}
-                className="p-1 hover:bg-white dark:hover:bg-dark-elevated rounded-md shadow-sm transition-all text-gray-600 dark:text-gray-300"
-                aria-label="إنقاص يوم"
-              >
-                <Minus size={16} />
-              </button>
+              <button onClick={() => changeHijriOffset(-1)} className="p-1 hover:bg-white dark:hover:bg-dark-elevated rounded-md shadow-sm transition-all text-gray-600 dark:text-gray-300"><Minus size={16} /></button>
               <span className="text-body-sm font-bold w-4 text-center text-gray-800 dark:text-white">{hijriOffset}</span>
-              <button 
-                onClick={() => changeHijriOffset(1)}
-                className="p-1 hover:bg-white dark:hover:bg-dark-elevated rounded-md shadow-sm transition-all text-gray-600 dark:text-gray-300"
-                aria-label="زيادة يوم"
-              >
-                <Plus size={16} />
-              </button>
+              <button onClick={() => changeHijriOffset(1)} className="p-1 hover:bg-white dark:hover:bg-dark-elevated rounded-md shadow-sm transition-all text-gray-600 dark:text-gray-300"><Plus size={16} /></button>
             </div>
           }
         />
@@ -678,64 +478,26 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
         {/* Font Size Settings */}
         <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
           <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 rounded-full bg-gray-100 dark:bg-dark-panel text-gray-600 dark:text-dark-secondary">
-              <Type size={24} />
-            </div>
+            <div className="p-3 rounded-full bg-gray-100 dark:bg-dark-panel text-gray-600 dark:text-dark-secondary"><Type size={24} /></div>
             <div>
               <h3 className="font-bold text-body-lg text-gray-800 dark:text-dark-text font-arabic">حجم الخط</h3>
               <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">تغيير حجم خط الأذكار</p>
             </div>
           </div>
-          
           <div className="flex bg-gray-100 dark:bg-dark-panel rounded-xl p-1 gap-1 mb-4">
-            {(['small', 'medium', 'large', 'xlarge'] as storage.FontSize[]).map((size) => {
-               const labels: Record<string, string> = { small: 'صغير', medium: 'متوسط', large: 'كبير', xlarge: 'ضخم' };
-               return (
-                 <button
-                   key={size}
-                   onClick={() => changeFontSize(size)}
-                   className={`
-                     flex-1 py-2 rounded-lg text-btn font-bold transition-all
-                     ${fontSize === size 
-                       ? 'bg-white dark:bg-dark-elevated text-primary-600 dark:text-primary-400 shadow-sm ring-1 ring-gray-200 dark:ring-dark-border' 
-                       : 'text-gray-500 dark:text-dark-muted hover:text-gray-700 dark:hover:text-dark-text'}
-                   `}
-                 >
-                   {labels[size]}
-                 </button>
-               );
-            })}
+            {(['small', 'medium', 'large', 'xlarge'] as storage.FontSize[]).map((size) => (
+               <button key={size} onClick={() => changeFontSize(size)} className={`flex-1 py-2 rounded-lg text-btn font-bold transition-all ${fontSize === size ? 'bg-white dark:bg-dark-elevated text-primary-600 shadow-sm ring-1 ring-gray-200 dark:ring-dark-border' : 'text-gray-500 hover:text-gray-700'}`}>
+                 {({ small: 'صغير', medium: 'متوسط', large: 'كبير', xlarge: 'ضخم' } as any)[size]}
+               </button>
+            ))}
           </div>
-
-          <div className="p-6 bg-gray-50 dark:bg-dark-panel rounded-xl border border-dashed border-gray-200 dark:border-dark-border text-center transition-all">
-             <p className={`font-arabic text-gray-800 dark:text-dark-text leading-loose transition-all duration-300 ${getPreviewFontSizeClass()}`}>
-               بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
-             </p>
-             <p className="text-caption text-gray-400 mt-2">معاينة النص</p>
+          <div className="p-6 bg-gray-50 dark:bg-dark-panel rounded-xl border border-dashed border-gray-200 dark:border-dark-border text-center">
+             <p className={`font-arabic text-gray-800 dark:text-dark-text leading-loose transition-all duration-300 ${getPreviewFontSizeClass()}`}>بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
           </div>
         </div>
 
         {/* Clear Data Section */}
-        <SettingsItem 
-            icon={Trash2}
-            label="حذف البيانات"
-            description="مسح كافة السجلات والمفضلة"
-            danger={true}
-            action={
-                <button 
-                onClick={clearData}
-                className="px-4 py-2 text-btn font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-400"
-                >
-                حذف
-                </button>
-            }
-        />
-      </div>
-
-      <div className="mt-12 text-center flex flex-col items-center gap-2">
-         <p className="text-caption text-gray-400 dark:text-dark-muted font-english font-bold">
-           Rayyan v1.6.0
-         </p>
+        <SettingsItem icon={Trash2} label="حذف البيانات" description="مسح كافة السجلات والمفضلة" danger={true} action={<button onClick={clearData} className="px-4 py-2 text-btn font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-900/50">حذف</button>} />
       </div>
     </div>
   );
