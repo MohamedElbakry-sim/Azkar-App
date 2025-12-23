@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, Check, Settings, Vibration, Bell, ChevronDown } from 'lucide-react';
+import { RotateCcw, Check, Settings, Vibrate, Bell, ChevronDown } from 'lucide-react';
 import * as storage from '../services/storage';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Capacitor } from '@capacitor/core';
@@ -103,7 +103,7 @@ const Tasbeeh: React.FC = () => {
           </button>
           
           <div className="bg-white/50 dark:bg-dark-surface/50 backdrop-blur-sm px-4 py-2 rounded-2xl border border-gray-100 dark:border-dark-border text-gray-400 text-xs font-bold flex items-center gap-2">
-              <Vibration size={14} className={hapticEnabled ? 'text-emerald-500' : ''} />
+              <Vibrate size={14} className={hapticEnabled ? 'text-emerald-500' : ''} />
               <span>{milestone > 0 ? `تنبيه كل ${milestone}` : 'تنبيه معطل'}</span>
           </div>
       </div>

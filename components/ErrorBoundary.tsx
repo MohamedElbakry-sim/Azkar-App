@@ -1,8 +1,8 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React from 'react';
 import ErrorState from './ErrorState';
 
 interface Props {
-  children?: ReactNode;
+  children?: React.ReactNode;
 }
 
 interface State {
@@ -13,8 +13,8 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in the component tree.
  */
-// Fix: Import Component directly and extend it to ensure TypeScript correctly resolves inherited members like setState and props.
-class ErrorBoundary extends Component<Props, State> {
+// Fix: Use React.Component explicitly to ensure TypeScript correctly resolves inherited members like setState and props.
+class ErrorBoundary extends React.Component<Props, State> {
   public state: State = {
     hasError: false,
     error: null
@@ -26,21 +26,21 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   // Lifecycle method for logging errors
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
   }
 
   // Handle retry logic to reset state and attempt reload
-  // Fix: Component inheritance makes setState available to the class instance.
+  // Fix: setState is inherited from React.Component and is available on the class instance.
   private handleRetry = () => {
     this.setState({ hasError: false, error: null });
     window.location.reload();
   };
 
   // Render method to display fallback UI or children
+  // Fix: props is inherited from React.Component and is available on the class instance.
   public render() {
-    // Fix: Proper access to state and props from the Component base class.
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg p-4">
