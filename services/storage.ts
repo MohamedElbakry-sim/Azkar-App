@@ -1,5 +1,5 @@
 
-import { ProgressState, Dhikr, CategoryId } from '../types';
+import { ProgressState, Dhikr, CategoryId, CustomCategory } from '../types';
 
 const FAVORITES_KEY = 'nour_favorites_v1';
 const PROGRESS_KEY = 'nour_progress_v1';
@@ -7,6 +7,7 @@ const HISTORY_KEY = 'nour_history_v1';
 const TASBEEH_KEY = 'nour_tasbeeh_count_v1';
 const CUSTOM_TARGETS_KEY = 'nour_custom_targets_v1';
 const CUSTOM_DHIKR_KEY = 'nour_custom_dhikr_v1';
+const CUSTOM_CATEGORIES_KEY = 'nour_custom_categories_v1';
 const OVERRIDE_DHIKR_KEY = 'nour_override_dhikr_v1';
 const DELETED_DEFAULTS_KEY = 'nour_deleted_defaults_v1';
 const FONT_SIZE_KEY = 'nour_font_size_v1';
@@ -62,6 +63,40 @@ export interface NotificationSettings {
 }
 
 export type HeatmapTheme = 'emerald' | 'blue' | 'flame';
+
+// --- Custom Categories ---
+
+export const getCustomCategories = (): CustomCategory[] => {
+  try {
+    const stored = localStorage.getItem(CUSTOM_CATEGORIES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const saveCustomCategory = (category: CustomCategory) => {
+  const current = getCustomCategories();
+  const index = current.findIndex(c => c.id === category.id);
+  let updated;
+  if (index >= 0) {
+    updated = current.map(c => c.id === category.id ? category : c);
+  } else {
+    updated = [...current, category];
+  }
+  localStorage.setItem(CUSTOM_CATEGORIES_KEY, JSON.stringify(updated));
+};
+
+export const deleteCustomCategory = (id: string) => {
+  // 1. Delete the category itself
+  const current = getCustomCategories();
+  localStorage.setItem(CUSTOM_CATEGORIES_KEY, JSON.stringify(current.filter(c => c.id !== id)));
+  
+  // 2. Delete all dhikrs associated with this category
+  const dhikrs = getCustomDhikrs();
+  const filteredDhikrs = dhikrs.filter(d => d.customCategoryId !== id);
+  localStorage.setItem(CUSTOM_DHIKR_KEY, JSON.stringify(filteredDhikrs));
+};
 
 // --- App Appearance ---
 
@@ -335,6 +370,7 @@ export const saveFontSize = (size: FontSize) => {
 
 export const getHijriOffset = (): number => {
   try {
+    // FIX: Changed name from HI_OFFSET_KEY to HIJRI_OFFSET_KEY to resolve undefined error
     const stored = localStorage.getItem(HIJRI_OFFSET_KEY);
     // Changed default fallback from 0 to -1 to fix the date discrepancy reported by users
     return stored ? parseInt(stored, 10) : -1;

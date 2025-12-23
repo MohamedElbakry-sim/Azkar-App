@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { HashRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -31,6 +30,8 @@ const MoreMenu = React.lazy(() => import('./pages/MoreMenu'));
 const AthkarIndex = React.lazy(() => import('./pages/AthkarIndex'));
 const QuranIndex = React.lazy(() => import('./pages/QuranIndex'));
 const QuranReader = React.lazy(() => import('./pages/QuranReader'));
+const CustomAzkar = React.lazy(() => import('./pages/CustomAzkar'));
+const CustomCategoryView = React.lazy(() => import('./pages/CustomCategoryView'));
 
 // Component to handle back button logic which needs access to Router hooks
 const AppUrlListener: React.FC = () => {
@@ -167,6 +168,8 @@ const App: React.FC = () => {
                 {/* Athkar Sub-routes */}
                 <Route path="/category/:id" element={<CategoryView />} />
                 <Route path="/favorites" element={<Favorites />} />
+                <Route path="/custom-athkar" element={<CustomAzkar />} />
+                <Route path="/custom-category/:id" element={<CustomCategoryView />} />
 
                 {/* Quran Sub-routes */}
                 <Route path="/quran/:surahId" element={<QuranReader />} />

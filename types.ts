@@ -101,12 +101,18 @@ export interface DuaCategory {
   items: SituationalDua[];
 }
 
-export type CategoryId = 'sabah' | 'masaa' | 'sleep' | 'waking' | 'prayer';
+export type CategoryId = 'sabah' | 'masaa' | 'sleep' | 'waking' | 'prayer' | 'custom';
 
-// Add missing Dhikr interface to resolve import errors
+export interface CustomCategory {
+  id: string;
+  title: string;
+  createdAt: number;
+}
+
 export interface Dhikr {
   id: number;
   category: CategoryId;
+  customCategoryId?: string; // Links to a CustomCategory
   text: string;
   count: number;
   source?: string;

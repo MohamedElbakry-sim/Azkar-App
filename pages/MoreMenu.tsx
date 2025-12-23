@@ -1,12 +1,11 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Settings, Heart, BookOpenText, 
   Radio, Calendar, Mail, BarChart2, 
-  ChevronLeft, Smartphone, BookOpen
+  ChevronLeft, Smartphone, BookOpen, Sparkles, Clock
 } from 'lucide-react';
-import { TasbeehIcon, AllahIcon } from '../components/Layout';
+import { TasbeehIcon, AllahIcon, PrayerIcon } from '../components/Layout';
 
 const MoreMenu: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +14,7 @@ const MoreMenu: React.FC = () => {
     {
       title: "أدوات",
       items: [
+        { label: "مواقيت الصلاة", icon: <PrayerIcon size={22} />, path: "/prayers", color: "text-amber-600" },
         { label: "السبحة الإلكترونية", icon: <TasbeehIcon size={22} />, path: "/tasbeeh", color: "text-emerald-500" },
         { label: "التقويم الهجري", icon: <Calendar size={22} />, path: "/calendar", color: "text-blue-500" },
         { label: "الإذاعة", icon: <Radio size={22} />, path: "/radio", color: "text-red-500" },
@@ -30,6 +30,7 @@ const MoreMenu: React.FC = () => {
     {
       title: "شخصي",
       items: [
+        { label: "أذكار خاصة", icon: <Sparkles size={22} />, path: "/custom-athkar", color: "text-primary-500" },
         { label: "الإحصائيات", icon: <BarChart2 size={22} />, path: "/stats", color: "text-purple-500" },
         { label: "المفضلة", icon: <Heart size={22} />, path: "/favorites", color: "text-rose-500" },
       ]

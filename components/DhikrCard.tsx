@@ -110,7 +110,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
   };
 
   return (
-    <div className={`relative mb-6 group ${isCompleted ? 'opacity-50 pointer-events-none grayscale transition-all duration-700' : ''}`}>
+    <div className={`relative mb-6 group ${isCompleted ? 'opacity-60 grayscale transition-all duration-700' : ''}`}>
       
       {/* Main Interaction Card */}
       <div 
@@ -126,7 +126,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             ${reorderMode ? 'border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-dark-bg' : ''}
         `}
       >
-        {/* Progress Background Fill - Improved colors and layering */}
+        {/* Progress Background Fill */}
         {!readonly && !reorderMode && (
             <div 
                 className="absolute bottom-0 right-0 top-0 bg-primary-50/80 dark:bg-emerald-500/5 transition-all duration-500 ease-out z-0 pointer-events-none"
@@ -209,7 +209,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                 </p>
             </div>
 
-            {/* Counter Badge (Moved to bottom for space) */}
+            {/* Counter Badge */}
             {currentTarget > 1 && !reorderMode && (
                 <div className="flex justify-center mt-6">
                     <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 bg-gray-50 dark:bg-dark-elevated/50 px-4 py-1.5 rounded-full shadow-sm border border-gray-100 dark:border-dark-border">

@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Menu, Sun, Moon, ArrowRight, Maximize2, Square, Play, Pause, Radio, Calendar, BookOpen } from 'lucide-react';
+import { Home, Menu, Sun, Moon, ArrowRight, Maximize2, Square, Play, Pause, Radio, Calendar, BookOpen, Search } from 'lucide-react';
 import Logo from './Logo';
 import { useRadio } from '../contexts/RadioContext';
 import * as storage from '../services/storage';
+import SpiritualSpotlight from './SpiritualSpotlight';
 
 // Custom Icons Exported for Reuse in Settings
 export const PrayerIcon = ({ size = 24 }: { size?: number }) => (
@@ -59,11 +59,22 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   const navigate = useNavigate();
   const { currentStation, isPlaying, togglePlay, stop, isBuffering } = useRadio();
   
-  // State for dynamic navigation items
   const [activeNavIds, setActiveNavIds] = useState<string[]>(storage.getNavOrder());
   const [headerDate, setHeaderDate] = useState<string>('');
+  const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
 
-  // Listen for navigation updates from Settings page
+  // Global Keyboard Shortcut (Cmd+K or Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            setIsSpotlightOpen(prev => !prev);
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   useEffect(() => {
       const handleNavUpdate = () => {
           setActiveNavIds(storage.getNavOrder());
@@ -101,16 +112,10 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   }, []);
 
   const isAuthPage = location.pathname === '/auth';
-  
-  // Immersive Mode Logic: Hide nav when inside a Surah (Reader)
   const isReaderMode = location.pathname.startsWith('/quran/') && location.pathname !== '/quran';
-
-  // Determine if we should show navigation
   const showNav = !isAuthPage && !isReaderMode;
-  
   const showMiniPlayer = currentStation && showNav && location.pathname !== '/radio';
 
-  // Helper to determine if we are in a detail view (to show back button on mobile)
   const isDetailView = !isAuthPage && !isReaderMode && (
                        location.pathname.startsWith('/category/') ||
                        (location.pathname.startsWith('/quran/') && location.pathname !== '/quran') || 
@@ -119,7 +124,8 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                        location.pathname === '/stats' ||
                        location.pathname === '/names' || 
                        location.pathname === '/duas' ||
-                       location.pathname === '/contact'
+                       location.pathname === '/contact' ||
+                       location.pathname === '/prayers'
                        );
 
   const navTabs = activeNavIds.map(id => ALL_NAV_ITEMS[id]).filter(Boolean);
@@ -127,15 +133,22 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
   return (
     <div className="min-h-screen flex bg-[#F9FAFB] dark:bg-[#121212] transition-colors duration-200 font-arabic text-body text-gray-900 dark:text-dark-text">
       
+      <SpiritualSpotlight isOpen={isSpotlightOpen} onClose={() => setIsSpotlightOpen(false)} />
+
       {/* --- DESKTOP SIDEBAR --- */}
       {showNav && (
         <aside className="hidden md:flex flex-col w-72 h-screen sticky top-0 bg-white dark:bg-[#1E1E1E] border-l border-gray-100 dark:border-[#2A2A2A] z-50 shadow-sm">
-            {/* Logo Area */}
-            <div className="p-8 flex items-center gap-3">
-            <Logo size={36} className="text-primary-600 dark:text-primary-500" />
+            <div className="p-8 flex items-center justify-between">
+                <Logo size={36} className="text-primary-600 dark:text-primary-500" />
+                <button 
+                    onClick={() => setIsSpotlightOpen(true)}
+                    className="p-2 rounded-xl bg-gray-50 dark:bg-dark-bg text-gray-400 hover:text-primary-500 transition-colors border border-gray-100 dark:border-dark-border"
+                    title="بحث (Cmd+K)"
+                >
+                    <Search size={18} />
+                </button>
             </div>
             
-            {/* Nav Links */}
             <nav className="flex-1 px-4 space-y-2 py-4">
             {navTabs.map((item) => (
                 <NavLink
@@ -152,13 +165,11 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                     {item.icon}
                 </div>
                 <span className="text-base">{item.label}</span>
-                {/* Active Indicator */}
                 <NavLink to={item.path} className={({ isActive }) => `absolute left-0 w-1 h-8 bg-primary-500 rounded-r-full transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-0'}`} />
                 </NavLink>
             ))}
             </nav>
 
-            {/* Theme Toggle */}
             <div className="p-6 border-t border-gray-100 dark:border-[#2A2A2A]">
             <button 
                 onClick={toggleTheme}
@@ -174,21 +185,35 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
       {/* --- MAIN CONTENT --- */}
       <div className={`flex-1 flex flex-col min-h-screen relative max-w-full ${isAuthPage || isReaderMode ? 'h-screen overflow-hidden pb-0' : 'pb-24 md:pb-0'}`}>
         
-        {/* Mobile Header (Only on Detail Views) */}
-        {isDetailView && (
+        {/* Mobile Header */}
+        {showNav && (
             <header className="md:hidden sticky top-0 z-40 bg-white/90 dark:bg-[#1E1E1E]/90 backdrop-blur-md border-b border-gray-100 dark:border-[#2A2A2A] px-4 py-3 flex items-center justify-between">
-                <button 
-                    onClick={() => navigate(-1)} 
-                    className="p-2 -mr-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2A2A2A] rounded-full"
-                >
-                    <ArrowRight size={24} className="rtl:rotate-0" />
-                </button>
-                <div className="font-bold text-lg text-gray-800 dark:text-white">ريان</div>
-                <div className="w-8"></div> {/* Spacer */}
+                {isDetailView ? (
+                    <button 
+                        onClick={() => navigate(-1)} 
+                        className="p-2 -mr-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2A2A2A] rounded-full"
+                    >
+                        <ArrowRight size={24} className="rtl:rotate-0" />
+                    </button>
+                ) : (
+                    <div className="font-bold text-xl text-primary-600 dark:text-primary-500 font-arabicHead">ريان</div>
+                )}
+                
+                <div className="flex items-center gap-1">
+                    <button 
+                        onClick={() => setIsSpotlightOpen(true)}
+                        className="p-2 text-gray-500 dark:text-gray-300"
+                    >
+                        <Search size={22} />
+                    </button>
+                    <button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-300">
+                        {darkMode ? <Sun size={22} /> : <Moon size={22} />}
+                    </button>
+                </div>
             </header>
         )}
 
-        {/* Desktop Header - Hide in auth or reader mode */}
+        {/* Desktop Header */}
         {showNav && (
             <header className="hidden md:flex sticky top-0 z-40 bg-[#F9FAFB]/95 dark:bg-[#121212]/95 backdrop-blur px-8 py-6 justify-between items-center border-b border-transparent">
                 <div className="text-gray-400 dark:text-gray-500 font-medium text-sm flex items-center gap-2">
@@ -198,7 +223,6 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
             </header>
         )}
 
-        {/* Adjust Main Container */}
         <main 
             className={`flex-1 w-full mx-auto transition-all duration-300 
             ${isAuthPage || isReaderMode
@@ -227,13 +251,10 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                             >
                                 {({ isActive }) => (
                                     <>
-                                        {/* Background highlight for active tab */}
                                         <div className={`absolute inset-x-1 inset-y-1 bg-primary-50 dark:bg-primary-500/10 rounded-2xl transition-all duration-300 ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}></div>
-                                        
                                         <div className={`relative z-10 transition-all duration-300 ${isActive ? '-translate-y-1.5' : ''}`}>
                                             {item.icon}
                                         </div>
-                                        
                                         <div className={`relative z-10 h-0 transition-all duration-300 ${isActive ? 'opacity-100 mt-0.5' : 'opacity-0'}`}>
                                             {isActive && (
                                                 <span className="text-[10px] font-bold whitespace-nowrap animate-slideUp">
@@ -250,7 +271,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
             </div>
         )}
 
-        {/* --- MINI PLAYER (Global) --- */}
+        {/* --- MINI PLAYER --- */}
         {showMiniPlayer && (
             <div 
                 onClick={() => navigate('/radio')}
@@ -265,7 +286,6 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                                 <div className={`w-1 bg-current rounded-sm ${isPlaying ? 'animate-[pulse_0.5s_ease-in-out_infinite]' : 'h-1.5'}`}></div>
                              </div>
                         </div>
-                        
                         <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider flex items-center gap-1">
@@ -278,7 +298,6 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                             </span>
                         </div>
                     </div>
-
                     <div className="flex items-center gap-2 pl-2 border-r border-gray-100 dark:border-gray-700 mr-2 pr-1" onClick={(e) => e.stopPropagation()}>
                         <button 
                             onClick={togglePlay}
@@ -292,7 +311,6 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                                 <Play size={18} fill="currentColor" className="ml-0.5" />
                             )}
                         </button>
-
                         <button 
                             onClick={stop}
                             className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 hover:text-red-600 flex items-center justify-center transition-all shadow-sm"
@@ -300,14 +318,12 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                             <Square size={16} fill="currentColor" />
                         </button>
                     </div>
-
                     <div className="text-gray-300 dark:text-gray-600 group-hover:text-emerald-500 transition-colors">
                         <Maximize2 size={18} />
                     </div>
                 </div>
             </div>
         )}
-
       </div>
     </div>
   );

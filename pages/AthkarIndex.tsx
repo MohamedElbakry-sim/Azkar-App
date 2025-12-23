@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CATEGORIES } from '../data';
-import { Heart, Plus, Sun, Moon, CloudMoon, Sunrise, ArrowLeft } from 'lucide-react';
+import { Heart, Plus, Sun, Moon, CloudMoon, Sunrise, ArrowLeft, Sparkles } from 'lucide-react';
 
 const AthkarIndex: React.FC = () => {
   const navigate = useNavigate();
@@ -81,19 +80,28 @@ const AthkarIndex: React.FC = () => {
         })}
       </div>
 
-      {/* Custom Dhikr Banner (Placeholder for future feature) */}
+      {/* Custom Dhikr Builder Enabled */}
       <div 
-        className="bg-gradient-to-br from-primary-50 to-white dark:from-dark-surface dark:to-dark-panel p-6 rounded-3xl border border-primary-100 dark:border-dark-border flex items-center justify-between shadow-sm cursor-not-allowed opacity-80"
-        title="قريباً"
+        onClick={() => navigate('/custom-athkar')}
+        className="group bg-gradient-to-br from-primary-600 to-emerald-800 p-6 rounded-[2rem] border border-white/10 flex items-center justify-between shadow-xl cursor-pointer relative overflow-hidden transition-all duration-500 hover:shadow-primary-500/20"
       >
-          <div className="flex items-center gap-4">
-              <div className="p-3 bg-white dark:bg-dark-elevated rounded-full text-primary-500 shadow-sm">
-                  <Plus size={24} />
+          {/* Decorative Sparkle Background */}
+          <div className="absolute -right-10 -bottom-10 text-white/10 transform rotate-12 transition-transform group-hover:scale-125 duration-700">
+              <Sparkles size={180} />
+          </div>
+
+          <div className="flex items-center gap-5 relative z-10">
+              <div className="p-4 bg-white/20 backdrop-blur-md rounded-2xl text-white shadow-inner border border-white/10">
+                  <Plus size={32} />
               </div>
               <div>
-                  <h3 className="font-bold text-lg text-gray-800 dark:text-white font-arabicHead">أذكار خاصة</h3>
-                  <p className="text-small text-gray-500 dark:text-dark-muted">أضف أذكارك الخاصة (قريباً)</p>
+                  <h3 className="font-bold text-2xl text-white font-arabicHead">أذكار خاصة</h3>
+                  <p className="text-primary-50 font-arabic opacity-90">أضف أدعيتك الشخصية وتابع تقدمك فيها</p>
               </div>
+          </div>
+          
+          <div className="relative z-10 bg-white/20 p-2 rounded-full text-white backdrop-blur-sm group-hover:-translate-x-2 transition-transform">
+              <ArrowLeft size={20} className="rtl:rotate-0" />
           </div>
       </div>
     </div>

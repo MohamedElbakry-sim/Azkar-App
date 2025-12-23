@@ -1,4 +1,3 @@
-
 import React from 'react';
 import DailyWisdom from '../components/DailyWisdom';
 import RandomNameCard from '../components/RandomNameCard';
@@ -40,8 +39,8 @@ const Home: React.FC<HomeProps> = ({ darkMode, onToggleTheme }) => {
             </p>
         </div>
         
-        <div className="flex items-center gap-3">
-            {/* Quick Theme Toggle */}
+        {/* Theme Toggle: Hidden on mobile as it's available in the top bar */}
+        <div className="hidden md:flex items-center gap-3">
             <button 
                 onClick={handleThemeToggle}
                 className="w-12 h-12 md:w-14 md:h-14 bg-white dark:bg-dark-panel rounded-2xl flex items-center justify-center text-emerald-500 dark:text-emerald-400 shadow-soft border border-gray-100 dark:border-dark-border transition-all active:scale-90 hover:shadow-md"
