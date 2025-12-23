@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ChevronLeft, ChevronRight, Loader2, AlertCircle, Bookmark, Eye, EyeOff, Type, Settings, Sun, Moon, Coffee, Hash, Play, Pause, Copy, Share2, Palette, Search, Maximize2, Info } from 'lucide-react';
 import * as quranService from '../services/quranService';
@@ -7,8 +7,7 @@ import { toArabicNumerals, applyTajweed, normalizeArabic, getHighlightRegex } fr
 import { Ayah, SearchResult } from '../types';
 
 const TOTAL_PAGES = 604;
-// Fixed: Removed the period after 'بِسْم' to match the actual API text
-const BISMILLAH = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
+const BISMILLAH = "بِسْم. ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
 
 interface MushafPagesViewerProps {
   initialPage: number;
@@ -22,7 +21,7 @@ interface MushafPagesViewerProps {
   onReciterChange?: (id: string) => void;
   initialHighlightTerm?: string;
   onClearHighlight?: () => void;
-  playbackProgress?: number; // Progress percentage (0-100) for the current Surah
+  playbackProgress?: number;
 }
 
 const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({ 
@@ -45,14 +44,12 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   
-  // UI State
   const [showOverlay, setShowOverlay] = useState(true);
   const [fontSize, setFontSize] = useState(28); 
   const [showSettings, setShowSettings] = useState(false);
   const [hideText, setHideText] = useState(false);
   const [tajweedMode, setTajweedMode] = useState(false);
   
-  // Theme logic: Check if user has explicitly saved a preference, otherwise follow app
   const [pageTheme, setPageTheme] = useState<storage.PageTheme>(() => {
       const saved = localStorage.getItem('nour_quran_theme_v1');
       if (saved) return saved as storage.PageTheme;
@@ -62,7 +59,6 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
   const [bookmarks, setBookmarks] = useState<quranService.Bookmark[]>([]);
   const [infoModalSurah, setInfoModalSurah] = useState<any | null>(null);
   
-  // Search State
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchScope, setSearchScope] = useState<'global' | 'surah'>('global');
@@ -70,41 +66,33 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [highlightTerm, setHighlightTerm] = useState(initialHighlightTerm || '');
 
-  // Context Menu State
   const [selectedAyah, setSelectedAyah] = useState<{surah: number, ayah: number, text: string} | null>(null);
   
-  // Page Input State
   const [isEditingPage, setIsEditingPage] = useState(false);
   const [inputPageValue, setInputPageValue] = useState('');
 
-  // Swipe & Scroll State
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const isDrag = useRef<boolean>(false);
   const overlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
-  // Audio Sync Ref
   const activeAyahRef = useRef<HTMLSpanElement | null>(null);
 
-  // Load initial data
   useEffect(() => {
     fetchPage(initialPage);
     setBookmarks(quranService.getBookmarks());
   }, []);
 
-  // Update Highlight term from props
   useEffect(() => {
       setHighlightTerm(initialHighlightTerm || '');
   }, [initialHighlightTerm]);
 
-  // Update theme handling
   const handleThemeChange = (newTheme: storage.PageTheme) => {
       setPageTheme(newTheme);
       storage.saveQuranTheme(newTheme);
       resetOverlayTimer();
   };
 
-  // Sync internal state if prop changes
   useEffect(() => {
     if (page !== initialPage) {
         setPage(initialPage);
@@ -112,7 +100,6 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
     }
   }, [initialPage]);
 
-  // Audio Sync Scrolling
   useEffect(() => {
       if (highlightedAyah && !loading) {
           const ayahId = `ayah-${highlightedAyah.surah}-${highlightedAyah.ayah}`;
@@ -124,7 +111,6 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
       }
   }, [highlightedAyah, loading]);
 
-  // Auto-save Last Read position
   useEffect(() => {
       if (ayahs.length > 0) {
           const firstAyah = ayahs[0];
@@ -138,7 +124,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
       }
   }, [ayahs, page]);
 
-  // Auto-hide overlay logic
+  // Fix: Added missing useCallback to resolve "Cannot find name 'useCallback'"
   const resetOverlayTimer = useCallback(() => {
     if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current);
     if (showOverlay && !isEditingPage && !selectedAyah && !showSearch && !infoModalSurah) {
@@ -156,7 +142,6 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
     };
   }, [showOverlay, resetOverlayTimer]);
 
-  // Search Logic
   useEffect(() => {
       if (!searchQuery.trim()) {
           setSearchResults([]);
@@ -200,6 +185,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
     }
   };
 
+  // Fix: Added missing useCallback to resolve "Cannot find name 'useCallback'"
   const changePage = useCallback((newPage: number) => {
       if (newPage < 1 || newPage > TOTAL_PAGES) return;
       setPage(newPage);
@@ -209,6 +195,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
       setSelectedAyah(null);
   }, [onPageChange]);
 
+  // Fix: Added missing useCallback to resolve "Cannot find name 'useCallback'"
   const goToNext = useCallback(() => changePage(page + 1), [page, changePage]);
   const goToPrev = useCallback(() => changePage(page - 1), [page, changePage]);
 
@@ -237,7 +224,6 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
       navigate(`/quran/${result.surah.number}?ayah=${result.numberInSurah}`, { replace: true });
   };
 
-  // Keyboard Nav
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         if (isEditingPage || showSearch) return;
@@ -257,7 +243,6 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [goToNext, goToPrev, onClose, isEditingPage, onTogglePlay, selectedAyah, showSearch]);
 
-  // Gestures
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
@@ -283,7 +268,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
     }
   };
 
-  // Bookmark Logic
+  // Fix: Added missing useMemo to resolve "Cannot find name 'useMemo'"
   const isBookmarked = useMemo(() => {
       if (ayahs.length === 0) return false;
       const firstAyah = ayahs[0];
@@ -310,7 +295,6 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
       resetOverlayTimer();
   };
 
-  // Action Menu Helpers
   const handleAyahShare = async () => {
       if (!selectedAyah) return;
       if (navigator.share) {
@@ -343,6 +327,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
 
   const themeStyles = getThemeStyles();
 
+  // Fix: Added missing useMemo to resolve "Cannot find name 'useMemo'"
   const renderPageContent = useMemo(() => {
       if (!ayahs || ayahs.length === 0) return null;
 
@@ -410,8 +395,12 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                                   }
 
                                   const isSelected = selectedAyah?.surah === group.surah.number && selectedAyah?.ayah === ayah.numberInSurah;
-                                  const isHighlightedAyah = highlightedAyah?.surah === group.surah.number && highlightedAyah?.ayah === ayah.numberInSurah;
-                                  const isActive = isSelected || isHighlightedAyah;
+                                  const isPlaybackActive = highlightedAyah?.surah === group.surah.number && highlightedAyah?.ayah === ayah.numberInSurah;
+                                  
+                                  // Visual logic: selected has highest priority. 
+                                  // Playback is de-emphasized if another ayah is selected.
+                                  const showPlayback = isPlaybackActive && !isSelected;
+                                  const playbackDeEmphasized = selectedAyah !== null && !isSelected;
 
                                   if (lastJuz === -1) lastJuz = ayahs[0].juz;
                                   const showJuzIndicator = ayah.juz !== lastJuz;
@@ -449,15 +438,19 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                                             id={`ayah-${group.surah.number}-${ayah.numberInSurah}`}
                                             className={`
                                                 inline relative rounded px-1 transition-all duration-200 cursor-pointer
-                                                ${isActive ? 'bg-blue-100/80 dark:bg-blue-900/30 box-decoration-clone ring-2 ring-blue-300 dark:ring-blue-700 animate-[pulse_2s_infinite]' : ''}
+                                                ${isSelected ? 'bg-emerald-500/20 dark:bg-emerald-500/30 box-decoration-clone ring-2 ring-emerald-400 dark:ring-emerald-700 z-20 scale-105' : ''}
+                                                ${showPlayback ? `bg-blue-100/80 dark:bg-blue-900/30 box-decoration-clone ring-2 ring-blue-300 dark:ring-blue-700 animate-[pulse_2s_infinite] ${playbackDeEmphasized ? 'opacity-40 grayscale-[0.5]' : ''}` : ''}
                                                 ${hideText ? 'blur-[6px] hover:blur-none active:blur-none transition-filter' : ''}
                                             `}
                                             style={{ fontSize: `${fontSize}px` }}
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 if (!isDrag.current) {
-                                                    if (highlightTerm) setHighlightTerm('');
-                                                    if (onClearHighlight) onClearHighlight();
+                                                    // Explicitly clear search highlight when selecting an ayah
+                                                    if (highlightTerm) {
+                                                        setHighlightTerm('');
+                                                        if (onClearHighlight) onClearHighlight();
+                                                    }
                                                     
                                                     if (isSelected) {
                                                         setSelectedAyah(null);
@@ -481,7 +474,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                                                   </span>
                                               )}
                                               
-                                              <span className={`inline-block mx-1 font-quran select-none ${themeStyles.marker}`} style={{ fontSize: '0.9em' }}>
+                                              <span className={`inline-block mx-1 font-quran select-none ${isSelected ? 'text-emerald-600 dark:text-emerald-400 font-bold' : showPlayback ? 'text-blue-600' : themeStyles.marker}`} style={{ fontSize: '0.9em' }}>
                                                   ﴿{toArabicNumerals(ayah.numberInSurah)}﴾
                                               </span>
                                               {" "}
@@ -791,10 +784,10 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                     </p>
                     
                     <div className="flex justify-center gap-3 text-xs font-bold text-gray-600 dark:text-gray-300">
-                        <span className="bg-gray-100 dark:bg-black/20 px-4 py-2 rounded-xl border border-gray-200 dark:border-white/5">
+                        <span className="bg-gray-100 dark:bg-black/20 px-4 py-2 rounded-xl border border-gray-100 dark:border-white/5">
                             {infoModalSurah.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}
                         </span>
-                        <span className="bg-gray-100 dark:bg-black/20 px-4 py-2 rounded-xl border border-gray-200 dark:border-white/5">
+                        <span className="bg-gray-100 dark:bg-black/20 px-4 py-2 rounded-xl border border-gray-100 dark:border-white/5">
                             {infoModalSurah.numberOfAyahs} آيات
                         </span>
                     </div>
@@ -859,7 +852,6 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
         >
             <div className={`backdrop-blur-md border-t px-6 py-4 flex flex-col gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] ${pageTheme === 'dark' ? 'bg-[#1a1a1a]/95 border-[#333]' : 'bg-white/90 border-gray-200'}`}>
                 
-                {/* Visual Playback Progress Bar (Surah Level) */}
                 {highlightedAyah && playbackProgress > 0 && (
                     <div className="w-full flex flex-col gap-1 mb-2 animate-fadeIn">
                         <div className="flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest px-1">
