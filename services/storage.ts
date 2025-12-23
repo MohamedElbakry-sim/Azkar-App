@@ -21,10 +21,6 @@ const RADIO_FAVORITES_KEY = 'nour_radio_favorites_v1';
 const NAV_SETTINGS_KEY = 'nour_nav_settings_v1';
 const ACCENT_THEME_KEY = 'nour_accent_theme_v1';
 
-// Tasbeeh Haptics
-const TASBEEH_HAPTIC_ENABLED_KEY = 'nour_tasbeeh_haptic_enabled_v1';
-const TASBEEH_MILESTONE_KEY = 'nour_tasbeeh_milestone_v1';
-
 // New Adhan Keys
 const ADHAN_AUDIO_ENABLED_KEY = 'nour_adhan_audio_enabled_v1';
 const ADHAN_VOICE_KEY = 'nour_adhan_voice_v1';
@@ -73,26 +69,6 @@ export interface NotificationSettings {
 }
 
 export type HeatmapTheme = 'emerald' | 'blue' | 'flame';
-
-// --- Tasbeeh Settings ---
-
-export const isTasbeehHapticEnabled = (): boolean => {
-    const val = localStorage.getItem(TASBEEH_HAPTIC_ENABLED_KEY);
-    return val === null ? true : val === 'true';
-};
-
-export const setTasbeehHapticEnabled = (enabled: boolean) => {
-    localStorage.setItem(TASBEEH_HAPTIC_ENABLED_KEY, String(enabled));
-};
-
-export const getTasbeehMilestone = (): number => {
-    const val = localStorage.getItem(TASBEEH_MILESTONE_KEY);
-    return val ? parseInt(val, 10) : 33;
-};
-
-export const setTasbeehMilestone = (milestone: number) => {
-    localStorage.setItem(TASBEEH_MILESTONE_KEY, milestone.toString());
-};
 
 // --- Adhan Settings ---
 

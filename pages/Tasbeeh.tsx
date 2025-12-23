@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, Check, Settings, Vibrate, Bell, ChevronDown } from 'lucide-react';
+import { RotateCcw, Check } from 'lucide-react';
 import * as storage from '../services/storage';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Capacitor } from '@capacitor/core';
@@ -9,43 +9,19 @@ const Tasbeeh: React.FC = () => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   
-  // Haptic Settings
-  const [hapticEnabled, setHapticEnabled] = useState(true);
-  const [milestone, setMilestone] = useState(33);
-  const [showQuickSettings, setShowQuickSettings] = useState(false);
-
   useEffect(() => {
     setCount(storage.getTasbeehCount());
-    setHapticEnabled(storage.isTasbeehHapticEnabled());
-    setMilestone(storage.getTasbeehMilestone());
   }, []);
 
   const triggerHaptic = async (style: ImpactStyle = ImpactStyle.Light) => {
-    if (!hapticEnabled) return;
-
     if (Capacitor.isNativePlatform()) {
         try {
             await Haptics.impact({ style });
         } catch (e) {
-            if (navigator.vibrate) navigator.vibrate(style === ImpactStyle.Heavy ? 100 : 10);
+            if (navigator.vibrate) navigator.vibrate(10);
         }
     } else {
-        if (navigator.vibrate) navigator.vibrate(style === ImpactStyle.Heavy ? 100 : 10);
-    }
-  };
-
-  const triggerMilestoneHaptic = async () => {
-    if (!hapticEnabled) return;
-
-    if (Capacitor.isNativePlatform()) {
-        try {
-            // Notification SUCCESS usually gives a nice double pulse
-            await Haptics.notification({ type: 'SUCCESS' as any }); 
-        } catch (e) {
-            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        }
-    } else {
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        if (navigator.vibrate) navigator.vibrate(10);
     }
   };
 
@@ -58,12 +34,8 @@ const Tasbeeh: React.FC = () => {
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 150);
 
-    // Haptic Logic
-    if (milestone > 0 && newCount % milestone === 0) {
-        triggerMilestoneHaptic();
-    } else {
-        triggerHaptic(ImpactStyle.Light);
-    }
+    // Simple haptic on every tap
+    triggerHaptic(ImpactStyle.Light);
   };
 
   const handleReset = () => {
@@ -71,7 +43,7 @@ const Tasbeeh: React.FC = () => {
       setCount(0);
       storage.saveTasbeehCount(0);
       setResetConfirm(false);
-      triggerMilestoneHaptic();
+      triggerHaptic(ImpactStyle.Medium);
     } else {
       setResetConfirm(true);
       triggerHaptic(ImpactStyle.Medium);
@@ -79,72 +51,8 @@ const Tasbeeh: React.FC = () => {
     }
   };
 
-  const updateHapticToggle = (val: boolean) => {
-      setHapticEnabled(val);
-      storage.setTasbeehHapticEnabled(val);
-  };
-
-  const updateMilestone = (val: number) => {
-      setMilestone(val);
-      storage.setTasbeehMilestone(val);
-      triggerHaptic(ImpactStyle.Heavy);
-  };
-
   return (
     <div className="h-full flex flex-col items-center justify-center py-6 min-h-[70vh] relative">
-      
-      {/* Quick Settings Trigger */}
-      <div className="absolute top-0 left-0 w-full flex justify-between px-4">
-          <button 
-            onClick={() => setShowQuickSettings(!showQuickSettings)}
-            className={`p-3 rounded-2xl transition-all border ${showQuickSettings ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 border-primary-200' : 'bg-white dark:bg-dark-surface text-gray-400 border-gray-100 dark:border-dark-border'}`}
-          >
-              <Settings size={20} />
-          </button>
-          
-          <div className="bg-white/50 dark:bg-dark-surface/50 backdrop-blur-sm px-4 py-2 rounded-2xl border border-gray-100 dark:border-dark-border text-gray-400 text-xs font-bold flex items-center gap-2">
-              <Vibrate size={14} className={hapticEnabled ? 'text-emerald-500' : ''} />
-              <span>{milestone > 0 ? `تنبيه كل ${milestone}` : 'تنبيه معطل'}</span>
-          </div>
-      </div>
-
-      {/* Quick Settings Drawer */}
-      {showQuickSettings && (
-          <div className="absolute top-16 left-4 right-4 z-40 bg-white dark:bg-dark-surface rounded-3xl p-6 shadow-2xl border border-gray-100 dark:border-dark-border animate-slideUp">
-              <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-bold text-gray-800 dark:text-white font-arabicHead">إعدادات الاهتزاز</h3>
-                  <button onClick={() => setShowQuickSettings(false)} className="text-gray-400"><Check size={20} /></button>
-              </div>
-
-              <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-bg rounded-2xl border border-gray-100 dark:border-dark-border">
-                      <span className="text-sm font-bold text-gray-600 dark:text-gray-300">تفعيل الاهتزاز</span>
-                      <button 
-                        onClick={() => updateHapticToggle(!hapticEnabled)}
-                        className={`w-12 h-7 rounded-full transition-colors relative ${hapticEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-700'}`}
-                      >
-                          <div className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${hapticEnabled ? 'left-[calc(100%-1.5rem)]' : 'left-1'}`} />
-                      </button>
-                  </div>
-
-                  <div className="p-3 bg-gray-50 dark:bg-dark-bg rounded-2xl border border-gray-100 dark:border-dark-border">
-                      <label className="block text-xs font-bold text-gray-400 uppercase mb-3 mr-1">نغمة الاهتزاز (كل عدد)</label>
-                      <div className="grid grid-cols-4 gap-2">
-                          {[33, 100, 1000, 0].map((val) => (
-                              <button
-                                key={val}
-                                onClick={() => updateMilestone(val)}
-                                className={`py-2 rounded-xl text-xs font-bold transition-all border ${milestone === val ? 'bg-primary-600 text-white border-primary-700 shadow-md' : 'bg-white dark:bg-dark-surface text-gray-500 border-gray-100 dark:border-dark-border'}`}
-                              >
-                                  {val === 0 ? 'معطل' : val}
-                              </button>
-                          ))}
-                      </div>
-                      <p className="text-[10px] text-gray-400 mt-3 mr-1">يصدر التطبيق نبضة قوية ومزدوجة عند الوصول لهذا العدد لمساعدتك على العد دون النظر للشاشة.</p>
-                  </div>
-              </div>
-          </div>
-      )}
       
       <div className="text-center space-y-2 mb-10">
         <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 font-arabicHead">المسبحة الإلكترونية</h2>

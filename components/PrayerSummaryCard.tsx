@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, ChevronLeft, MapPin, Loader2 } from 'lucide-react';
+import { Clock, ChevronLeft, Loader2 } from 'lucide-react';
 import * as AdhanLib from 'adhan';
 
 const adhan = (AdhanLib as any).default || AdhanLib;
@@ -21,10 +21,18 @@ const PrayerSummaryCard: React.FC = () => {
         const date = new Date();
         const prayerTimes = new adhan.PrayerTimes(coordinates, date, params);
         
-        const next = prayerTimes.nextPrayer();
+        let next = prayerTimes.nextPrayer();
+        let targetPrayerTimes = prayerTimes;
+        let isNextDay = false;
+
+        // If nextPrayer is 'none', it means we are past Isha today.
+        // We need to look at Fajr for the next day.
         if (next === 'none') {
-            setNextPrayer(null);
-            return;
+            const tomorrow = new Date(date);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            targetPrayerTimes = new adhan.PrayerTimes(coordinates, tomorrow, params);
+            next = 'fajr';
+            isNextDay = true;
         }
 
         const prayerNames: Record<string, string> = {
@@ -36,15 +44,16 @@ const PrayerSummaryCard: React.FC = () => {
           isha: 'العشاء'
         };
 
-        const time = prayerTimes.timeForPrayer(next);
+        const time = targetPrayerTimes.timeForPrayer(next);
         if (!time) return;
 
         const formatter = new Intl.DateTimeFormat('ar-SA', { hour: 'numeric', minute: 'numeric' });
         
-        // Calculate countdown
+        // Calculate countdown accurately across date boundaries
         const diff = time.getTime() - date.getTime();
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const totalMinutes = Math.floor(diff / (1000 * 60));
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
         
         if (isMounted) {
           setNextPrayer({
@@ -54,7 +63,7 @@ const PrayerSummaryCard: React.FC = () => {
           });
         }
       } catch (e) {
-        console.error(e);
+        console.error("Prayer Summary Calc Error:", e);
       } finally {
         if (isMounted) setLoading(false);
       }

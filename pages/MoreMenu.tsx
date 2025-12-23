@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -14,6 +15,7 @@ const MoreMenu: React.FC = () => {
     {
       title: "أدوات",
       items: [
+        { label: "مواقيت الصلاة", icon: <PrayerIcon size={22} />, path: "/prayers", color: "text-primary-600" },
         { label: "السبحة الإلكترونية", icon: <TasbeehIcon size={22} />, path: "/tasbeeh", color: "text-emerald-500" },
         { label: "حاسبة الزكاة", icon: <Coins size={22} />, path: "/zakat", color: "text-primary-600" },
         { label: "التقويم الهجري", icon: <Calendar size={22} />, path: "/calendar", color: "text-blue-500" },

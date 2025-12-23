@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Volume2, Vibrate, Book, Download, Upload, Palette, Check, Menu, ArrowUp, ArrowDown, X, Music, Activity } from 'lucide-react';
+import { Moon, Sun, Trash2, Bell, Plus, Type, Calendar, Minus, Download, Upload, Palette, Check, Menu, ArrowUp, ArrowDown, X, Music } from 'lucide-react';
 import * as storage from '../services/storage';
-import { CATEGORIES } from '../data';
 import { ALL_NAV_ITEMS } from '../components/Layout';
 
 interface SettingsProps {
@@ -22,10 +21,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
   const [notifSettings, setNotifSettings] = useState<storage.NotificationSettings>({ soundEnabled: true, vibrationType: 'default' });
   const [accent, setAccent] = useState<storage.AccentTheme>(currentAccent);
 
-  // Tasbeeh Haptics
-  const [tasbeehHaptic, setTasbeehHaptic] = useState(true);
-  const [tasbeehMilestone, setTasbeehMilestone] = useState(33);
-
   // Adhan States
   const [adhanEnabled, setAdhanEnabled] = useState(false);
   const [adhanVoice, setAdhanVoice] = useState<storage.AdhanVoice>('mecca');
@@ -40,8 +35,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
     setNotifSettings(storage.getNotificationSettings());
     setNavOrder(storage.getNavOrder());
     setAccent(storage.getAccentTheme());
-    setTasbeehHaptic(storage.isTasbeehHapticEnabled());
-    setTasbeehMilestone(storage.getTasbeehMilestone());
     
     // Load Adhan Settings
     setAdhanEnabled(storage.isAdhanAudioEnabled());
@@ -317,41 +310,6 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, toggleTheme, currentAccen
                         </div>
                     </div>
                 )}
-            </div>
-        </div>
-
-        {/* --- Tasbeeh Haptics Section --- */}
-        <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4">
-            <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 rounded-full bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400">
-                    <Activity size={24} />
-                </div>
-                <div>
-                    <h3 className="font-bold text-body-lg text-gray-800 dark:text-dark-text font-arabic">اهتزاز المسبحة</h3>
-                    <p className="text-body-sm text-gray-500 dark:text-dark-muted mt-0.5">تخصيص ردود فعل الاهتزاز عند التسبيح</p>
-                </div>
-            </div>
-
-            <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-panel rounded-xl border border-gray-100 dark:border-dark-border">
-                    <span className="text-body-sm font-bold text-gray-700 dark:text-gray-200">الاهتزاز عند كل ضغطة</span>
-                    <Toggle checked={tasbeehHaptic} onChange={(val: boolean) => { setTasbeehHaptic(val); storage.setTasbeehHapticEnabled(val); }} label="اهتزاز الضغط" />
-                </div>
-
-                <div className="p-4 bg-gray-50 dark:bg-dark-panel rounded-xl border border-gray-100 dark:border-dark-border">
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-3 mr-1">تنبيه عند الوصول لعدد معين</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {[33, 100, 1000, 0].map((val) => (
-                            <button
-                                key={val}
-                                onClick={() => { setTasbeehMilestone(val); storage.setTasbeehMilestone(val); }}
-                                className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${tasbeehMilestone === val ? 'bg-primary-500 text-white border-primary-600' : 'bg-white dark:bg-dark-bg text-gray-600 dark:text-gray-400 border-gray-100 dark:border-dark-border'}`}
-                            >
-                                {val === 0 ? 'معطل' : val}
-                            </button>
-                        ))}
-                    </div>
-                </div>
             </div>
         </div>
 
