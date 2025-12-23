@@ -13,17 +13,11 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in the component tree.
  */
-/* Fixed: Using explicit Component import and generic type arguments to ensure correct inheritance in TypeScript */
 class ErrorBoundary extends Component<Props, State> {
-  /* Fixed: Explicitly declared the state property to ensure property recognition on the class instance */
   public state: State = {
     hasError: false,
     error: null
   };
-
-  constructor(props: Props) {
-    super(props);
-  }
 
   // Update state so the next render will show the fallback UI.
   public static getDerivedStateFromError(error: Error): State {
@@ -38,14 +32,14 @@ class ErrorBoundary extends Component<Props, State> {
 
   // Handle retry logic to reset state and attempt reload
   private handleRetry = () => {
-    /* Fixed: setState is correctly recognized as an inherited method from Component */
+    // Fix: setState is correctly recognized as an inherited method from Component
     this.setState({ hasError: false, error: null });
     window.location.reload();
   };
 
   // Render method to display fallback UI or children
   public render() {
-    /* Fixed: state is correctly recognized as an inherited property from Component */
+    // Fix: state is correctly recognized as an inherited property from Component
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg p-4">
@@ -59,7 +53,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    /* Fixed: props is correctly recognized as an inherited property from Component */
+    // Fix: props is correctly recognized as an inherited property from Component
     return this.props.children;
   }
 }
