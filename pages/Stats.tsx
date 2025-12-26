@@ -48,7 +48,7 @@ const Stats: React.FC = () => {
         <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base">تابع تقدمك واستمر في الذكر</p>
       </div>
 
-      {/* Stats Grid - Updated to 4 columns */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {/* Streak */}
         <div className="bg-white dark:bg-dark-surface p-4 md:p-6 rounded-2xl shadow-sm border border-orange-100 dark:border-dark-border flex flex-col items-center justify-center transition-transform hover:scale-105">
@@ -59,12 +59,12 @@ const Stats: React.FC = () => {
             <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold">أيام متتالية</span>
         </div>
 
-        {/* Total (All Time) - New Stat Card */}
+        {/* Total (All Time) */}
         <div className="bg-white dark:bg-dark-surface p-4 md:p-6 rounded-2xl shadow-sm border border-emerald-100 dark:border-dark-border flex flex-col items-center justify-center transition-transform hover:scale-105">
             <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 md:p-4 rounded-full text-emerald-600 dark:text-emerald-400 mb-3">
                 <Award size={24} className="md:w-8 md:h-8" />
             </div>
-            <span className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 font-english">{stats.totalDhikrCompleted.toLocaleString('ar-SA')}</span>
+            <span className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 font-english">{stats.totalDhikrCompleted.toLocaleString()}</span>
             <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold">إجمالي الأذكار</span>
         </div>
 
@@ -217,7 +217,6 @@ interface ContributionGraphProps {
 
 /**
  * Renders the contribution heatmap grid.
- * If range is > 30 days (e.g., 90), it splits the view into monthly blocks.
  */
 const ContributionGraph: React.FC<ContributionGraphProps> = ({ history, daysCount, theme }) => {
     const [tooltip, setTooltip] = useState<TooltipData | null>(null);
@@ -227,7 +226,6 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({ history, daysCoun
         const key = date.toISOString().split('T')[0];
         const dayData = history[key];
         if (!dayData) return 0;
-        // Cast values to number[] explicitly to solve type inference issues
         return (Object.values(dayData) as number[]).reduce((a, b) => (b > 0 ? a + b : a), 0);
     };
 
@@ -300,9 +298,6 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({ history, daysCoun
         });
     };
 
-    // --- Data Grouping Logic ---
-
-    // Generate Array of Dates [Oldest ... Newest]
     const allCells = useMemo(() => {
         const arr = [];
         const today = new Date();
@@ -314,23 +309,17 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({ history, daysCoun
         return arr;
     }, [daysCount]);
 
-    // Group dates by Month if viewing 90 days (3 months)
     const monthGroups = useMemo(() => {
         if (daysCount < 90) return null;
-
         const groups: { [key: string]: Date[] } = {};
         allCells.forEach(date => {
             const monthKey = date.toLocaleString('ar-SA', { month: 'long', year: 'numeric' });
             if (!groups[monthKey]) groups[monthKey] = [];
             groups[monthKey].push(date);
         });
-        
-        // Return array of groups. Order: Oldest Month -> Newest Month.
         return Object.entries(groups).map(([name, dates]) => ({ name, dates }));
     }, [allCells, daysCount]);
 
-    // Helper component for a single grid block
-    // explicitly typed as React.FC to allow props including 'key' when rendered in lists
     const HeatmapGridBlock: React.FC<{ dates: Date[], label?: string }> = ({ dates, label }) => {
         const startDay = dates.length > 0 ? dates[0].getDay() : 0;
         const paddingArray = Array(startDay).fill(null);
@@ -364,20 +353,15 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({ history, daysCoun
     return (
         <div className="relative w-full overflow-x-auto pb-4">
             <div className="flex justify-center gap-8 min-w-max px-4">
-                
                 {monthGroups ? (
-                    // 3-Block View
                     monthGroups.map((group) => (
                         <HeatmapGridBlock key={group.name} dates={group.dates} label={group.name} />
                     ))
                 ) : (
-                    // Single Grid View (7 or 30 days)
                     <HeatmapGridBlock dates={allCells} />
                 )}
-
             </div>
             
-            {/* Tooltip */}
             {tooltip && (
                 <div 
                     className="fixed z-50 px-3 py-1.5 bg-gray-900/90 backdrop-blur text-white text-xs rounded-lg shadow-xl pointer-events-none transform -translate-x-1/2 -translate-y-full border border-gray-700 whitespace-nowrap"
@@ -391,7 +375,6 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({ history, daysCoun
                 </div>
             )}
 
-            {/* Modal */}
             {selectedDay && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedDay(null)}>
                     <div className="bg-white dark:bg-dark-surface w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-popIn border border-gray-100 dark:border-dark-border" onClick={e => e.stopPropagation()}>

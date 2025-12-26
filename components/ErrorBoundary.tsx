@@ -1,8 +1,8 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React from 'react';
 import ErrorState from './ErrorState';
 
 interface Props {
-  children?: ReactNode;
+  children?: React.ReactNode;
 }
 
 interface State {
@@ -13,9 +13,9 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in the component tree.
  */
-// FIX: Using Component<Props, State> from 'react' ensures base class members like props, state, and setState are correctly recognized by TypeScript
-class ErrorBoundary extends Component<Props, State> {
-  // FIX: Declaring state as a class property provides better type visibility and ensures 'this.state' is recognized by the compiler
+// Fix: Explicitly extending React.Component ensures base class members like props, state, and setState are correctly recognized
+class ErrorBoundary extends React.Component<Props, State> {
+  // Use property initializer for state
   public state: State = {
     hasError: false,
     error: null
@@ -31,21 +31,21 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   // Lifecycle method for logging errors
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
   }
 
   // Handle retry logic to reset state and attempt reload
   private handleRetry = () => {
-    // FIX: setState is an inherited member of the React Component class
+    // Fix: Access setState from the inherited React.Component class
     this.setState({ hasError: false, error: null });
     window.location.reload();
   };
 
   // Render method to display fallback UI or children
   public render() {
-    // FIX: state is an inherited member of the React Component class
+    // Check inherited state
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg p-4">
@@ -59,7 +59,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // FIX: props is an inherited member of the React Component class
+    // Fix: Access inherited props to return children
     return this.props.children;
   }
 }
