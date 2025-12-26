@@ -45,11 +45,39 @@ const QuranReader: React.FC = () => {
   const [tajweedMode, setTajweedMode] = useState(false);
   const [hideText, setHideText] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
+  
   const [pageTheme, setPageTheme] = useState<storage.PageTheme>(() => {
       const saved = localStorage.getItem('nour_quran_theme_v1');
       if (saved) return saved as storage.PageTheme;
       return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
   });
+
+  // Sync with global theme changes
+  useEffect(() => {
+    const syncTheme = () => {
+        const isGlobalDark = document.documentElement.classList.contains('dark');
+        if (pageTheme !== 'sepia') {
+            setPageTheme(isGlobalDark ? 'dark' : 'light');
+        }
+    };
+    window.addEventListener('appearance-changed', syncTheme);
+    return () => window.removeEventListener('appearance-changed', syncTheme);
+  }, [pageTheme]);
+
+  const updateGlobalTheme = (newTheme: storage.PageTheme) => {
+      setPageTheme(newTheme);
+      storage.saveQuranTheme(newTheme);
+      
+      // Update global app theme if not sepia
+      if (newTheme === 'dark' || newTheme === 'light') {
+          localStorage.setItem('nour_theme', newTheme);
+          window.dispatchEvent(new Event('appearance-changed'));
+      } else if (newTheme === 'sepia') {
+          // If sepia, we ensure the app background is light for visual consistency
+          localStorage.setItem('nour_theme', 'light');
+          window.dispatchEvent(new Event('appearance-changed'));
+      }
+  };
 
   // Search State for Text Mode
   const [showSearch, setShowSearch] = useState(false);
@@ -404,7 +432,7 @@ const QuranReader: React.FC = () => {
                                     >
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">
-                                                سورة {res.surah?.name} - آية {res.numberInSurah}
+                                                سورة {res.surah?.name || ''} - آية {res.numberInSurah}
                                             </span>
                                         </div>
                                         <p className="font-quran text-lg text-gray-800 dark:text-gray-100 leading-relaxed line-clamp-2" dir="rtl">
@@ -454,19 +482,19 @@ const QuranReader: React.FC = () => {
                             <span className="text-sm font-bold text-gray-500">لون الصفحة:</span>
                             <div className={`flex gap-1 p-1 rounded-lg bg-gray-100 dark:bg-[#333]`}>
                                 <button 
-                                    onClick={() => { setPageTheme('light'); storage.saveQuranTheme('light'); }}
+                                    onClick={() => updateGlobalTheme('light')}
                                     className={`p-2 rounded-md transition-colors flex items-center gap-2 text-xs font-bold ${pageTheme === 'light' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}
                                 >
                                     أبيض
                                 </button>
                                 <button 
-                                    onClick={() => { setPageTheme('sepia'); storage.saveQuranTheme('sepia'); }}
+                                    onClick={() => updateGlobalTheme('sepia')}
                                     className={`p-2 rounded-md transition-colors flex items-center gap-2 text-xs font-bold ${pageTheme === 'sepia' ? 'bg-[#fbf0d6] text-[#5c4b37] shadow-sm' : 'text-gray-500'}`}
                                 >
                                     كريمي
                                 </button>
                                 <button 
-                                    onClick={() => { setPageTheme('dark'); storage.saveQuranTheme('dark'); }}
+                                    onClick={() => updateGlobalTheme('dark')}
                                     className={`p-2 rounded-md transition-colors flex items-center gap-2 text-xs font-bold ${pageTheme === 'dark' ? 'bg-[#1a1a1a] text-white shadow-sm' : 'text-gray-500'}`}
                                 >
                                     داكن
@@ -526,6 +554,8 @@ const QuranReader: React.FC = () => {
                     playbackProgress={surahProgress}
                     initialHighlightTerm={searchParams.get('q') || ''}
                     onClearHighlight={() => setSearchParams(prev => { prev.delete('q'); return prev; })}
+                    externalTheme={pageTheme}
+                    onThemeChange={updateGlobalTheme}
                 />
             )}
         </div>
