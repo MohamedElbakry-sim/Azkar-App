@@ -57,6 +57,9 @@ export const getSurah = async (surahId: number): Promise<SurahDetail> => {
     const translation = editions[1];
     const tafsir = editions[2];
 
+    // Clean Surah name from redundant prefix
+    const cleanName = uthmani.name.replace(/^(سُورَةُ |سورة )/, "").trim();
+
     const ayahs: Ayah[] = uthmani.ayahs.map((ayah: any, index: number) => ({
       number: ayah.number,
       text: ayah.text,
@@ -69,7 +72,7 @@ export const getSurah = async (surahId: number): Promise<SurahDetail> => {
       audio: `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${ayah.number}.mp3`,
       surah: {
         number: uthmani.number,
-        name: uthmani.name,
+        name: cleanName,
         englishName: uthmani.englishName,
         englishNameTranslation: uthmani.englishNameTranslation,
         revelationType: uthmani.revelationType,
@@ -79,7 +82,7 @@ export const getSurah = async (surahId: number): Promise<SurahDetail> => {
 
     return {
       number: uthmani.number,
-      name: uthmani.name,
+      name: cleanName,
       englishName: uthmani.englishName,
       revelationType: uthmani.revelationType,
       numberOfAyahs: uthmani.numberOfAyahs,
@@ -119,14 +122,18 @@ export const searchQuran = async (query: string): Promise<SearchResult[]> => {
     const data = await response.json();
     if (!data.data || !data.data.matches) return [];
     
-    return data.data.matches.map((match: any) => ({
-      surah: match.surah,
-      ayah: {
-        number: match.number,
-        text: match.text,
-        numberInSurah: match.numberInSurah
-      }
-    }));
+    return data.data.matches.map((match: any) => {
+        // Clean surah name in search results
+        const cleanSName = match.surah.name.replace(/^(سُورَةُ |سورة )/, "").trim();
+        return {
+            surah: { ...match.surah, name: cleanSName },
+            ayah: {
+                number: match.number,
+                text: match.text,
+                numberInSurah: match.numberInSurah
+            }
+        };
+    });
   } catch (error) {
     console.error("searchQuran failed:", error);
     return [];

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Play, Share2, Copy, Bookmark, BookOpen, Quote, Edit3, Save, Trash2, X, ArrowUp, ChevronLeft } from 'lucide-react';
 import { SurahDetail, Ayah } from '../services/quranService';
@@ -32,6 +33,7 @@ interface TextModeViewerProps {
   hideText?: boolean;
   pageTheme?: storage.PageTheme;
   highlightTerm?: string;
+  onClearHighlight?: () => void;
 }
 
 const BISMILLAH_TEXT = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
@@ -45,7 +47,7 @@ const VerseMarker: React.FC<{ number: number; classes?: string }> = ({ number, c
 const TextModeViewer: React.FC<TextModeViewerProps> = ({
   surah, activeAyahIndex, isPlaying, onPlayAyah, onToggleBookmark,
   bookmarks, showTranslation, fontSize, onCopy, onShare,
-  tajweedMode = false, hideText = false, pageTheme = 'light', highlightTerm = ''
+  tajweedMode = false, hideText = false, pageTheme = 'light', highlightTerm = '', onClearHighlight
 }) => {
   const navigate = useNavigate();
   const [reflections, setReflections] = useState<storage.AyahReflection[]>([]);
@@ -178,6 +180,9 @@ const TextModeViewer: React.FC<TextModeViewerProps> = ({
   }, [activeAyahIndex, surah, selectedAyahs, highlightTerm, bookmarks, themeStyles]);
 
   const handleAyahClick = (ayah: Ayah) => {
+      // Clear highlight on selection as requested
+      if (onClearHighlight) onClearHighlight();
+      
       const id = `${surah.number}:${ayah.numberInSurah}`;
       setSelectedAyahs(prev => {
           const next = new Set(prev);
@@ -233,7 +238,7 @@ const TextModeViewer: React.FC<TextModeViewerProps> = ({
              <span className={themeStyles.secondaryText}>﷽</span>
              <div className={`h-px bg-gradient-to-l from-transparent to-gray-300 dark:to-gray-700 flex-1`}></div>
           </div>
-          <div className={`font-quran text-4xl ${themeStyles.text}`}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+          <div className={`font-quran text-4xl ${themeStyles.text}`}>بِسْم. ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
         </div>
       )}
 

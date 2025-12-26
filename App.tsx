@@ -7,7 +7,6 @@ import Layout from './components/Layout';
 import Home from './pages/Home';
 import NotificationManager from './components/NotificationManager';
 import ErrorBoundary from './components/ErrorBoundary';
-import { Loader2 } from 'lucide-react';
 import * as storage from './services/storage';
 import { RadioProvider } from './contexts/RadioContext';
 
@@ -144,9 +143,17 @@ const App: React.FC = () => {
     window.dispatchEvent(new Event('appearance-changed'));
   };
 
+  // Modern Top-bar Loader
   const PageLoader = () => (
-    <div className="h-[80vh] flex flex-col items-center justify-center">
-      <Loader2 size={40} className="animate-spin text-primary-500 mb-4" />
+    <div className="fixed top-0 left-0 right-0 z-[9999] h-1 overflow-hidden pointer-events-none">
+      <div className="h-full bg-primary-500 animate-[topLoader_2s_infinite] origin-right shadow-[0_0_10px_var(--primary-500)]"></div>
+      <style>{`
+        @keyframes topLoader {
+          0% { transform: translateX(100%) scaleX(0.5); }
+          50% { transform: translateX(0%) scaleX(1); }
+          100% { transform: translateX(-100%) scaleX(0.5); }
+        }
+      `}</style>
     </div>
   );
 

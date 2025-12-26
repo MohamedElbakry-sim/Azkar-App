@@ -86,7 +86,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchScope, setSearchScope] = useState<'global' | 'surah'>('global');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [highlightTerm, setHighlightTerm] = useState(initialHighlightTerm || '');
 
@@ -175,7 +175,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
               } else {
                   results = await quranService.searchGlobal(searchQuery);
               }
-              setSearchResults(results as unknown as SearchResult[]);
+              setSearchResults(results);
           } catch (e) {
               setSearchResults([]);
           } finally {
@@ -185,6 +185,14 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
 
       return () => clearTimeout(timer);
   }, [searchQuery, searchScope, ayahs]);
+
+  const handleSearchResultSelect = (result: any) => {
+    setShowSearch(false);
+    const surahNum = result.surah.number;
+    const ayahNum = result.numberInSurah;
+    // Navigate and force Mushaf view mode
+    navigate(`/quran/${surahNum}?ayah=${ayahNum}&q=${encodeURIComponent(searchQuery)}&view=mushaf`);
+  };
 
   const fetchPage = async (pageNumber: number) => {
     setLoading(true);
@@ -399,7 +407,6 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 if (!isDrag.current) {
-                                                    if (highlightTerm) { setHighlightTerm(''); if (onClearHighlight) onClearHighlight(); }
                                                     if (isSelected) { setSelectedAyah(null); } 
                                                     else { setSelectedAyah({ surah: group.surah.number, ayah: ayah.numberInSurah, text: text }); setShowOverlay(false); setShowSettings(false); }
                                                 }
@@ -417,7 +424,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
               })}
           </div>
       );
-  }, [ayahs, page, fontSize, hideText, tajweedMode, highlightTerm, pageTheme, highlightedAyah, selectedAyah, themeStyles, onClearHighlight]);
+  }, [ayahs, page, fontSize, hideText, tajweedMode, highlightTerm, pageTheme, highlightedAyah, selectedAyah, themeStyles]);
 
   return (
     <div className={`fixed inset-0 z-[100] flex flex-col h-full w-full overflow-hidden select-text transition-colors duration-300 ${themeStyles.container}`}>
@@ -431,6 +438,16 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                     <button onClick={() => { setShowSearch(true); resetOverlayTimer(); }} className={`p-2 rounded-full hover:opacity-80 transition-opacity ${pageTheme === 'dark' ? 'bg-[#333] text-white' : 'bg-gray-100 text-gray-800'}`}>
                         <Search size={20} />
                     </button>
+                    {highlightTerm && (
+                        <button 
+                            onClick={onClearHighlight} 
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-bold border border-amber-200 dark:border-amber-800 animate-fadeIn"
+                            title="إزالة تمييز البحث"
+                        >
+                            <span>إزالة البحث</span>
+                            <X size={14} />
+                        </button>
+                    )}
                 </div>
                 
                 <button onClick={() => { if (ayahs.length > 0) setInfoModalSurah(ayahs[0].surah); resetOverlayTimer(); }} className="flex flex-col items-center group cursor-pointer">
@@ -454,7 +471,6 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                     <button onClick={() => setShowSettings(!showSettings)} className={`p-2 rounded-full transition-all ${showSettings ? 'bg-emerald-50 text-emerald-500' : (pageTheme === 'dark' ? 'bg-[#333] text-gray-300' : 'bg-gray-100 text-gray-600')}`} title="الإعدادات">
                         <Settings size={18} />
                     </button>
-                    {/* Fix: Removed stray parenthesis from template literal expression */}
                     <button onClick={() => setShowOverlay(false)} className={`p-2 rounded-full transition-colors ${pageTheme === 'dark' ? 'bg-[#333] text-gray-300' : 'bg-gray-100 text-gray-600'}`} title="إخفاء القوائم">
                         <Maximize2 size={18} />
                     </button>
@@ -504,7 +520,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
             )}
         </div>
 
-        <div className="flex-1 relative w-full h-full overflow-y-auto overflow-x-hidden no-scrollbar" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={() => { if (isDrag.current) return; if (selectedAyah) setSelectedAyah(null); else { if (onClearHighlight) onClearHighlight(); if (!isEditingPage && !showSearch && !infoModalSurah) { setShowOverlay(prev => !prev); setShowSettings(false); } } }}>
+        <div className="flex-1 relative w-full h-full overflow-y-auto overflow-x-hidden no-scrollbar" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={() => { if (isDrag.current) return; if (selectedAyah) setSelectedAyah(null); else { if (!isEditingPage && !showSearch && !infoModalSurah) { setShowOverlay(prev => !prev); setShowSettings(false); } } }}>
             <div className={`w-full max-w-[800px] min-h-full mx-auto shadow-2xl relative flex flex-col my-0 md:my-4 md:rounded-lg border-x ${themeStyles.sheet}`} style={{ backgroundImage: "linear-gradient(to right, rgba(0,0,0,0.02) 0%, transparent 5%, transparent 95%, rgba(0,0,0,0.02) 100%)" }}>
                 <div className={`absolute inset-2 md:inset-4 border-2 pointer-events-none z-0 rounded-sm ${themeStyles.surahHeaderBorder}`}></div>
                 <div className={`absolute inset-[10px] md:inset-[18px] border pointer-events-none z-0 rounded-sm opacity-50 ${themeStyles.surahHeaderBorder}`}></div>
@@ -517,7 +533,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                         </div>
                     )}
                     {loading ? (
-                        <div className="flex-1 flex flex-col items-center justify-center gap-4 opacity-50 min-h-[60vh]">
+                        <div className="flex-1 flex flex-col items-center justify-center gap-4 opacity-50 min-h-[60vh] transition-opacity duration-300">
                             <Loader2 size={40} className="animate-spin text-[#D4AF37]" />
                             <p className={`text-sm font-arabic ${themeStyles.secondaryText}`}>جاري تحميل الصفحة...</p>
                         </div>
@@ -528,7 +544,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                             <button onClick={() => fetchPage(page)} className="px-6 py-2 bg-[#D4AF37] text-white rounded-full text-sm font-bold hover:bg-[#C5A028]">إعادة المحاولة</button>
                         </div>
                     ) : (
-                        <div className="flex-1">
+                        <div className="flex-1 animate-fadeIn">
                             {renderPageContent}
                         </div>
                     )}
@@ -540,6 +556,90 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
                 </div>
             </div>
         </div>
+
+        {/* Global Search Modal for Mushaf Mode */}
+        {showSearch && (
+            <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-md flex items-start justify-center pt-20 px-4 animate-fadeIn" onClick={() => setShowSearch(false)}>
+                <div className="w-full max-w-xl bg-white dark:bg-dark-surface rounded-3xl shadow-2xl overflow-hidden animate-slideUp border border-gray-100 dark:border-[#333]" onClick={e => e.stopPropagation()}>
+                    <div className="p-5 border-b border-gray-50 dark:border-dark-border flex items-center gap-4">
+                        <Search className="text-gray-400" size={24} />
+                        <input 
+                            autoFocus
+                            type="text" 
+                            placeholder="ابحث عن آية..." 
+                            className="flex-1 bg-transparent border-none outline-none text-lg font-arabic placeholder-gray-400 dark:text-white"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1"><X size={18} className="text-gray-400" /></button>}
+                        <button onClick={() => setShowSearch(false)} className="text-sm font-bold text-emerald-600 px-2">إلغاء</button>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-dark-bg/50 px-6 py-3 flex items-center gap-6 border-b border-gray-100 dark:border-dark-border">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-500 hover:text-emerald-600 transition-colors">
+                            <input 
+                                type="radio" 
+                                name="mushafSearchScope" 
+                                checked={searchScope === 'surah'} 
+                                onChange={() => setSearchScope('surah')}
+                                className="accent-emerald-500"
+                            />
+                            في السورة الحالية
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-500 hover:text-emerald-600 transition-colors">
+                            <input 
+                                type="radio" 
+                                name="mushafSearchScope" 
+                                checked={searchScope === 'global'} 
+                                onChange={() => setSearchScope('global')}
+                                className="accent-emerald-500"
+                            />
+                            في كل المصحف
+                        </label>
+                    </div>
+
+                    <div className="max-h-[60vh] overflow-y-auto p-3 no-scrollbar space-y-2">
+                        {isSearching ? (
+                            <div className="py-16 flex flex-col items-center justify-center gap-4 opacity-50">
+                                <Loader2 size={36} className="animate-spin text-emerald-500" />
+                                <span className="text-sm font-bold">جاري البحث في آيات الله...</span>
+                            </div>
+                        ) : searchResults.length > 0 ? (
+                            <div className="space-y-2 pb-4">
+                                {searchResults.map((res: any, idx: number) => (
+                                    <button 
+                                        key={idx} 
+                                        onClick={() => handleSearchResultSelect(res)}
+                                        className="w-full text-right p-5 rounded-2xl bg-gray-50/50 dark:bg-dark-elevated/20 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-all border border-transparent hover:border-emerald-100 dark:hover:border-emerald-800/30 group"
+                                    >
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100/50 dark:bg-emerald-900/30 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-800/50">
+                                                سورة {res.surah?.name || ''} - آية {res.numberInSurah}
+                                            </span>
+                                            <span className="text-[9px] font-bold text-gray-400">آية كريمة</span>
+                                        </div>
+                                        <p className="font-quran text-2xl text-gray-800 dark:text-gray-100 leading-relaxed line-clamp-3 text-center" dir="rtl">
+                                            {res.text}
+                                        </p>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : searchQuery ? (
+                            <div className="py-24 text-center text-gray-400">
+                                <AlertCircle size={48} className="mx-auto mb-4 opacity-20" />
+                                <p className="text-base font-bold">لا توجد آيات مطابقة لبحثك</p>
+                                <p className="text-xs mt-1">تأكد من كتابة الكلمات بشكل صحيح</p>
+                            </div>
+                        ) : (
+                            <div className="py-24 text-center text-gray-400 opacity-40">
+                                <Search size={48} className="mx-auto mb-4" />
+                                <p className="text-base font-bold">ابدأ كتابة الكلمات للبحث</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        )}
 
         {infoModalSurah && (
             <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-fadeIn" onClick={() => setInfoModalSurah(null)}>
@@ -571,7 +671,7 @@ const MushafPagesViewer: React.FC<MushafPagesViewerProps> = ({
             </div>
         )}
 
-        <div className={`absolute bottom-0 left-0 right-0 z-30 transition-transform duration-300 ${showOverlay ? 'translate-y-0' : '-translate-y-full'}`} onClick={(e) => e.stopPropagation()}>
+        <div className={`absolute bottom-0 left-0 right-0 z-30 transition-transform duration-300 ${showOverlay ? 'translate-y-0' : 'translate-y-full'}`} onClick={(e) => e.stopPropagation()}>
             <div className={`backdrop-blur-md border-t px-6 py-4 flex flex-col gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] ${pageTheme === 'dark' ? 'bg-[#1a1a1a]/95 border-[#333]' : 'bg-white/90 border-gray-200'}`}>
                 {highlightedAyah && playbackProgress > 0 && (
                     <div className="w-full flex flex-col gap-1 mb-2 animate-fadeIn">

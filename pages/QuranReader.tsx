@@ -75,11 +75,19 @@ const QuranReader: React.FC = () => {
           localStorage.setItem('nour_theme', newTheme);
           window.dispatchEvent(new Event('appearance-changed'));
       } else if (newTheme === 'sepia') {
-          // If sepia, we ensure the app background is light for visual consistency
           localStorage.setItem('nour_theme', 'light');
           window.dispatchEvent(new Event('appearance-changed'));
       }
   };
+
+  const clearHighlight = useCallback(() => {
+    if (searchParams.has('q')) {
+        setSearchParams(prev => {
+            prev.delete('q');
+            return prev;
+        }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Search State for Text Mode
   const [showSearch, setShowSearch] = useState(false);
@@ -208,29 +216,34 @@ const QuranReader: React.FC = () => {
     try {
       const data = await quranService.getSurah(parseInt(surahId));
       setSurah(data);
-
-      const initialAyah = searchParams.get('ayah');
-      if (initialAyah) {
-          const index = data.ayahs.findIndex(a => a.numberInSurah === parseInt(initialAyah));
-          if (index !== -1) { 
-              setActiveAyahIndex(index); 
-              setCurrentPage(data.ayahs[index].page); 
-          }
-      } else {
-          setCurrentPage(data.ayahs[0].page);
-      }
     } catch (e: any) { 
       setError(e.message || 'تعذر تحميل السورة'); 
     } finally { 
       setLoading(false); 
     }
-  }, [surahId, searchParams]);
+  }, [surahId]); // Decoupled from searchParams to avoid redundant calls on view toggle
 
   useEffect(() => {
     loadSurah();
-    setBookmarks(storage.getQuranBookmarks());
-    setFontSize(storage.getFontSize());
   }, [loadSurah]);
+
+  // Effect to handle initial positioning based on searchParams
+  useEffect(() => {
+    if (surah) {
+        const initialAyah = searchParams.get('ayah');
+        if (initialAyah) {
+            const index = surah.ayahs.findIndex(a => a.numberInSurah === parseInt(initialAyah));
+            if (index !== -1) { 
+                setActiveAyahIndex(index); 
+                setCurrentPage(surah.ayahs[index].page); 
+            }
+        } else if (activeAyahIndex === null) {
+            setCurrentPage(surah.ayahs[0].page);
+        }
+        setBookmarks(storage.getQuranBookmarks());
+        setFontSize(storage.getFontSize());
+    }
+  }, [surah, searchParams]);
 
   const playAyah = (index: number) => {
       if (!surah || !audioRef.current || index < 0 || index >= surah.ayahs.length) return;
@@ -310,12 +323,11 @@ const QuranReader: React.FC = () => {
   const surahProgress = useMemo(() => {
     if (!surah || activeAyahIndex === null) return 0;
     const ayahProgressFraction = currentAyahDuration > 0 ? (currentAyahTime / currentAyahDuration) : 0;
-    return ((activeAyahIndex + ayahProgressFraction) / surah.ayahs.length) * 100;
+    return ((activeAyahIndex + ayahProgressFraction) / (surah.ayahs.length || 1)) * 100;
   }, [surah, activeAyahIndex, currentAyahTime, currentAyahDuration]);
 
-  if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-emerald-500" size={40} /></div>;
-  
-  if (error || !surah) return (
+  // Error state handles itself
+  if (error) return (
     <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg p-4">
         <ErrorState 
             title="تعذر تحميل السورة"
@@ -334,6 +346,20 @@ const QuranReader: React.FC = () => {
         <audio ref={audioRef} onEnded={handleAudioEnded} onTimeUpdate={handleTimeUpdate} onError={() => setIsPlaying(false)} />
         <audio ref={metadataAudioRef} crossOrigin="anonymous" preload="metadata" />
         
+        {/* Modern Top-bar Progress for Loading */}
+        {loading && (
+            <div className="fixed top-0 left-0 right-0 z-[100] h-1 overflow-hidden pointer-events-none">
+                <div className="h-full bg-emerald-500 animate-[surahLoader_1.5s_infinite] origin-right"></div>
+                <style>{`
+                    @keyframes surahLoader {
+                        0% { transform: translateX(100%) scaleX(0.2); }
+                        50% { transform: translateX(0%) scaleX(1); }
+                        100% { transform: translateX(-100%) scaleX(0.2); }
+                    }
+                `}</style>
+            </div>
+        )}
+
         {/* Header Overlay */}
         <div className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-500 ${showOverlay ? 'translate-y-0' : '-translate-y-full'}`}>
             <div className="bg-white/95 dark:bg-[#1A1A1A]/95 backdrop-blur-xl border-b border-gray-100 dark:border-[#333] px-4 py-3 flex items-center justify-between shadow-sm">
@@ -342,8 +368,12 @@ const QuranReader: React.FC = () => {
                         <ArrowLeft size={22} className="text-gray-600 dark:text-gray-300 rtl:rotate-0" />
                     </button>
                     <div className="flex flex-col">
-                        <span className="font-bold text-lg text-gray-800 dark:text-white font-arabicHead leading-tight">{surah.name}</span>
-                        <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold">{surah.englishName}</span>
+                        <span className="font-bold text-lg text-gray-800 dark:text-white font-arabicHead leading-tight">
+                            سورة {surah?.name || '...'}
+                        </span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold">
+                            {surah?.englishName || 'LOADING'}
+                        </span>
                     </div>
                 </div>
 
@@ -407,7 +437,7 @@ const QuranReader: React.FC = () => {
                                 onChange={() => setSearchScope('surah')}
                                 className="accent-emerald-500"
                             />
-                            في سورة {surah.name}
+                            في {surah?.name || '...'}
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-500 hover:text-emerald-600 transition-colors">
                             <input 
@@ -535,32 +565,40 @@ const QuranReader: React.FC = () => {
         )}
 
         <div className={`flex-1 w-full mx-auto transition-all ${isTextMode ? 'pt-20 py-8' : 'p-0 flex flex-col items-center justify-center overflow-hidden h-full'}`}>
-            {isTextMode ? (
-                <TextModeViewer 
-                    surah={surah} 
-                    activeAyahIndex={activeAyahIndex} 
-                    isPlaying={isPlaying} 
-                    onPlayAyah={playAyah} 
-                    onToggleBookmark={toggleBookmark} 
-                    bookmarks={bookmarks} 
-                    showTranslation={showTranslation} 
-                    fontSize={fontSize} 
-                    tajweedMode={tajweedMode}
-                    hideText={hideText}
-                    pageTheme={pageTheme}
-                    onCopy={(t) => navigator.clipboard.writeText(t)} 
-                    onShare={async (t) => { if (navigator.share) await navigator.share({ text: t }); }} 
-                    highlightTerm={searchParams.get('q') || ''}
-                />
+            {loading && !surah ? (
+                <div className="flex flex-col items-center justify-center h-full opacity-40 gap-4">
+                    <Loader2 size={48} className="animate-spin text-emerald-500" />
+                    <p className="font-arabic font-bold">جاري فتح المصحف...</p>
+                </div>
+            ) : isTextMode ? (
+                surah && (
+                    <TextModeViewer 
+                        surah={surah} 
+                        activeAyahIndex={activeAyahIndex} 
+                        isPlaying={isPlaying} 
+                        onPlayAyah={playAyah} 
+                        onToggleBookmark={toggleBookmark} 
+                        bookmarks={bookmarks} 
+                        showTranslation={showTranslation} 
+                        fontSize={fontSize} 
+                        tajweedMode={tajweedMode}
+                        hideText={hideText}
+                        pageTheme={pageTheme}
+                        onCopy={(t) => navigator.clipboard.writeText(t)} 
+                        onShare={async (t) => { if (navigator.share) await navigator.share({ text: t }); }} 
+                        highlightTerm={searchParams.get('q') || ''}
+                        onClearHighlight={clearHighlight}
+                    />
+                )
             ) : (
                 <MushafPagesViewer 
                     initialPage={currentPage} onPageChange={setCurrentPage} onClose={() => setViewMode('text')} 
-                    highlightedAyah={activeAyahIndex !== null ? { surah: surah.number, ayah: surah.ayahs[activeAyahIndex].numberInSurah } : null}
-                    onAyahClick={(s, a) => { const idx = surah.ayahs.findIndex(ayah => ayah.numberInSurah === a); if (idx !== -1) playAyah(idx); }}
+                    highlightedAyah={activeAyahIndex !== null && surah ? { surah: surah.number, ayah: surah.ayahs[activeAyahIndex].numberInSurah } : null}
+                    onAyahClick={(s, a) => { if (surah) { const idx = surah.ayahs.findIndex(ayah => ayah.numberInSurah === a); if (idx !== -1) playAyah(idx); } }}
                     isPlaying={isPlaying} onTogglePlay={togglePlay} reciterId={reciterId} onReciterChange={setReciterId}
                     playbackProgress={surahProgress}
                     initialHighlightTerm={searchParams.get('q') || ''}
-                    onClearHighlight={() => setSearchParams(prev => { prev.delete('q'); return prev; })}
+                    onClearHighlight={clearHighlight}
                     externalTheme={pageTheme}
                     onThemeChange={updateGlobalTheme}
                 />
@@ -568,7 +606,7 @@ const QuranReader: React.FC = () => {
         </div>
 
         {/* --- CENTERED PLAYER --- */}
-        {activeAyahIndex !== null && (
+        {activeAyahIndex !== null && surah && (
             <div className={`fixed bottom-6 left-0 md:right-72 right-0 z-[60] flex justify-center px-4 transition-transform duration-500 ${showOverlay ? 'translate-y-0' : 'translate-y-[150%]'}`}>
                 <div className="bg-white/95 dark:bg-[#1A1A1A]/95 backdrop-blur-2xl border border-gray-100 dark:border-white/10 rounded-[2.5rem] p-2 shadow-[0_20px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)] flex items-center gap-2 md:gap-8 min-w-[310px] max-w-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
                     <div className="absolute top-0 left-6 right-6 h-0.5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
