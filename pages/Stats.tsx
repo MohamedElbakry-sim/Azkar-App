@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { Flame, CheckCircle, BarChart3, Calendar, ChevronDown, RefreshCw, Info, X } from 'lucide-react';
+import { Flame, CheckCircle, BarChart3, Calendar, ChevronDown, RefreshCw, Info, X, Award } from 'lucide-react';
 import * as storage from '../services/storage';
 import { AZKAR_DATA, CATEGORIES } from '../data';
 import { ProgressState } from '../types';
@@ -44,19 +44,28 @@ const Stats: React.FC = () => {
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10">
       <div className="text-center mb-6 md:mb-10">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">إحصائياتك</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2 font-arabicHead">إحصائياتك</h2>
         <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base">تابع تقدمك واستمر في الذكر</p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+      {/* Stats Grid - Updated to 4 columns */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {/* Streak */}
         <div className="bg-white dark:bg-dark-surface p-4 md:p-6 rounded-2xl shadow-sm border border-orange-100 dark:border-dark-border flex flex-col items-center justify-center transition-transform hover:scale-105">
             <div className="bg-orange-100 dark:bg-orange-900/30 p-3 md:p-4 rounded-full text-orange-600 dark:text-orange-400 mb-3">
                 <Flame size={24} className="md:w-8 md:h-8" />
             </div>
-            <span className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">{stats.currentStreak}</span>
-            <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">أيام متتالية</span>
+            <span className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 font-english">{stats.currentStreak}</span>
+            <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold">أيام متتالية</span>
+        </div>
+
+        {/* Total (All Time) - New Stat Card */}
+        <div className="bg-white dark:bg-dark-surface p-4 md:p-6 rounded-2xl shadow-sm border border-emerald-100 dark:border-dark-border flex flex-col items-center justify-center transition-transform hover:scale-105">
+            <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 md:p-4 rounded-full text-emerald-600 dark:text-emerald-400 mb-3">
+                <Award size={24} className="md:w-8 md:h-8" />
+            </div>
+            <span className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 font-english">{stats.totalDhikrCompleted.toLocaleString('ar-SA')}</span>
+            <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold">إجمالي الأذكار</span>
         </div>
 
         {/* Weekly */}
@@ -64,8 +73,8 @@ const Stats: React.FC = () => {
              <div className="bg-blue-100 dark:bg-blue-900/30 p-3 md:p-4 rounded-full text-blue-600 dark:text-blue-400 mb-3">
                 <BarChart3 size={24} className="md:w-8 md:h-8" />
             </div>
-            <span className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">{stats.weeklyCount}</span>
-            <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">ذكر هذا الأسبوع</span>
+            <span className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 font-english">{stats.weeklyCount}</span>
+            <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold">ذكر هذا الأسبوع</span>
         </div>
 
         {/* Today */}
@@ -73,15 +82,15 @@ const Stats: React.FC = () => {
              <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 md:p-4 rounded-full text-emerald-600 dark:text-emerald-400 mb-3">
                 <CheckCircle size={24} className="md:w-8 md:h-8" />
             </div>
-            <span className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">{stats.todayCount}</span>
-            <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">ذكر اليوم</span>
+            <span className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 font-english">{stats.todayCount}</span>
+            <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold">ذكر اليوم</span>
         </div>
       </div>
 
       {/* Heatmap Section */}
       <div className="bg-white dark:bg-dark-surface p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <h3 className="text-lg md:text-xl font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+            <h3 className="text-lg md:text-xl font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2 font-arabicHead">
                 سجل الاستمرارية
                 <Tooltip text="مربعات ملونة تمثل أيامك. اللون الأغمق يعني عدداً أكبر من الأذكار.">
                     <div className="text-gray-400 hover:text-primary-500 cursor-help transition-colors">
@@ -405,14 +414,14 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({ history, daysCoun
                         </div>
                         
                         <div className="p-6 max-h-[60vh] overflow-y-auto">
-                            <h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 border-b border-gray-100 dark:border-dark-border pb-2">تفاصيل</h4>
+                            <h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 border-b border-gray-100 dark:border-dark-border pb-2 font-arabicHead">تفاصيل</h4>
                             <div className="space-y-3">
                                 {selectedDay.categories.map((cat, idx) => (
                                     <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-dark-bg border border-gray-100 dark:border-dark-border">
-                                        <span className="font-medium text-gray-700 dark:text-gray-200">
+                                        <span className="font-medium text-gray-700 dark:text-gray-200 font-arabic">
                                             {cat.title}
                                         </span>
-                                        <span className={`font-mono font-bold text-lg ${
+                                        <span className={`font-english font-bold text-lg ${
                                             theme === 'blue' ? 'text-blue-600 dark:text-blue-400' :
                                             theme === 'flame' ? 'text-red-600 dark:text-red-400' :
                                             'text-emerald-600 dark:text-emerald-400'

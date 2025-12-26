@@ -196,51 +196,78 @@ const CategoryView: React.FC = () => {
   const totalRepetitions = items.reduce((acc, item) => acc + (customTargets[item.id] || item.count), 0);
 
   const getThemeClasses = (theme: string) => {
+    const base = "backdrop-blur-2xl border transition-colors duration-500";
     switch (theme) {
-      case 'orange': return 'bg-orange-50 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
-      case 'indigo': return 'bg-indigo-50 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300';
-      case 'slate': return 'bg-slate-50 text-slate-800 dark:bg-slate-800 dark:text-slate-300';
-      case 'yellow': return 'bg-yellow-50 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-      case 'emerald': return 'bg-emerald-50 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300';
-      default: return 'bg-gray-50 text-gray-800 dark:bg-dark-surface dark:text-gray-300';
+      case 'orange': return `${base} bg-orange-50/60 border-orange-100 text-orange-800 dark:bg-orange-900/60 dark:border-orange-800 dark:text-orange-300`;
+      case 'indigo': return `${base} bg-indigo-50/60 border-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:border-indigo-800 dark:text-indigo-300`;
+      case 'slate': return `${base} bg-slate-50/60 border-slate-100 text-slate-800 dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-300`;
+      case 'yellow': return `${base} bg-yellow-50/60 border-yellow-100 text-yellow-800 dark:bg-yellow-900/60 dark:border-yellow-800 dark:text-yellow-300`;
+      case 'emerald': return `${base} bg-emerald-50/60 border-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:border-emerald-800 dark:text-emerald-300`;
+      default: return `${base} bg-white/60 border-gray-100 text-gray-800 dark:bg-dark-surface/60 dark:border-dark-border dark:text-gray-300`;
     }
   };
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto relative z-10">
-      <div className={`rounded-3xl p-6 md:p-8 text-center mb-8 shadow-sm border border-gray-100 dark:border-dark-border ${getThemeClasses(category.theme)} relative overflow-visible`}>
-        <div className="absolute top-4 left-4 z-20 flex gap-2">
-             <button onClick={() => setShowFontControls(!showFontControls)} className="p-2 rounded-full bg-white/40 hover:bg-white/60 dark:bg-black/20 dark:hover:bg-black/40 text-inherit transition-all shadow-sm"><Type size={20} /></button>
-             {showFontControls && (
-                <div className="absolute top-full left-0 mt-2 bg-white dark:bg-dark-surface p-2 rounded-xl shadow-xl border border-gray-100 dark:border-dark-border min-w-[150px] animate-popIn z-30 flex flex-col gap-1">
-                   {(['small', 'medium', 'large', 'xlarge'] as storage.FontSize[]).map((size) => (
-                        <button key={size} onClick={() => { handleFontSizeChange(size); setShowFontControls(false); }} className={`px-3 py-2 text-sm font-bold rounded-lg text-right transition-colors ${fontSize === size ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>{({ small: 'صغير', medium: 'متوسط', large: 'كبير', xlarge: 'ضخم' } as any)[size]}</button>
-                   ))}
-                </div>
-             )}
-        </div>
-
-        <div className="absolute top-4 right-4 z-20 flex gap-2">
-            <button 
-                onClick={(e) => { e.stopPropagation(); handlePin(); }} 
-                className={`p-2 rounded-full bg-white/40 hover:bg-white/60 dark:bg-black/20 dark:hover:bg-black/40 text-inherit transition-all shadow-sm ${pinnedState ? 'ring-2 ring-primary-500 bg-white/60' : ''}`}
-                title={pinnedState ? "إزالة من الوصول السريع" : "إضافة للوصول السريع"}
-            >
-                <Pin size={20} className={pinnedState ? 'rotate-0' : 'rotate-45'} fill={pinnedState ? 'currentColor' : 'none'} />
-            </button>
-            <button onClick={() => setIsReordering(!isReordering)} className={`p-2 rounded-full bg-white/40 hover:bg-white/60 dark:bg-black/20 dark:hover:bg-black/40 text-inherit transition-all shadow-sm flex items-center gap-1 ${isReordering ? 'ring-2 ring-primary-500 bg-white/60 dark:bg-black/40' : ''}`} title={isReordering ? "إنهاء الترتيب" : "إعادة الترتيب"}>{isReordering ? <Check size={20} /> : <ArrowDownUp size={20} />}</button>
-            <button onClick={handleAddItem} className="p-2 rounded-full bg-white/40 hover:bg-white/60 dark:bg-black/20 dark:hover:bg-black/40 text-inherit transition-all shadow-sm flex items-center gap-1" title="إضافة ذكر جديد"><Plus size={20} /></button>
-        </div>
-
-        <h2 className="text-3xl font-bold mb-2 opacity-90 font-serif">{category.title}</h2>
-        <div className="flex justify-center items-center gap-2 text-base font-medium opacity-80">
-           {remainingCount === 0 ? <span className="flex items-center gap-2 font-bold animate-slideUp text-emerald-600 dark:text-emerald-400"><CheckCircle size={20} />تم إكمال جميع الأذكار!</span> : <span>متبقي {remainingCount} من {totalCount}</span>}
-        </div>
+      <div className={`rounded-3xl p-6 md:p-8 mb-8 shadow-sm ${getThemeClasses(category.theme)} relative overflow-visible`}>
         
-        <div className="mt-6 h-3 bg-white/30 dark:bg-black/20 rounded-full overflow-hidden w-4/5 md:w-2/3 mx-auto shadow-inner">
-          <div className="h-full transition-all duration-700 ease-out relative bg-gradient-to-r from-[#F1C40F] to-[#F39C12]" style={{ width: `${percentage}%` }}>
-             <div className="absolute top-0 right-0 bottom-0 w-full bg-gradient-to-l from-white/30 to-transparent"></div>
-          </div>
+        {/* Responsive Toolbar */}
+        <div className="flex items-center justify-between gap-3 mb-8">
+            {/* Font Size Actions */}
+            <div className="relative">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setShowFontControls(!showFontControls); }} 
+                  className="p-2.5 rounded-2xl bg-white/40 hover:bg-white/60 dark:bg-black/20 dark:hover:bg-black/40 text-inherit transition-all shadow-sm backdrop-blur-md"
+                  title="تغيير حجم الخط"
+                >
+                  <Type size={20} />
+                </button>
+                {showFontControls && (
+                    <div className="absolute top-full right-0 mt-2 bg-white dark:bg-dark-surface p-2 rounded-2xl shadow-2xl border border-gray-100 dark:border-dark-border min-w-[150px] animate-popIn z-[60] flex flex-col gap-1">
+                      {(['small', 'medium', 'large', 'xlarge'] as storage.FontSize[]).map((size) => (
+                            <button key={size} onClick={() => { handleFontSizeChange(size); setShowFontControls(false); }} className={`px-4 py-2.5 text-sm font-bold rounded-xl text-right transition-colors ${fontSize === size ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>{({ small: 'صغير', medium: 'متوسط', large: 'كبير', xlarge: 'ضخم' } as any)[size]}</button>
+                      ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Utility Actions */}
+            <div className="flex items-center gap-2">
+                <button 
+                    onClick={(e) => { e.stopPropagation(); handlePin(); }} 
+                    className={`p-2.5 rounded-2xl bg-white/40 hover:bg-white/60 dark:bg-black/20 dark:hover:bg-black/40 text-inherit transition-all shadow-sm backdrop-blur-md ${pinnedState ? 'ring-2 ring-primary-500 bg-white/60' : ''}`}
+                    title={pinnedState ? "إزالة من الوصول السريع" : "إضافة للوصول السريع"}
+                >
+                    <Pin size={20} className={pinnedState ? 'rotate-0' : 'rotate-45'} fill={pinnedState ? 'currentColor' : 'none'} />
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setIsReordering(!isReordering); }} 
+                  className={`p-2.5 rounded-2xl bg-white/40 hover:bg-white/60 dark:bg-black/20 dark:hover:bg-black/40 text-inherit transition-all shadow-sm backdrop-blur-md flex items-center gap-1 ${isReordering ? 'ring-2 ring-primary-500 bg-white/60 dark:bg-black/40' : ''}`} 
+                  title={isReordering ? "إنهاء الترتيب" : "إعادة الترتيب"}
+                >
+                  {isReordering ? <Check size={20} /> : <ArrowDownUp size={20} />}
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleAddItem(); }} 
+                  className="p-2.5 rounded-2xl bg-white/40 hover:bg-white/60 dark:bg-black/20 dark:hover:bg-black/40 text-inherit transition-all shadow-sm backdrop-blur-md flex items-center gap-1" 
+                  title="إضافة ذكر جديد"
+                >
+                  <Plus size={20} />
+                </button>
+            </div>
+        </div>
+
+        <div className="text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-3 opacity-90 font-arabicHead">{category.title}</h2>
+            <div className="flex justify-center items-center gap-2 text-base font-medium opacity-80 mb-6">
+               {remainingCount === 0 ? <span className="flex items-center gap-2 font-bold animate-slideUp text-emerald-600 dark:text-emerald-400"><CheckCircle size={20} />تم إكمال جميع الأذكار!</span> : <span>متبقي {remainingCount} من {totalCount}</span>}
+            </div>
+            
+            <div className="h-3 bg-white/30 dark:bg-black/20 rounded-full overflow-hidden w-full max-w-md mx-auto shadow-inner relative">
+              <div className="h-full transition-all duration-700 ease-out relative bg-gradient-to-r from-[#F1C40F] to-[#F39C12]" style={{ width: `${percentage}%` }}>
+                 <div className="absolute top-0 right-0 bottom-0 w-full bg-gradient-to-l from-white/30 to-transparent"></div>
+              </div>
+            </div>
         </div>
       </div>
 

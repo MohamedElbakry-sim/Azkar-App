@@ -13,12 +13,17 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in the component tree.
  */
-/* FIX: Directly extending Component from 'react' to resolve member identification issues in some environments */
+// FIX: Using Component<Props, State> from 'react' ensures base class members like props, state, and setState are correctly recognized by TypeScript
 class ErrorBoundary extends Component<Props, State> {
+  // FIX: Declaring state as a class property provides better type visibility and ensures 'this.state' is recognized by the compiler
   public state: State = {
     hasError: false,
     error: null
   };
+
+  constructor(props: Props) {
+    super(props);
+  }
 
   // Update state so the next render will show the fallback UI.
   public static getDerivedStateFromError(error: Error): State {
@@ -32,14 +37,15 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   // Handle retry logic to reset state and attempt reload
-  /* FIX: Ensure setState is correctly resolved via inheritance */
   private handleRetry = () => {
+    // FIX: setState is an inherited member of the React Component class
     this.setState({ hasError: false, error: null });
     window.location.reload();
   };
 
   // Render method to display fallback UI or children
   public render() {
+    // FIX: state is an inherited member of the React Component class
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg p-4">
@@ -53,7 +59,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    /* FIX: Ensure props is correctly resolved via inheritance */
+    // FIX: props is an inherited member of the React Component class
     return this.props.children;
   }
 }

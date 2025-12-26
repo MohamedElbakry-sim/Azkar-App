@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { Plus, ArrowRight, ArrowDownUp, Check, CheckCircle, BarChart3, Home, BookOpen, Pin } from 'lucide-react';
+import { Plus, ArrowRight, ArrowDownUp, Check, CheckCircle, BarChart3, Home, BookOpen, Pin, Type } from 'lucide-react';
 import * as storage from '../services/storage';
 import { Dhikr, CustomCategory } from '../types';
 import DhikrCard from '../components/DhikrCard';
@@ -23,6 +23,10 @@ const CustomCategoryView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isReordering, setIsReordering] = useState(false);
   const [pinnedState, setPinnedState] = useState(false);
+
+  // Font Size Control State
+  const [fontSize, setFontSize] = useState<storage.FontSize>('medium');
+  const [showFontControls, setShowFontControls] = useState(false);
 
   const loadData = () => {
     if (!id) return;
@@ -74,12 +78,18 @@ const CustomCategoryView: React.FC = () => {
 
   useEffect(() => {
     setFavorites(storage.getFavorites());
+    setFontSize(storage.getFontSize());
     loadData();
   }, [id]);
 
   const handleToggleFavorite = (dhikrId: number) => {
     const newFavs = storage.toggleFavoriteStorage(dhikrId);
     setFavorites(newFavs);
+  };
+
+  const handleFontSizeChange = (size: storage.FontSize) => {
+    setFontSize(size);
+    storage.saveFontSize(size);
   };
 
   const handleComplete = (dhikrId: number) => {
@@ -134,47 +144,79 @@ const CustomCategoryView: React.FC = () => {
   const percentage = items.length > 0 ? (completedCount / items.length) * 100 : 0;
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto pb-20 animate-fadeIn">
-        {/* Category Header Card */}
-        <div className="bg-gradient-to-br from-primary-600 to-emerald-800 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-xl shadow-primary-500/10">
-            <div className="absolute top-4 left-4 flex gap-2">
-                <button 
-                    onClick={(e) => { e.stopPropagation(); handlePin(); }} 
-                    className={`p-2 rounded-xl backdrop-blur-md border border-white/10 transition-all ${pinnedState ? 'bg-white text-primary-700' : 'bg-white/10'}`}
-                    title={pinnedState ? "إزالة من الوصول السريع" : "إضافة للوصول السريع"}
-                >
-                    <Pin size={20} className={pinnedState ? 'rotate-0' : 'rotate-45'} fill={pinnedState ? 'currentColor' : 'none'} />
-                </button>
-                <button onClick={() => setIsReordering(!isReordering)} className={`p-2 rounded-xl backdrop-blur-md border border-white/10 transition-all ${isReordering ? 'bg-white text-primary-700' : 'bg-white/10'}`}>
-                    {isReordering ? <Check size={20} /> : <ArrowDownUp size={20} />}
-                </button>
-                <button onClick={() => { setEditingItem(undefined); setIsModalOpen(true); }} className="p-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10">
-                    <Plus size={20} />
-                </button>
+    <div className="space-y-6 max-w-3xl mx-auto pb-20 animate-fadeIn px-2 md:px-0">
+        {/* Category Header Card with Glassmorphism */}
+        <div className="bg-gradient-to-br from-primary-600/80 to-emerald-800/80 backdrop-blur-2xl rounded-[2.5rem] p-6 md:p-10 text-white relative overflow-hidden shadow-xl shadow-primary-500/10 border border-white/10">
+            {/* Toolbar */}
+            <div className="flex items-center justify-between gap-4 mb-8 relative z-20">
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => navigate('/custom-athkar')}
+                        className="flex items-center gap-2 text-white/80 hover:text-white transition-colors bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-sm font-bold"
+                    >
+                        <ArrowRight size={18} className="rtl:rotate-0" />
+                        <span className="hidden sm:inline">الرجوع</span>
+                    </button>
+                    
+                    <div className="relative">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setShowFontControls(!showFontControls); }} 
+                            className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-all text-white"
+                            title="تغيير حجم الخط"
+                        >
+                            <Type size={20} />
+                        </button>
+                        {showFontControls && (
+                            <div className="absolute top-full right-0 mt-2 bg-white dark:bg-dark-surface p-2 rounded-2xl shadow-2xl border border-gray-100 dark:border-dark-border min-w-[150px] animate-popIn z-[60] flex flex-col gap-1">
+                                {(['small', 'medium', 'large', 'xlarge'] as storage.FontSize[]).map((size) => (
+                                    <button key={size} onClick={() => { handleFontSizeChange(size); setShowFontControls(false); }} className={`px-4 py-2.5 text-sm font-bold rounded-xl text-right transition-colors ${fontSize === size ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>{({ small: 'صغير', medium: 'متوسط', large: 'كبير', xlarge: 'ضخم' } as any)[size]}</button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex gap-2">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); handlePin(); }} 
+                        className={`p-2.5 rounded-xl backdrop-blur-md border border-white/10 transition-all ${pinnedState ? 'bg-white text-primary-700 shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}
+                        title={pinnedState ? "إزالة من الوصول السريع" : "إضافة للوصول السريع"}
+                    >
+                        <Pin size={20} className={pinnedState ? 'rotate-0' : 'rotate-45'} fill={pinnedState ? 'currentColor' : 'none'} />
+                    </button>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setIsReordering(!isReordering); }} 
+                        className={`p-2.5 rounded-xl backdrop-blur-md border border-white/10 transition-all ${isReordering ? 'bg-white text-primary-700 shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}
+                        title="ترتيب الأذكار"
+                    >
+                        {isReordering ? <Check size={20} /> : <ArrowDownUp size={20} />}
+                    </button>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setEditingItem(undefined); setIsModalOpen(true); }} 
+                        className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-all"
+                        title="إضافة ذكر"
+                    >
+                        <Plus size={20} />
+                    </button>
+                </div>
             </div>
 
-            <button 
-                onClick={() => navigate('/custom-athkar')}
-                className="flex items-center gap-2 text-white/70 hover:text-white transition-colors mb-4 text-sm"
-            >
-                <ArrowRight size={16} className="rtl:rotate-0" />
-                الرجوع للأقسام
-            </button>
-
-            <h2 className="text-3xl font-bold font-arabicHead mb-2">{category.title}</h2>
-            
-            {items.length > 0 ? (
-                <>
-                    <p className="text-primary-50 opacity-80 text-sm mb-6">
-                        {visibleIds.length === 0 ? 'تم إكمال جميع الأوراد!' : `متبقي ${visibleIds.length} من ${items.length}`}
-                    </p>
-                    <div className="h-2.5 bg-white/20 rounded-full overflow-hidden w-full backdrop-blur-sm">
-                        <div className="h-full bg-white transition-all duration-700 ease-out" style={{ width: `${percentage}%` }} />
-                    </div>
-                </>
-            ) : (
-                <p className="text-primary-50 opacity-80 text-sm italic">لا توجد أذكار مضافة بعد</p>
-            )}
+            <div className="relative z-10">
+                <h2 className="text-3xl md:text-4xl font-bold font-arabicHead mb-2">{category.title}</h2>
+                
+                {items.length > 0 ? (
+                    <>
+                        <p className="text-primary-50 opacity-80 text-sm mb-6">
+                            {visibleIds.length === 0 ? 'تم إكمال جميع الأوراد!' : `متبقي ${visibleIds.length} من ${items.length}`}
+                        </p>
+                        <div className="h-3 bg-white/20 rounded-full overflow-hidden w-full max-w-md backdrop-blur-sm relative">
+                            <div className="h-full bg-white transition-all duration-1000 ease-out" style={{ width: `${percentage}%` }} />
+                        </div>
+                    </>
+                ) : (
+                    <p className="text-primary-50 opacity-80 text-sm italic">لا توجد أذكار مضافة بعد</p>
+                )}
+            </div>
         </div>
 
         {/* Dhikr List */}
@@ -192,6 +234,7 @@ const CustomCategoryView: React.FC = () => {
                             onComplete={handleComplete}
                             onEdit={(item) => { setEditingItem(item); setIsModalOpen(true); }}
                             onDelete={handleDeleteDhikr}
+                            fontSizeOverride={fontSize}
                             reorderMode={isReordering}
                             onMoveUp={() => moveItem(item.id, 'up')}
                             onMoveDown={() => moveItem(item.id, 'down')}
