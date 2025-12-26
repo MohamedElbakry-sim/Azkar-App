@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Search, X, Book, MessageCircle, Star, Sparkles, ChevronLeft, Loader2, ArrowRight, Filter } from 'lucide-react';
+import { Search, X, Book, MessageCircle, Star, Sparkles, ChevronLeft, ArrowRight, Filter, Clock } from 'lucide-react';
 import { AZKAR_DATA, NAMES_OF_ALLAH, SITUATIONAL_DUAS, CATEGORIES } from '../data';
 import * as quranService from '../services/quranService';
 import * as storage from '../services/storage';
@@ -19,11 +19,29 @@ interface SpotlightResult {
 
 type SearchFilter = 'all' | 'quran' | 'azkar' | 'names' | 'duas';
 
+/**
+ * Skeleton Loader Component for Search Results
+ */
+const SearchResultSkeleton: React.FC = () => (
+    <div className="px-2 space-y-2 animate-pulse">
+        {[...Array(5)].map((_, i) => (
+            <div key={i} className="w-full p-4 rounded-2xl flex items-center gap-4 bg-gray-50 dark:bg-dark-bg/50">
+                <div className="w-10 h-10 rounded-xl bg-gray-200 dark:bg-dark-elevated" />
+                <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 dark:bg-dark-elevated rounded w-1/3" />
+                    <div className="h-3 bg-gray-100 dark:bg-dark-surface rounded w-2/3 opacity-60" />
+                </div>
+            </div>
+        ))}
+    </div>
+);
+
 const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [quranResults, setQuranResults] = useState<any[]>([]);
+  const [recentViews, setRecentViews] = useState<storage.RecentViewItem[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [activeFilter, setActiveFilter] = useState<SearchFilter>('all');
@@ -34,6 +52,7 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
         setQuery('');
         setSelectedIndex(0);
         setActiveFilter('all');
+        setRecentViews(storage.getRecentViews().slice(0, 3)); // Show last 3
         setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
@@ -42,13 +61,13 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
   useEffect(() => {
     if (!query.trim() || (activeFilter !== 'all' && activeFilter !== 'quran')) {
         setQuranResults([]);
+        setIsSearching(false);
         return;
     }
 
+    setIsSearching(true);
     const timer = setTimeout(async () => {
-        setIsSearching(true);
         try {
-            // Note: searchGlobal already returns the mapped results
             const results = await quranService.searchGlobal(query);
             setQuranResults(results.slice(0, 5));
         } catch (e) {
@@ -69,7 +88,7 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
     const combined: SpotlightResult[] = [];
 
     // 1. Categories & Duas Library (Quick Navigation)
-    if (activeFilter === 'all' || activeFilter === 'duas') {
+    if (activeFilter === 'all' || activeFilter === 'duas' || activeFilter === 'categories' as any) {
         [...CATEGORIES, ...SITUATIONAL_DUAS].forEach(cat => {
             if (normalizeArabic(cat.title).includes(normalizedQuery)) {
                 combined.push({
@@ -83,7 +102,6 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
             }
         });
 
-        // Search within situational dua items
         SITUATIONAL_DUAS.forEach((cat, cIdx) => {
             cat.items.forEach((dua, dIdx) => {
                 if (normalizeArabic(dua.text).includes(normalizedQuery)) {
@@ -195,7 +213,7 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
       <div className="absolute inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-md animate-fadeIn" onClick={onClose} />
       
       {/* Modal Container */}
-      <div className="relative w-full max-w-2xl bg-white dark:bg-dark-surface rounded-[2rem] shadow-2xl shadow-black/20 overflow-hidden animate-slideUp border border-gray-100 dark:border-dark-border">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-dark-surface rounded-[2.5rem] shadow-2xl shadow-black/20 overflow-hidden animate-slideUp border border-gray-100 dark:border-dark-border">
         
         {/* Search Header */}
         <div className="pt-6">
@@ -212,9 +230,8 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
                     setSelectedIndex(0);
                 }}
               />
-              {isSearching && <Loader2 size={20} className="animate-spin text-primary-500 mr-2" />}
               {query && (
-                  <button onClick={() => setQuery('')} className="p-2 text-gray-400">
+                  <button onClick={() => setQuery('')} className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
                       <X size={18} />
                   </button>
               )}
@@ -226,7 +243,6 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
               </button>
             </div>
             
-            {/* Filter Tabs Container */}
             <div className="relative group">
                 <div className="flex items-center gap-2 py-4 overflow-x-auto no-scrollbar scroll-smooth px-6">
                     {filters.map((f) => (
@@ -253,74 +269,117 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
 
         {/* Results Body */}
         <div className="max-h-[50vh] overflow-y-auto no-scrollbar py-2">
-            {query && results.length > 0 ? (
-                <div className="px-2 space-y-1">
-                    {results.map((res, idx) => (
-                        <button
-                            key={res.id}
-                            onClick={() => handleSelect(res.path)}
-                            onMouseEnter={() => setSelectedIndex(idx)}
-                            className={`
-                                w-full text-right p-4 rounded-2xl flex items-center justify-between transition-all group
-                                ${selectedIndex === idx ? 'bg-primary-50 dark:bg-primary-900/20 ring-1 ring-primary-200 dark:ring-primary-800/50' : 'hover:bg-gray-50 dark:hover:bg-dark-bg'}
-                            `}
-                        >
-                            <div className="flex items-center gap-4 flex-1 min-w-0">
-                                <div className={`p-2.5 rounded-xl transition-colors ${selectedIndex === idx ? 'bg-white dark:bg-dark-surface shadow-sm' : 'bg-gray-100 dark:bg-dark-bg text-gray-400'}`}>
-                                    {res.icon}
-                                </div>
-                                <div className="flex flex-col min-w-0">
-                                    <span className={`font-bold font-arabicHead truncate ${selectedIndex === idx ? 'text-primary-700 dark:text-primary-400' : 'text-gray-800 dark:text-gray-100'}`}>
-                                        {res.title}
-                                    </span>
-                                    {res.subtitle && (
-                                        <span className="text-[10px] text-gray-400 font-arabic truncate mt-0.5 opacity-80">
-                                            {res.subtitle}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                            <div className={`mr-4 transition-transform ${selectedIndex === idx ? 'translate-x-0 opacity-100' : 'translate-x-2 opacity-0'}`}>
-                                <ArrowRight size={18} className="text-primary-500 rtl:rotate-0" />
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            ) : query ? (
-                <div className="py-20 text-center flex flex-col items-center gap-4 animate-fadeIn">
-                    <div className="p-5 bg-gray-50 dark:bg-dark-bg rounded-full text-gray-300">
-                        <Search size={48} />
-                    </div>
-                    <div>
-                        <p className="text-gray-500 dark:text-gray-400 font-bold">لا توجد نتائج مطابقة</p>
-                        <p className="text-xs text-gray-400 mt-1">تأكد من كتابة الكلمة بشكل صحيح (بدون تشكيل)</p>
-                    </div>
-                </div>
+            
+            {/* Show Loading Skeleton while searching */}
+            {isSearching ? (
+                <SearchResultSkeleton />
             ) : (
-                <div className="py-12 px-8">
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <Sparkles size={14} className="text-primary-500" />
-                        اقتراحات سريعة
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {[
-                            { label: 'أذكار الصباح', path: '/category/sabah' },
-                            { label: 'سورة الكهف', path: '/quran/18' },
-                            { label: 'السبحة', path: '/tasbeeh' },
-                            { label: 'مواقيت الصلاة', path: '/prayers' },
-                            { label: 'أسماء الله', path: '/names' },
-                            { label: 'حصن المسلم', path: '/duas' }
-                        ].map((s, i) => (
-                            <button 
-                                key={i}
-                                onClick={() => handleSelect(s.path)}
-                                className="p-3 bg-gray-50 dark:bg-dark-bg hover:bg-primary-50 dark:hover:bg-primary-900/20 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 text-sm font-bold rounded-xl border border-gray-100 dark:border-dark-border transition-all text-center"
-                            >
-                                {s.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                <>
+                    {/* Recently Viewed (Empty Query State) */}
+                    {!query && recentViews.length > 0 && (
+                        <div className="px-6 py-4 animate-fadeIn">
+                            <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <Clock size={12} />
+                                شوهد مؤخراً
+                            </h4>
+                            <div className="space-y-1">
+                                {recentViews.map((res) => (
+                                    <button
+                                        key={res.id}
+                                        onClick={() => handleSelect(res.path)}
+                                        className="w-full text-right p-3 rounded-xl flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-dark-bg transition-all"
+                                    >
+                                        <div className="p-2 rounded-lg bg-gray-100 dark:bg-dark-bg text-gray-400">
+                                            {res.type === 'quran' ? <Book size={16} className="text-emerald-600" /> : <Sparkles size={16} className="text-primary-500" />}
+                                        </div>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="font-bold font-arabicHead text-sm text-gray-800 dark:text-gray-100">
+                                                {res.title}
+                                            </span>
+                                            {res.subtitle && (
+                                                <span className="text-[10px] text-gray-400 font-arabic truncate">
+                                                    {res.subtitle}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Results List */}
+                    {query && results.length > 0 ? (
+                        <div className="px-2 space-y-1">
+                            {results.map((res, idx) => (
+                                <button
+                                    key={res.id}
+                                    onClick={() => handleSelect(res.path)}
+                                    onMouseEnter={() => setSelectedIndex(idx)}
+                                    className={`
+                                        w-full text-right p-4 rounded-2xl flex items-center justify-between transition-all group
+                                        ${selectedIndex === idx ? 'bg-primary-50 dark:bg-primary-900/20 ring-1 ring-primary-200 dark:ring-primary-800/50' : 'hover:bg-gray-50 dark:hover:bg-dark-bg'}
+                                    `}
+                                >
+                                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                                        <div className={`p-2.5 rounded-xl transition-colors ${selectedIndex === idx ? 'bg-white dark:bg-dark-surface shadow-sm' : 'bg-gray-100 dark:bg-dark-bg text-gray-400'}`}>
+                                            {res.icon}
+                                        </div>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className={`font-bold font-arabicHead truncate ${selectedIndex === idx ? 'text-primary-700 dark:text-primary-400' : 'text-gray-800 dark:text-gray-100'}`}>
+                                                {res.title}
+                                            </span>
+                                            {res.subtitle && (
+                                                <span className="text-[10px] text-gray-400 font-arabic truncate mt-0.5 opacity-80">
+                                                    {res.subtitle}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className={`mr-4 transition-transform ${selectedIndex === idx ? 'translate-x-0 opacity-100' : 'translate-x-2 opacity-0'}`}>
+                                        <ArrowRight size={18} className="text-primary-500 rtl:rotate-0" />
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    ) : query ? (
+                        <div className="py-20 text-center flex flex-col items-center gap-4 animate-fadeIn">
+                            <div className="p-5 bg-gray-50 dark:bg-dark-bg rounded-full text-gray-300">
+                                <Search size={48} />
+                            </div>
+                            <div>
+                                <p className="text-gray-500 dark:text-gray-400 font-bold">لا توجد نتائج مطابقة</p>
+                                <p className="text-xs text-gray-400 mt-1">تأكد من كتابة الكلمة بشكل صحيح (بدون تشكيل)</p>
+                            </div>
+                        </div>
+                    ) : (
+                        /* Default Suggestions when Query is Empty */
+                        <div className="py-12 px-8">
+                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                <Sparkles size={14} className="text-primary-500" />
+                                اقتراحات سريعة
+                            </h4>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {[
+                                    { label: 'أذكار الصباح', path: '/category/sabah' },
+                                    { label: 'سورة الكهف', path: '/quran/18' },
+                                    { label: 'السبحة', path: '/tasbeeh' },
+                                    { label: 'مواقيت الصلاة', path: '/prayers' },
+                                    { label: 'أسماء الله', path: '/names' },
+                                    { label: 'حصن المسلم', path: '/duas' }
+                                ].map((s, i) => (
+                                    <button 
+                                        key={i}
+                                        onClick={() => handleSelect(s.path)}
+                                        className="p-3 bg-gray-50 dark:bg-dark-bg hover:bg-primary-50 dark:hover:bg-primary-900/20 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 text-sm font-bold rounded-xl border border-gray-100 dark:border-dark-border transition-all text-center"
+                                    >
+                                        {s.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
         </div>
 

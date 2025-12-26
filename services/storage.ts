@@ -1,3 +1,5 @@
+
+
 import { ProgressState, Dhikr, CategoryId, CustomCategory } from '../types';
 
 const FAVORITES_KEY = 'nour_favorites_v1';
@@ -20,6 +22,8 @@ const DHIKR_ORDER_KEY = 'nour_dhikr_order_v1';
 const RADIO_FAVORITES_KEY = 'nour_radio_favorites_v1';
 const NAV_SETTINGS_KEY = 'nour_nav_settings_v1';
 const ACCENT_THEME_KEY = 'nour_accent_theme_v1';
+const RECENT_VIEWS_KEY = 'nour_recent_views_v1';
+const PINNED_ITEMS_KEY = 'nour_pinned_items_v1';
 
 // New Adhan Keys
 const ADHAN_AUDIO_ENABLED_KEY = 'nour_adhan_audio_enabled_v1';
@@ -32,11 +36,17 @@ const QURAN_LAST_READ_KEY = 'nour_quran_last_read_v1';
 const QURAN_BOOKMARKS_KEY = 'nour_quran_bookmarks_v1';
 const QURAN_THEME_KEY = 'nour_quran_theme_v1';
 const QURAN_REFLECTIONS_KEY = 'nour_quran_reflections_v1';
+const QURAN_READER_SETTINGS_KEY = 'nour_quran_reader_settings_v1';
 
 export type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
 export type PageTheme = 'light' | 'sepia' | 'dark';
 export type AccentTheme = 'emerald' | 'blue' | 'purple' | 'rose' | 'amber';
 export type AdhanVoice = 'mecca' | 'madina' | 'alaqsa' | 'standard';
+
+export interface ReaderSettings {
+  lineHeight: number;
+  wordSpacing: number;
+}
 
 export interface Reminder {
   id: string;
@@ -61,6 +71,22 @@ export interface AyahReflection {
   updatedAt: number;
 }
 
+export interface RecentViewItem {
+  id: string;
+  type: 'quran' | 'azkar';
+  title: string;
+  subtitle?: string;
+  path: string;
+  timestamp: number;
+}
+
+export interface PinnedItem {
+  id: string;
+  type: 'quran' | 'azkar' | 'custom_azkar';
+  title: string;
+  path: string;
+}
+
 export type VibrationType = 'default' | 'short' | 'long' | 'pulse' | 'none';
 
 export interface NotificationSettings {
@@ -69,6 +95,71 @@ export interface NotificationSettings {
 }
 
 export type HeatmapTheme = 'emerald' | 'blue' | 'flame';
+
+// --- Recent Views ---
+
+export const getRecentViews = (): RecentViewItem[] => {
+  try {
+    const stored = localStorage.getItem(RECENT_VIEWS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const addRecentView = (item: Omit<RecentViewItem, 'timestamp'>) => {
+  const current = getRecentViews();
+  const newItem: RecentViewItem = { ...item, timestamp: Date.now() };
+  
+  // Remove duplicate if exists and add to top
+  const filtered = current.filter(i => i.id !== item.id);
+  const updated = [newItem, ...filtered].slice(0, 3); // Capped at last 3 viewed
+  
+  localStorage.setItem(RECENT_VIEWS_KEY, JSON.stringify(updated));
+};
+
+// --- Pinned Items ---
+
+export const getPinnedItems = (): PinnedItem[] => {
+  try {
+    const stored = localStorage.getItem(PINNED_ITEMS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const isPinned = (id: string): boolean => {
+  return getPinnedItems().some(item => item.id === id);
+};
+
+export const togglePin = (item: PinnedItem) => {
+  const current = getPinnedItems();
+  const index = current.findIndex(i => i.id === item.id);
+  let updated;
+  if (index >= 0) {
+    updated = current.filter(i => i.id !== item.id);
+  } else {
+    updated = [item, ...current].slice(0, 6); // Max 6 pins for UI stability
+  }
+  localStorage.setItem(PINNED_ITEMS_KEY, JSON.stringify(updated));
+  window.dispatchEvent(new Event('pins-updated'));
+};
+
+// --- Reader Settings ---
+
+export const getReaderSettings = (): ReaderSettings => {
+  try {
+    const stored = localStorage.getItem(QURAN_READER_SETTINGS_KEY);
+    return stored ? JSON.parse(stored) : { lineHeight: 2.2, wordSpacing: 1 };
+  } catch {
+    return { lineHeight: 2.2, wordSpacing: 1 };
+  }
+};
+
+export const saveReaderSettings = (settings: ReaderSettings) => {
+  localStorage.setItem(QURAN_READER_SETTINGS_KEY, JSON.stringify(settings));
+};
 
 // --- Adhan Settings ---
 
@@ -481,6 +572,7 @@ export const saveNotificationSettings = (settings: NotificationSettings) => {
   localStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
 };
 
+/* FIX: Removed duplicate getVibrationPattern implementation */
 export const getVibrationPattern = (type: VibrationType): number[] => {
   switch (type) {
     case 'short': return [100];

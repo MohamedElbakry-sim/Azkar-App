@@ -18,7 +18,7 @@ export const normalizeArabic = (text: string): string => {
 export const getHighlightRegex = (query: string): RegExp | null => {
   if (!query) return null;
   const normalizedQuery = normalizeArabic(query);
-  const diacriticsPattern = "[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06DC\\u06DF-\\u06E8\\u06EA-\\u06ED]*";
+  const diacriticsPattern = "[\\u0610-\\u061A\\u064B-\\u065F\\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*";
   
   const pattern = normalizedQuery
     .split('')
@@ -89,4 +89,16 @@ export const getJuzInfo = (juzNumber: number): { surah: number, ayah: number } =
     { surah: 78, ayah: 1 },   // 30
   ];
   return juzStarts[juzNumber - 1];
+};
+
+// Define valid time periods for background theme effects
+export type TimePeriod = 'dawn' | 'day' | 'sunset' | 'night';
+
+// Utility to determine the current time period for dynamic UI adjustments
+export const getTimePeriod = (): TimePeriod => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 8) return 'dawn';
+  if (hour >= 8 && hour < 17) return 'day';
+  if (hour >= 17 && hour < 20) return 'sunset';
+  return 'night';
 };

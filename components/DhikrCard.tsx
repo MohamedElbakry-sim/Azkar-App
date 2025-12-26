@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Dhikr } from '../types';
 import { Heart, Repeat, Info, Share2, Copy, Check, Edit3, Trash2, SkipForward, MoveUp, MoveDown } from 'lucide-react';
@@ -129,7 +128,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
         {/* Progress Background Fill */}
         {!readonly && !reorderMode && (
             <div 
-                className="absolute bottom-0 right-0 top-0 bg-primary-50/80 dark:bg-emerald-500/5 transition-all duration-500 ease-out z-0 pointer-events-none"
+                className="absolute bottom-0 right-0 top-0 bg-primary-500/10 dark:bg-emerald-500/10 transition-all duration-500 ease-out z-0 pointer-events-none"
                 style={{ width: `${progressPercent}%` }}
             />
         )}
@@ -168,7 +167,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
                             )}
                             <button 
                                 onClick={() => onToggleFavorite(item.id)}
-                                className={`p-2 rounded-full transition-colors ${isFavorite ? 'text-rose-500 bg-rose-50 dark:bg-rose-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
+                                className={`p-2 rounded-full transition-colors ${isFavorite ? 'text-rose-500 bg-rose-50 dark:bg-rose-900/30' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-bg'}`}
                                 title={isFavorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}
                             >
                                 <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
@@ -212,7 +211,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             {/* Counter Badge */}
             {currentTarget > 1 && !reorderMode && (
                 <div className="flex justify-center mt-6">
-                    <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 bg-gray-50 dark:bg-dark-elevated/50 px-4 py-1.5 rounded-full shadow-sm border border-gray-100 dark:border-dark-border">
+                    <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 bg-gray-50 dark:bg-dark-elevated/40 px-4 py-1.5 rounded-full shadow-sm border border-gray-100 dark:border-dark-border">
                         <Repeat size={14} className="opacity-70" />
                         <span className="text-sm font-bold font-english">{count} / {currentTarget}</span>
                     </div>
@@ -222,7 +221,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({
             {/* Benefit Drawer */}
             {showBenefit && item.benefit && (
                 <div className="mt-6 pt-4 border-t border-gray-100 dark:border-dark-border animate-slideUp" onClick={e => e.stopPropagation()}>
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl">
+                    <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl">
                         <p className="text-body text-blue-800 dark:text-blue-200 font-arabic leading-relaxed">
                             {item.benefit}
                         </p>

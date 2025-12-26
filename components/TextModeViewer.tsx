@@ -34,6 +34,7 @@ interface TextModeViewerProps {
   pageTheme?: storage.PageTheme;
   highlightTerm?: string;
   onClearHighlight?: () => void;
+  readerSettings?: storage.ReaderSettings;
 }
 
 const BISMILLAH_TEXT = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
@@ -47,7 +48,8 @@ const VerseMarker: React.FC<{ number: number; classes?: string }> = ({ number, c
 const TextModeViewer: React.FC<TextModeViewerProps> = ({
   surah, activeAyahIndex, isPlaying, onPlayAyah, onToggleBookmark,
   bookmarks, showTranslation, fontSize, onCopy, onShare,
-  tajweedMode = false, hideText = false, pageTheme = 'light', highlightTerm = '', onClearHighlight
+  tajweedMode = false, hideText = false, pageTheme = 'light', highlightTerm = '', onClearHighlight,
+  readerSettings = { lineHeight: 2.2, wordSpacing: 1 }
 }) => {
   const navigate = useNavigate();
   const [reflections, setReflections] = useState<storage.AyahReflection[]>([]);
@@ -194,11 +196,11 @@ const TextModeViewer: React.FC<TextModeViewerProps> = ({
 
   const getFontSizeClass = () => {
     switch (fontSize) {
-      case 'small': return 'text-2xl leading-[2.4]';
-      case 'medium': return 'text-3xl md:text-4xl leading-[2.4]';
-      case 'large': return 'text-4xl md:text-5xl leading-[2.6]';
-      case 'xlarge': return 'text-5xl md:text-6xl leading-[3]';
-      default: return 'text-3xl leading-[2.4]';
+      case 'small': return 'text-2xl';
+      case 'medium': return 'text-3xl md:text-4xl';
+      case 'large': return 'text-4xl md:text-5xl';
+      case 'xlarge': return 'text-5xl md:text-6xl';
+      default: return 'text-3xl';
     }
   };
 
@@ -326,6 +328,10 @@ const TextModeViewer: React.FC<TextModeViewerProps> = ({
                     className={`font-quran text-right cursor-pointer select-text transition-all duration-300 ${getFontSizeClass()} ${highlights.textClasses} ${hideText ? 'blur-[8px] hover:blur-none active:blur-none' : ''}`} 
                     onClick={() => handleAyahClick(ayah)} 
                     dir="rtl"
+                    style={{ 
+                        lineHeight: readerSettings.lineHeight,
+                        wordSpacing: `${readerSettings.wordSpacing}px`
+                    }}
                   >
                       {finalAyahContent}
                       <VerseMarker number={ayah.numberInSurah} classes={highlights.markerClasses} />

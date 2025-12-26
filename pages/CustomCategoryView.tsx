@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
-// FIX: Added missing BookOpen import from lucide-react
-import { Plus, ArrowRight, ArrowDownUp, Check, CheckCircle, BarChart3, Home, BookOpen } from 'lucide-react';
+import { Plus, ArrowRight, ArrowDownUp, Check, CheckCircle, BarChart3, Home, BookOpen, Pin } from 'lucide-react';
 import * as storage from '../services/storage';
 import { Dhikr, CustomCategory } from '../types';
 import DhikrCard from '../components/DhikrCard';
@@ -23,6 +22,7 @@ const CustomCategoryView: React.FC = () => {
   const [editingItem, setEditingItem] = useState<Dhikr | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [isReordering, setIsReordering] = useState(false);
+  const [pinnedState, setPinnedState] = useState(false);
 
   const loadData = () => {
     if (!id) return;
@@ -32,10 +32,19 @@ const CustomCategoryView: React.FC = () => {
     if (!currentCat) return;
     setCategory(currentCat);
 
+    // Track as recent
+    storage.addRecentView({
+        id: `custom-azkar-${currentCat.id}`,
+        type: 'azkar',
+        title: currentCat.title,
+        subtitle: 'قسم خاص',
+        path: `/custom-category/${currentCat.id}`
+    });
+    setPinnedState(storage.isPinned(`custom-azkar-${currentCat.id}`));
+
     const allDhikrs = storage.getCustomDhikrs();
     const catDhikrs = allDhikrs.filter(d => d.customCategoryId === id);
     
-    // Apply Order
     const savedOrder = storage.getDhikrOrder(`custom_${id}`);
     if (savedOrder.length > 0) {
         catDhikrs.sort((a, b) => {
@@ -47,7 +56,6 @@ const CustomCategoryView: React.FC = () => {
     }
     
     setItems(catDhikrs);
-    
     const today = storage.getTodayKey();
     const todayProgress = storage.getProgress()[today] || {};
     setProgress(todayProgress);
@@ -76,6 +84,17 @@ const CustomCategoryView: React.FC = () => {
 
   const handleComplete = (dhikrId: number) => {
     setVisibleIds(prev => prev.filter(vId => vId !== dhikrId));
+  };
+
+  const handlePin = () => {
+      if (!category) return;
+      storage.togglePin({
+          id: `custom-azkar-${category.id}`,
+          type: 'custom_azkar',
+          title: category.title,
+          path: `/custom-category/${category.id}`
+      });
+      setPinnedState(storage.isPinned(`custom-azkar-${category.id}`));
   };
 
   const handleSaveDhikr = (dhikrData: Partial<Dhikr>) => {
@@ -119,6 +138,13 @@ const CustomCategoryView: React.FC = () => {
         {/* Category Header Card */}
         <div className="bg-gradient-to-br from-primary-600 to-emerald-800 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-xl shadow-primary-500/10">
             <div className="absolute top-4 left-4 flex gap-2">
+                <button 
+                    onClick={(e) => { e.stopPropagation(); handlePin(); }} 
+                    className={`p-2 rounded-xl backdrop-blur-md border border-white/10 transition-all ${pinnedState ? 'bg-white text-primary-700' : 'bg-white/10'}`}
+                    title={pinnedState ? "إزالة من الوصول السريع" : "إضافة للوصول السريع"}
+                >
+                    <Pin size={20} className={pinnedState ? 'rotate-0' : 'rotate-45'} fill={pinnedState ? 'currentColor' : 'none'} />
+                </button>
                 <button onClick={() => setIsReordering(!isReordering)} className={`p-2 rounded-xl backdrop-blur-md border border-white/10 transition-all ${isReordering ? 'bg-white text-primary-700' : 'bg-white/10'}`}>
                     {isReordering ? <Check size={20} /> : <ArrowDownUp size={20} />}
                 </button>
