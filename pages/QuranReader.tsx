@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import * as quranService from '../services/quranService';
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react';
 import MushafPagesViewer from '../components/MushafPagesViewer';
 import TextModeViewer from '../components/TextModeViewer';
+import ErrorState from '../components/ErrorState';
 
 type ViewMode = 'text' | 'mushaf';
 
@@ -314,10 +316,13 @@ const QuranReader: React.FC = () => {
   if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-emerald-500" size={40} /></div>;
   
   if (error || !surah) return (
-    <div className="h-screen flex items-center justify-center flex-col gap-6 p-6 text-center">
-        <AlertCircle size={48} className="text-red-500"/>
-        <p className="text-gray-800 dark:text-white font-bold text-lg">{error || 'تعذر تحميل السورة'}</p>
-        <button onClick={loadSurah} className="px-8 py-3 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg active:scale-95"><RefreshCw size={20} className="inline ml-2" />إعادة المحاولة</button>
+    <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg p-4">
+        <ErrorState 
+            title="تعذر تحميل السورة"
+            message={error || "نعتذر، واجهنا مشكلة في جلب بيانات هذه السورة. يرجى التأكد من اتصالك بالإنترنت."}
+            onRetry={loadSurah}
+            fullScreen={true}
+        />
     </div>
   );
 
@@ -379,21 +384,21 @@ const QuranReader: React.FC = () => {
         {isTextMode && showSearch && (
             <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-md flex items-start justify-center pt-20 px-4 animate-fadeIn" onClick={() => setShowSearch(false)}>
                 <div className="w-full max-w-xl bg-white dark:bg-dark-surface rounded-3xl shadow-2xl overflow-hidden animate-slideUp border border-gray-100 dark:border-[#333]" onClick={e => e.stopPropagation()}>
-                    <div className="p-4 border-b border-gray-50 dark:border-dark-border flex items-center gap-3">
-                        <Search className="text-gray-400" size={20} />
+                    <div className="p-5 border-b border-gray-50 dark:border-dark-border flex items-center gap-4">
+                        <Search className="text-gray-400" size={24} />
                         <input 
                             autoFocus
                             type="text" 
-                            placeholder="ابحث عن كلمة في القرآن..." 
-                            className="flex-1 bg-transparent border-none outline-none text-base font-arabic placeholder-gray-400 dark:text-white"
+                            placeholder="ابحث عن آية..." 
+                            className="flex-1 bg-transparent border-none outline-none text-lg font-arabic placeholder-gray-400 dark:text-white"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                         {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1"><X size={18} className="text-gray-400" /></button>}
-                        <button onClick={() => setShowSearch(false)} className="text-sm font-bold text-emerald-600">إلغاء</button>
+                        <button onClick={() => setShowSearch(false)} className="text-sm font-bold text-emerald-600 px-2">إلغاء</button>
                     </div>
 
-                    <div className="bg-gray-50 dark:bg-dark-bg/50 px-4 py-2 flex items-center gap-4 border-b border-gray-100 dark:border-dark-border">
+                    <div className="bg-gray-50 dark:bg-dark-bg/50 px-6 py-3 flex items-center gap-6 border-b border-gray-100 dark:border-dark-border">
                         <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-500 hover:text-emerald-600 transition-colors">
                             <input 
                                 type="radio" 
@@ -416,40 +421,42 @@ const QuranReader: React.FC = () => {
                         </label>
                     </div>
 
-                    <div className="max-h-[60vh] overflow-y-auto p-2 no-scrollbar">
+                    <div className="max-h-[60vh] overflow-y-auto p-3 no-scrollbar space-y-2">
                         {isSearching ? (
-                            <div className="py-12 flex flex-col items-center gap-3 opacity-50">
-                                <Loader2 size={32} className="animate-spin text-emerald-500" />
-                                <span className="text-sm">جاري البحث...</span>
+                            <div className="py-16 flex flex-col items-center justify-center gap-4 opacity-50">
+                                <Loader2 size={36} className="animate-spin text-emerald-500" />
+                                <span className="text-sm font-bold">جاري البحث في آيات الله...</span>
                             </div>
                         ) : searchResults.length > 0 ? (
-                            <div className="space-y-1">
+                            <div className="space-y-2 pb-4">
                                 {searchResults.map((res: any, idx: number) => (
                                     <button 
                                         key={idx} 
                                         onClick={() => handleSearchResultSelect(res)}
-                                        className="w-full text-right p-4 rounded-2xl hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-all border border-transparent hover:border-emerald-100 dark:hover:border-emerald-800/30 group"
+                                        className="w-full text-right p-5 rounded-2xl bg-gray-50/50 dark:bg-dark-elevated/20 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-all border border-transparent hover:border-emerald-100 dark:hover:border-emerald-800/30 group"
                                     >
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100/50 dark:bg-emerald-900/30 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-800/50">
                                                 سورة {res.surah?.name || ''} - آية {res.numberInSurah}
                                             </span>
+                                            <span className="text-[9px] font-bold text-gray-400">آية كريمة</span>
                                         </div>
-                                        <p className="font-quran text-lg text-gray-800 dark:text-gray-100 leading-relaxed line-clamp-2" dir="rtl">
+                                        <p className="font-quran text-2xl text-gray-800 dark:text-gray-100 leading-relaxed line-clamp-3 text-center" dir="rtl">
                                             {res.text}
                                         </p>
                                     </button>
                                 ))}
                             </div>
                         ) : searchQuery ? (
-                            <div className="py-20 text-center text-gray-400">
-                                <AlertCircle size={40} className="mx-auto mb-3 opacity-20" />
-                                <p className="text-sm">لا توجد نتائج مطابقة لبحثك</p>
+                            <div className="py-24 text-center text-gray-400">
+                                <AlertCircle size={48} className="mx-auto mb-4 opacity-20" />
+                                <p className="text-base font-bold">لا توجد آيات مطابقة لبحثك</p>
+                                <p className="text-xs mt-1">تأكد من كتابة الكلمات بشكل صحيح</p>
                             </div>
                         ) : (
-                            <div className="py-20 text-center text-gray-400 opacity-50">
-                                <Search size={40} className="mx-auto mb-3" />
-                                <p className="text-sm font-arabic">ابدأ كتابة الكلمات للبحث في آيات الله</p>
+                            <div className="py-24 text-center text-gray-400 opacity-40">
+                                <Search size={48} className="mx-auto mb-4" />
+                                <p className="text-base font-bold">ابدأ كتابة الكلمات للبحث</p>
                             </div>
                         )}
                     </div>
@@ -578,7 +585,7 @@ const QuranReader: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1 md:gap-4 flex-1 justify-center">
                         <button onClick={() => playAyah(activeAyahIndex - 1)} disabled={activeAyahIndex === 0} className="p-2 text-gray-400 hover:text-emerald-600 disabled:opacity-20 transition-all active:scale-90">
-                            <SkipBack size={22} className="rtl:rotate-180" />
+                            <SkipBack size={22} className="rtl:rotate-0" />
                         </button>
                         <div className="flex flex-col items-center gap-1">
                             <button onClick={togglePlay} className={`w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all shadow-xl active:scale-95 bg-emerald-500 text-white shadow-emerald-500/30 hover:bg-emerald-600`}>
@@ -587,7 +594,7 @@ const QuranReader: React.FC = () => {
                             <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">{formatTime(currentAyahTime)}</span>
                         </div>
                         <button onClick={() => playAyah(activeAyahIndex + 1)} disabled={activeAyahIndex === surah.ayahs.length - 1} className="p-2 text-gray-400 hover:text-emerald-600 disabled:opacity-20 transition-all active:scale-90">
-                            <SkipForward size={22} className="rtl:rotate-180" />
+                            <SkipForward size={22} className="rtl:rotate-0" />
                         </button>
                     </div>
                     <div className="flex items-center gap-3 pl-2 md:pl-4 border-l border-gray-100 dark:border-gray-800">

@@ -1,5 +1,7 @@
+
 import { Ayah, SurahDetail, SearchResult } from '../types';
 import * as storage from './storage';
+import { normalizeArabic } from '../utils';
 
 export type { Ayah, SurahDetail, SearchResult };
 
@@ -26,7 +28,7 @@ export const RECITERS = [
 /**
  * Enhanced fetch with timeout
  */
-const fetchWithTimeout = async (url: string, options: any = {}, timeout = 10000) => {
+const fetchWithTimeout = async (url: string, options: any = {}, timeout = 15000) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
@@ -101,12 +103,22 @@ export const getPageContent = async (pageNumber: number): Promise<Ayah[]> => {
   }
 };
 
+/**
+ * Search Quran verses using 'quran-simple-clean' for matching.
+ * We normalize the query to match the 'clean' edition which has no diacritics.
+ */
 export const searchQuran = async (query: string): Promise<SearchResult[]> => {
+  const cleanQuery = normalizeArabic(query?.trim() || '');
+  if (!cleanQuery || cleanQuery.length < 2) return [];
+  
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/search/${encodeURIComponent(query)}/all/ar`);
+    // Using 'quran-simple-clean' is essential for matching standard keyboard input
+    const response = await fetchWithTimeout(`${BASE_URL}/search/${encodeURIComponent(cleanQuery)}/all/quran-simple-clean`);
     if (!response.ok) return [];
+    
     const data = await response.json();
     if (!data.data || !data.data.matches) return [];
+    
     return data.data.matches.map((match: any) => ({
       surah: match.surah,
       ayah: {

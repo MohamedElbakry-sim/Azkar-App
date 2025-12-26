@@ -64,26 +64,13 @@ const MoreMenu: React.FC = () => {
   ];
 
   return (
-    <div className="pb-16 space-y-10 animate-fadeIn max-w-4xl mx-auto px-4 sm:px-6">
-      {/* Dynamic Header */}
-      <div className="relative overflow-hidden rounded-[2.5rem] bg-white dark:bg-dark-surface p-8 border border-gray-100 dark:border-dark-border shadow-soft group">
-        <div className="absolute top-0 left-0 w-32 h-32 bg-primary-500/5 rounded-br-full -ml-8 -mt-8 transition-transform group-hover:scale-110"></div>
-        <div className="relative z-10">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white font-arabicHead mb-3">
-              استكشف ريان
-            </h1>
-            <p className="text-lg text-gray-500 dark:text-dark-muted font-arabic leading-relaxed max-w-xl">
-              كل ما تحتاجه في رحلتك الروحانية اليومية مجموع في مكان واحد، من مواقيت الصلاة إلى الأذكار والعلوم.
-            </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+    <div className="pb-24 space-y-12 animate-fadeIn max-w-4xl mx-auto px-6 sm:px-10 pt-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-12">
         {sections.map((section, idx) => (
-          <div key={idx} className="space-y-4 animate-slideUp" style={{ animationDelay: `${idx * 100}ms` }}>
+          <div key={idx} className="space-y-5 animate-slideUp" style={{ animationDelay: `${idx * 100}ms` }}>
             <div className="flex items-center justify-between px-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-gray-100 dark:border-dark-border">
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-gray-100 dark:border-dark-border">
                   {section.icon}
                 </div>
                 <div>
@@ -97,23 +84,23 @@ const MoreMenu: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-dark-surface rounded-3xl border border-gray-100 dark:border-dark-border overflow-hidden shadow-soft divide-y divide-gray-50 dark:divide-dark-border">
+            <div className="bg-white dark:bg-dark-surface rounded-[2rem] border border-gray-100 dark:border-dark-border overflow-hidden shadow-soft divide-y divide-gray-50 dark:divide-dark-border">
               {section.items.map((item) => (
                 <button
                   key={item.path}
                   onClick={() => navigate(item.path)}
-                  className="w-full flex items-center justify-between p-4.5 hover:bg-gray-50 dark:hover:bg-dark-elevated transition-all group"
+                  className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-dark-elevated transition-all group"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className={`p-2.5 rounded-2xl transition-transform group-hover:scale-110 ${item.bg} ${item.color}`}>
+                  <div className="flex items-center gap-5">
+                    <div className={`w-12 h-12 shrink-0 flex items-center justify-center rounded-2xl transition-all duration-300 group-hover:scale-110 shadow-sm ${item.bg} ${item.color}`}>
                         {item.icon}
                     </div>
                     <span className="font-bold text-gray-700 dark:text-gray-200 text-body font-arabic group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                         {item.label}
                     </span>
                   </div>
-                  <div className="p-1.5 rounded-full bg-gray-50 dark:bg-dark-bg text-gray-300 group-hover:text-primary-500 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/20 transition-all">
-                    <ChevronLeft size={16} className="rtl:rotate-0" />
+                  <div className="p-2 rounded-full bg-gray-50 dark:bg-dark-bg text-gray-300 group-hover:text-primary-500 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/20 transition-all">
+                    <ChevronLeft size={18} className="rtl:rotate-0" />
                   </div>
                 </button>
               ))}
@@ -123,23 +110,23 @@ const MoreMenu: React.FC = () => {
       </div>
 
       {/* About/Version info section */}
-      <div className="pt-12 pb-8 border-t border-gray-100 dark:border-dark-border">
-        <div className="flex flex-col items-center justify-center text-center space-y-4">
-            <div className="flex items-center gap-2 px-4 py-1.5 bg-gray-100 dark:bg-dark-surface rounded-full text-gray-400 border border-gray-50 dark:border-dark-border">
+      <div className="pt-16 pb-12 border-t border-gray-100 dark:border-dark-border">
+        <div className="flex flex-col items-center justify-center text-center space-y-5">
+            <div className="flex items-center gap-2 px-5 py-2 bg-gray-100 dark:bg-dark-surface rounded-full text-gray-400 border border-gray-50 dark:border-dark-border">
                 <Info size={14} />
                 <span className="text-xs font-bold font-arabic">عن التطبيق</span>
             </div>
             
-            <div className="w-16 h-16 bg-white dark:bg-dark-surface rounded-3xl shadow-soft flex items-center justify-center border border-gray-100 dark:border-dark-border mb-2">
-                <Smartphone size={32} className="text-gray-300" />
+            <div className="w-20 h-20 bg-white dark:bg-dark-surface rounded-3xl shadow-soft flex items-center justify-center border border-gray-100 dark:border-dark-border mb-2">
+                <Smartphone size={36} className="text-gray-300" />
             </div>
             
             <div>
-              <p className="text-gray-800 dark:text-white font-bold text-lg font-arabicHead">تطبيق ريان</p>
-              <p className="text-xs text-gray-400 font-english mt-1">Version 1.6.2 (Stable)</p>
+              <p className="text-gray-800 dark:text-white font-bold text-xl font-arabicHead">تطبيق ريان</p>
+              <p className="text-xs text-gray-400 font-english mt-1.5 tracking-widest">VERSION 1.6.2</p>
             </div>
             
-            <p className="text-sm text-gray-500 dark:text-dark-muted max-w-xs font-arabic leading-relaxed">
+            <p className="text-sm text-gray-500 dark:text-dark-muted max-w-sm font-arabic leading-relaxed">
               تم تطوير هذا التطبيق ليكون رفيقاً للمسلم في يومه وليله، نسأل الله أن يتقبل منا ومنكم صالح الأعمال.
             </p>
         </div>

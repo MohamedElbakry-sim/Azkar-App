@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
@@ -47,6 +48,7 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
     const timer = setTimeout(async () => {
         setIsSearching(true);
         try {
+            // Note: searchGlobal already returns the mapped results
             const results = await quranService.searchGlobal(query);
             setQuranResults(results.slice(0, 5));
         } catch (e) {
@@ -118,7 +120,9 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
     // 3. Azkar
     if (activeFilter === 'all' || activeFilter === 'azkar') {
         const customDhikrs = storage.getCustomDhikrs();
-        [...AZKAR_DATA, ...customDhikrs].forEach(item => {
+        const staticAzkar = AZKAR_DATA;
+        
+        [...staticAzkar, ...customDhikrs].forEach(item => {
             if (normalizeArabic(item.text).includes(normalizedQuery)) {
                 combined.push({
                     id: `azkar-${item.id}`,
@@ -147,7 +151,7 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
     }
 
     const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
-    return unique.slice(0, 10);
+    return unique.slice(0, 15);
   }, [query, quranResults, activeFilter]);
 
   const handleSelect = (path: string) => {
@@ -209,24 +213,22 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
                 }}
               />
               {isSearching && <Loader2 size={20} className="animate-spin text-primary-500 mr-2" />}
+              {query && (
+                  <button onClick={() => setQuery('')} className="p-2 text-gray-400">
+                      <X size={18} />
+                  </button>
+              )}
               <button 
                 onClick={onClose}
                 className="p-2 mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-dark-bg text-gray-400 transition-colors"
               >
-                <X size={20} />
+                <Filter size={20} />
               </button>
             </div>
             
-            {/* Filter Tabs Container with Fade Effect */}
+            {/* Filter Tabs Container */}
             <div className="relative group">
-                {/* Left/Right Fades to indicate scrolling */}
-                <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white dark:from-dark-surface to-transparent z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white dark:from-dark-surface to-transparent z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
-
                 <div className="flex items-center gap-2 py-4 overflow-x-auto no-scrollbar scroll-smooth px-6">
-                    <div className="text-gray-400 ml-2 shrink-0">
-                        <Filter size={14} />
-                    </div>
                     {filters.map((f) => (
                         <button
                             key={f.id}
@@ -245,8 +247,6 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
                             {f.label}
                         </button>
                     ))}
-                    {/* Extra padding item to ensure last element is fully scrollable and visible */}
-                    <div className="w-4 shrink-0 h-1"></div>
                 </div>
             </div>
         </div>
@@ -293,7 +293,7 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
                     </div>
                     <div>
                         <p className="text-gray-500 dark:text-gray-400 font-bold">لا توجد نتائج مطابقة</p>
-                        <p className="text-xs text-gray-400 mt-1">حاول استخدام كلمات مختلفة أو تغيير الفلتر</p>
+                        <p className="text-xs text-gray-400 mt-1">تأكد من كتابة الكلمة بشكل صحيح (بدون تشكيل)</p>
                     </div>
                 </div>
             ) : (
@@ -309,7 +309,7 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
                             { label: 'السبحة', path: '/tasbeeh' },
                             { label: 'مواقيت الصلاة', path: '/prayers' },
                             { label: 'أسماء الله', path: '/names' },
-                            { label: 'المفضلة', path: '/favorites' }
+                            { label: 'حصن المسلم', path: '/duas' }
                         ].map((s, i) => (
                             <button 
                                 key={i}
@@ -328,7 +328,6 @@ const SpiritualSpotlight: React.FC<{ isOpen: boolean; onClose: () => void }> = (
         <div className="bg-gray-50 dark:bg-dark-bg/50 px-6 py-3 border-t border-gray-100 dark:border-dark-border flex justify-between items-center text-[10px] text-gray-400 font-bold">
             <div className="flex gap-4">
                 <span className="flex items-center gap-1"><kbd className="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border px-1.5 rounded shadow-sm">Enter</kbd> للاختيار</span>
-                <span className="flex items-center gap-1"><kbd className="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border px-1.5 rounded shadow-sm">↑↓</kbd> للتنقل</span>
             </div>
             <span>اضغط <kbd className="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border px-1.5 rounded shadow-sm">Esc</kbd> للإغلاق</span>
         </div>
