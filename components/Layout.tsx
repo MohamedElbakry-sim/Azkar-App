@@ -235,33 +235,32 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
           </div>
         </main>
 
-        {/* --- MOBILE BOTTOM TAB BAR --- */}
+        {/* --- FIXED MOBILE BOTTOM NAV BAR --- */}
         {showNav && (
-            <div className="md:hidden fixed bottom-4 left-4 right-4 z-50">
-                <nav className="bg-white/95 dark:bg-[#1E1E1E]/95 backdrop-blur-2xl border border-gray-200 dark:border-[#333] rounded-[2.5rem] shadow-[0_12px_40px_rgba(0,0,0,0.15)] dark:shadow-black/50 px-2 py-2">
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+                <nav className="bg-white/95 dark:bg-[#1E1E1E]/95 backdrop-blur-2xl border-t border-gray-100 dark:border-[#333] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-2 pb-[env(safe-area-inset-bottom)]">
                     <div className="flex items-center justify-around h-16">
                         {navTabs.slice(0, 5).map((item) => (
                             <NavLink
                                 key={item.path}
                                 to={item.path}
                                 className={({ isActive }) => `
-                                    flex flex-col items-center justify-center h-full w-full rounded-3xl transition-all duration-300 relative
+                                    flex flex-col items-center justify-center h-full w-full transition-all duration-300 relative
                                     ${isActive ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'}
                                 `}
                             >
                                 {({ isActive }) => (
                                     <>
-                                        {/* Active Background Bubble */}
-                                        <div className={`absolute inset-x-1 inset-y-1 bg-primary-50 dark:bg-primary-500/10 rounded-[2rem] transition-all duration-500 ease-out ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`}></div>
+                                        {/* Active Line Indicator */}
+                                        <div className={`absolute top-0 inset-x-4 h-0.5 bg-primary-500 rounded-full transition-all duration-300 ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}></div>
                                         
-                                        <div className={`flex flex-col items-center justify-center relative z-10 transition-all duration-500 ${isActive ? '-translate-y-1' : ''}`}>
+                                        <div className={`flex flex-col items-center justify-center relative z-10 transition-all duration-500 ${isActive ? '-translate-y-0.5' : ''}`}>
                                             <div className={`transition-transform duration-500 ${isActive ? 'scale-110' : 'scale-100'}`}>
                                                 {item.icon}
                                             </div>
                                             
-                                            {/* Label specifically visible and properly positioned only when active */}
-                                            <div className={`overflow-hidden transition-all duration-500 ease-out flex flex-col items-center ${isActive ? 'max-h-6 opacity-100 mt-1' : 'max-h-0 opacity-0 mt-0'}`}>
-                                                <span className="text-[10px] font-extrabold whitespace-nowrap font-arabicHead">
+                                            <div className={`overflow-hidden transition-all duration-500 ease-out flex flex-col items-center ${isActive ? 'max-h-6 opacity-100 mt-1' : 'max-h-6 opacity-60 mt-1'}`}>
+                                                <span className="text-[10px] font-bold whitespace-nowrap font-arabicHead">
                                                     {item.label}
                                                 </span>
                                             </div>
@@ -279,7 +278,7 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
         {showMiniPlayer && (
             <div 
                 onClick={() => navigate('/radio')}
-                className="fixed bottom-24 left-4 right-4 md:bottom-6 md:left-auto md:w-96 md:right-8 z-40 animate-slideUp cursor-pointer group"
+                className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-4 right-4 md:bottom-6 md:left-auto md:w-96 md:right-8 z-40 animate-slideUp cursor-pointer group"
             >
                 <div className="bg-white/95 dark:bg-[#1E1E1E]/95 backdrop-blur-xl border border-gray-200 dark:border-[#333] rounded-2xl p-3 shadow-2xl flex items-center justify-between hover:border-emerald-500/30 transition-colors">
                     <div className="flex items-center gap-3 overflow-hidden flex-1">

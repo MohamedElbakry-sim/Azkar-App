@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import ErrorState from './ErrorState';
 
 interface Props {
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 interface State {
@@ -13,16 +13,14 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in the component tree.
  */
-// Fix: Explicitly extending React.Component ensures base class members like props, state, and setState are correctly recognized
-class ErrorBoundary extends React.Component<Props, State> {
-  // Use property initializer for state
-  public state: State = {
-    hasError: false,
-    error: null
-  };
-
+class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
+    // Fix: Initialize state in the constructor to ensure inherited properties are correctly recognized by TypeScript
+    this.state = {
+      hasError: false,
+      error: null
+    };
   }
 
   // Update state so the next render will show the fallback UI.
@@ -31,21 +29,21 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   // Lifecycle method for logging errors
-  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
   }
 
   // Handle retry logic to reset state and attempt reload
   private handleRetry = () => {
-    // Fix: Access setState from the inherited React.Component class
+    // Fix: Access setState from the inherited Component class
     this.setState({ hasError: false, error: null });
     window.location.reload();
   };
 
   // Render method to display fallback UI or children
-  public render() {
-    // Check inherited state
+  public render(): ReactNode {
+    // Check inherited state for errors
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg p-4">
