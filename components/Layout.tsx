@@ -135,37 +135,37 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
       
       <SpiritualSpotlight isOpen={isSpotlightOpen} onClose={() => setIsSpotlightOpen(false)} />
 
-      {/* --- DESKTOP SIDEBAR --- */}
+      {/* --- DESKTOP SIDEBAR (Refined Glassmorphism) --- */}
       {showNav && (
-        <aside className="hidden md:flex flex-col w-72 h-screen sticky top-0 bg-white dark:bg-[#1E1E1E] border-l border-gray-100 dark:border-[#2A2A2A] z-50 shadow-sm">
+        <aside className="hidden md:flex flex-col w-72 h-screen sticky top-0 bg-white/70 dark:bg-[#1E1E1E]/70 backdrop-blur-2xl border-l border-gray-100 dark:border-[#2A2A2A] z-50 shadow-[inset_0_1px_1px_rgba(255,255,255,0.5)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
             <div className="p-8 flex items-center justify-between">
-                <Logo size={36} className="text-primary-600 dark:text-primary-500" />
+                <Logo size={36} className="text-primary-600 dark:text-primary-500 transition-transform hover:scale-105" />
                 <button 
                     onClick={() => setIsSpotlightOpen(true)}
-                    className="p-2 rounded-xl bg-gray-50 dark:bg-dark-bg text-gray-400 hover:text-primary-500 transition-colors border border-gray-100 dark:border-dark-border"
+                    className="p-2 rounded-xl bg-white/50 dark:bg-dark-bg/50 text-gray-400 hover:text-primary-500 transition-all border border-gray-100/50 dark:border-dark-border"
                     title="بحث (Cmd+K)"
                 >
                     <Search size={18} />
                 </button>
             </div>
             
-            <nav className="flex-1 px-4 space-y-2 py-4">
+            <nav className="flex-1 px-4 space-y-1.5 py-4">
             {navTabs.map((item) => (
                 <NavLink
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) => `
-                    flex items-center gap-4 p-4 rounded-2xl transition-all duration-200 font-bold group
+                    flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 font-bold group relative
                     ${isActive 
-                    ? 'bg-primary-50 dark:bg-primary-900/10 text-primary-600 dark:text-primary-400' 
-                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#2A2A2A] hover:text-gray-900 dark:hover:text-gray-200'}
+                    ? 'bg-primary-500/10 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 shadow-sm' 
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-[#2A2A2A] hover:text-gray-900 dark:hover:text-gray-200 hover:shadow-sm'}
                 `}
                 >
-                <div className={`transition-transform duration-200 group-hover:scale-110`}>
+                <div className={`transition-transform duration-300 group-hover:scale-110`}>
                     {item.icon}
                 </div>
                 <span className="text-base">{item.label}</span>
-                <NavLink to={item.path} className={({ isActive }) => `absolute left-0 w-1 h-8 bg-primary-500 rounded-r-full transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-0'}`} />
+                <div className={`absolute left-0 w-1.5 h-8 bg-primary-500 rounded-r-full transition-opacity duration-300 ${location.pathname === item.path ? 'opacity-100' : 'opacity-0'}`} />
                 </NavLink>
             ))}
             </nav>
@@ -173,9 +173,9 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
             <div className="p-6 border-t border-gray-100 dark:border-[#2A2A2A]">
             <button 
                 onClick={toggleTheme}
-                className="flex items-center gap-3 w-full p-4 rounded-2xl bg-gray-50 dark:bg-[#2A2A2A] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333333] transition-colors"
+                className="flex items-center gap-3 w-full p-4 rounded-2xl bg-gray-50/50 dark:bg-[#2A2A2A]/50 backdrop-blur-md text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-[#333333] transition-all shadow-sm active:scale-95"
             >
-                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+                {darkMode ? <Sun size={20} className="text-amber-500" /> : <Moon size={20} className="text-indigo-400" />}
                 <span className="font-bold text-sm">{darkMode ? 'الوضع النهاري' : 'الوضع الليلي'}</span>
             </button>
             </div>
@@ -216,8 +216,8 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
         {/* Desktop Header */}
         {showNav && (
             <header className="hidden md:flex sticky top-0 z-40 bg-[#F9FAFB]/95 dark:bg-[#121212]/95 backdrop-blur px-8 py-6 justify-between items-center border-b border-transparent">
-                <div className="text-gray-400 dark:text-gray-500 font-medium text-sm flex items-center gap-2">
-                    <Calendar size={16} />
+                <div className="text-gray-400 dark:text-gray-500 font-medium text-sm flex items-center gap-2 group cursor-default">
+                    <Calendar size={16} className="group-hover:text-primary-500 transition-colors" />
                     {headerDate}
                 </div>
             </header>
