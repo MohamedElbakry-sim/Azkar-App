@@ -1,8 +1,8 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React from 'react';
 import ErrorState from './ErrorState';
 
 interface Props {
-  children?: ReactNode;
+  children?: React.ReactNode;
 }
 
 interface State {
@@ -13,15 +13,13 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in the component tree.
  */
-class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    // Fix: Initialize state in the constructor to ensure inherited properties are correctly recognized by TypeScript
-    this.state = {
-      hasError: false,
-      error: null
-    };
-  }
+// Fix: Using React.Component explicitly ensures that TypeScript correctly identifies inherited properties like setState, props, and state, avoiding potential name collisions with other 'Component' declarations.
+class ErrorBoundary extends React.Component<Props, State> {
+  // Fix: Explicitly typing the state property ensures the class-level field is correctly merged into the component's state type.
+  public state: State = {
+    hasError: false,
+    error: null
+  };
 
   // Update state so the next render will show the fallback UI.
   public static getDerivedStateFromError(error: Error): State {
@@ -29,21 +27,21 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   // Lifecycle method for logging errors
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
   }
 
   // Handle retry logic to reset state and attempt reload
   private handleRetry = () => {
-    // Fix: Access setState from the inherited Component class
+    // Fix: setState is a built-in method of React.Component and is now correctly identified through explicit inheritance.
     this.setState({ hasError: false, error: null });
     window.location.reload();
   };
 
   // Render method to display fallback UI or children
-  public render(): ReactNode {
-    // Check inherited state for errors
+  public render(): React.ReactNode {
+    // Fix: state property is correctly inherited from the React.Component base class.
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg p-4">
@@ -57,7 +55,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Fix: Access inherited props to return children
+    // Fix: props property is correctly inherited from the React.Component base class.
     return this.props.children;
   }
 }

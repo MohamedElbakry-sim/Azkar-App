@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { BookOpen, Scroll, Loader2, Share2, Quote, Image as ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { getDailyContent } from '../services/dailyContent';
@@ -43,7 +42,6 @@ const DailyWisdom: React.FC = () => {
     fetchData();
   }, []);
 
-  // Handle Text Share
   const handleShareText = async (text: string, source: string) => {
     if (navigator.share) {
       try {
@@ -60,17 +58,15 @@ const DailyWisdom: React.FC = () => {
     }
   };
 
-  // Handle Image Share
   const handleShareImage = async (type: 'verse' | 'hadith') => {
     if (!content || isSharing) return;
 
-    // 1. Set data for the hidden template
     if (type === 'verse') {
         setShareData({
             type: 'verse',
             text: content.verse.text,
             source: `سورة ${content.verse.surah}`,
-            subSource: `آية ${content.verse.ayahNumber}`
+            subSource: `الآية ${content.verse.ayahNumber}`
         });
     } else {
         setShareData({
@@ -83,7 +79,6 @@ const DailyWisdom: React.FC = () => {
 
     setIsSharing(type);
 
-    // 2. Wait for render, then capture
     setTimeout(async () => {
         try {
             if (!shareRef.current) return;
@@ -96,20 +91,19 @@ const DailyWisdom: React.FC = () => {
             }
 
             const canvas = await html2canvas(shareRef.current, {
-                scale: 3, // High quality scale
-                backgroundColor: null,
+                scale: 3, 
+                backgroundColor: '#ffffff',
                 useCORS: true,
                 logging: false,
             });
 
-            // Use JPEG with 0.95 quality for better compression but high visual quality
             canvas.toBlob(async (blob: Blob | null) => {
                 if (!blob) {
                      setIsSharing(null);
                      return;
                 }
                 
-                const file = new File([blob], `rayyan-${type}-of-day.jpg`, { type: 'image/jpeg' });
+                const file = new File([blob], `rayyan-${type}.jpg`, { type: 'image/jpeg' });
                 
                 if (navigator.share) {
                     try {
@@ -122,12 +116,12 @@ const DailyWisdom: React.FC = () => {
                     }
                 } else {
                     const link = document.createElement('a');
-                    link.download = `rayyan-${type}-of-day.jpg`;
+                    link.download = `rayyan-${type}.jpg`;
                     link.href = canvas.toDataURL('image/jpeg', 0.95);
                     link.click();
                 }
                 setIsSharing(null);
-                setShareData(null); // Reset
+                setShareData(null);
             }, 'image/jpeg', 0.95);
 
         } catch (error) {
@@ -135,7 +129,7 @@ const DailyWisdom: React.FC = () => {
             setIsSharing(null);
             setShareData(null);
         }
-    }, 100); // Small delay to ensure DOM is updated
+    }, 150);
   };
 
   if (loading) {
@@ -161,58 +155,59 @@ const DailyWisdom: React.FC = () => {
   return (
     <div className="space-y-10 mb-12 animate-fadeIn">
       
-      {/* --- Hidden Template for Image Generation --- */}
+      {/* --- Minimalist Gallery Template (Hidden) --- */}
       <div className="fixed -left-[9999px] top-0 overflow-hidden" aria-hidden="true">
         {shareData && (
             <div 
                 ref={shareRef}
-                className={`w-[1080px] h-[1080px] flex flex-col items-center justify-center p-20 relative text-center ${
-                    shareData.type === 'verse' 
-                    ? 'bg-gradient-to-br from-emerald-900 via-emerald-800 to-black' 
-                    : 'bg-gradient-to-br from-amber-900 via-amber-800 to-black'
-                }`}
+                className="w-[1080px] h-[1080px] flex flex-col items-center justify-center p-20 bg-white relative"
             >
-                {/* Decorative Top */}
-                <div className="text-white/20 mb-16">
-                    <svg width="120" height="40" viewBox="0 0 100 20" fill="currentColor">
-                        <path d="M50 0 C30 0 20 10 0 10 V20 C20 20 30 10 50 10 C70 10 80 20 100 20 V10 C80 10 70 0 50 0 Z" />
-                    </svg>
+                {/* 1. Background Layer: Subtle Warm/Cool Glow */}
+                <div className={`absolute inset-0 z-0 opacity-40 ${
+                    shareData.type === 'verse' 
+                    ? 'bg-[radial-gradient(circle_at_top_right,_#D1FAE5_0%,_#ffffff_60%)]' 
+                    : 'bg-[radial-gradient(circle_at_top_right,_#FEF3C7_0%,_#ffffff_60%)]'
+                }`} />
+
+                {/* 2. Fine Line Decoration */}
+                <div className={`absolute inset-16 border-t border-r opacity-20 ${shareData.type === 'verse' ? 'border-emerald-500' : 'border-amber-500'}`} />
+                <div className={`absolute inset-16 border-b border-l opacity-20 ${shareData.type === 'verse' ? 'border-emerald-500' : 'border-amber-500'}`} />
+
+                {/* 3. Subtle Motif Watermark */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none">
+                     <svg width="600" height="600" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M50 0L61.2 38.8H100L68.8 61.2L80 100L50 77.6L20 100L31.2 61.2L0 38.8H38.8L50 0Z" fill="currentColor" />
+                     </svg>
                 </div>
 
-                <div className="flex-1 flex flex-col justify-center items-center w-full">
-                    {/* Header */}
-                    <div className="mb-10 flex items-center gap-3 text-white/90 border-b border-white/20 pb-4 px-8">
-                        {shareData.type === 'verse' ? <BookOpen size={40} /> : <Scroll size={40} />}
-                        <span className="text-4xl font-bold font-arabicHead">
-                            {shareData.type === 'verse' ? 'آية اليوم' : 'حديث اليوم'}
-                        </span>
+                {/* 4. Content Layer */}
+                <div className="relative z-10 w-full flex flex-col items-center text-center">
+                    
+                    {/* Centered Arabic Logo (Header Only) */}
+                    <div className="mb-20 animate-fadeIn">
+                        <Logo size={80} color={shareData.type === 'verse' ? '#10B981' : '#F59E0B'} showEnglish={false} />
                     </div>
 
-                    {/* Main Text */}
-                    <div className="max-w-4xl relative">
-                        <Quote size={80} className="absolute -top-12 -right-12 text-white/10" />
-                        <p className="text-white font-arabic text-6xl leading-[2.5] drop-shadow-md" dir="rtl">
+                    {/* Main Text Body */}
+                    <div className="px-12 w-full">
+                        <Quote size={80} className={`mx-auto mb-10 opacity-10 ${shareData.type === 'verse' ? 'text-emerald-500' : 'text-amber-500'}`} />
+                        
+                        <p className={`text-gray-800 leading-[2.8] ${
+                            shareData.type === 'verse' 
+                            ? 'font-quran text-6xl' 
+                            : 'font-arabic text-5xl font-medium'
+                        }`} dir="rtl">
                             {shareData.text}
                         </p>
-                    </div>
 
-                    {/* Source */}
-                    <div className="mt-16 flex flex-col items-center gap-2">
-                        <div className="bg-white/10 backdrop-blur-md rounded-full px-10 py-4 border border-white/20 shadow-lg">
-                            <span className="text-white text-3xl font-bold font-arabicHead">{shareData.source}</span>
-                        </div>
-                        {shareData.subSource && (
-                             <span className="text-white/70 text-2xl mt-2 font-arabic">{shareData.subSource}</span>
-                        )}
-                    </div>
-                </div>
-
-                {/* Footer Branding - Bottom Right */}
-                <div className="absolute bottom-12 right-12" dir="rtl">
-                    <div className="flex items-center gap-5 bg-black/20 backdrop-blur-xl px-10 py-5 rounded-full border border-white/10 shadow-2xl">
-                        <Logo size={100} className="text-white drop-shadow-md" />
-                        <div className="flex flex-col gap-1 text-right">
-                            <span className="text-white/90 text-xl font-medium leading-none drop-shadow-sm font-arabicHead">رفيقك اليومي في الذكر</span>
+                        <div className="mt-16 mb-4 flex flex-col items-center gap-4">
+                            <div className={`h-1 w-12 rounded-full ${shareData.type === 'verse' ? 'bg-emerald-200' : 'bg-amber-200'}`} />
+                            <h4 className="text-3xl font-black font-arabicHead text-gray-800">{shareData.source}</h4>
+                            {shareData.subSource && (
+                                <span className="text-xl font-bold text-gray-400 font-arabic bg-gray-50 px-4 py-1 rounded-lg">
+                                    {shareData.subSource}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -220,7 +215,7 @@ const DailyWisdom: React.FC = () => {
         )}
       </div>
 
-      {/* --- Quran Card --- */}
+      {/* --- UI Components (Stay same as they were good) --- */}
       <div className="bg-white dark:bg-dark-surface rounded-3xl overflow-hidden shadow-sm border border-emerald-100 dark:border-emerald-900/30 relative">
         <div className="bg-emerald-50/50 dark:bg-emerald-900/10 px-4 py-3 flex items-center justify-between border-b border-emerald-100 dark:border-emerald-900/30">
           <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
@@ -232,14 +227,12 @@ const DailyWisdom: React.FC = () => {
                 onClick={() => handleShareImage('verse')}
                 disabled={isSharing === 'verse'}
                 className="p-1.5 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors disabled:opacity-50"
-                title="مشاركة صورة"
             >
                 {isSharing === 'verse' ? <Loader2 size={18} className="animate-spin" /> : <ImageIcon size={18} />}
             </button>
             <button 
                 onClick={() => handleShareText(content.verse.text, `سورة ${content.verse.surah} - آية ${content.verse.ayahNumber}`)}
                 className="p-1.5 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-                title="مشاركة نص"
             >
                 <Share2 size={18} />
             </button>
@@ -250,7 +243,6 @@ const DailyWisdom: React.FC = () => {
           <Quote size={32} className="absolute top-4 right-4 text-emerald-100 dark:text-emerald-900/40 opacity-50" />
           
           <div className="mb-4 relative z-10">
-            {/* Modified: Use font-quran (Amiri), smaller text, normal weight */}
             <p className="font-quran text-2xl md:text-3xl font-normal leading-[2.5] text-gray-800 dark:text-gray-100 mb-4">
               {content.verse.text}
             </p>
@@ -268,7 +260,6 @@ const DailyWisdom: React.FC = () => {
         </div>
       </div>
 
-      {/* --- Hadith Card --- */}
       <div className="bg-white dark:bg-dark-surface rounded-3xl overflow-hidden shadow-sm border border-amber-100 dark:border-amber-900/30 relative">
         <div className="bg-amber-50/50 dark:bg-amber-900/10 px-4 py-3 flex items-center justify-between border-b border-amber-100 dark:border-amber-900/30">
           <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
@@ -280,14 +271,12 @@ const DailyWisdom: React.FC = () => {
                 onClick={() => handleShareImage('hadith')}
                 disabled={isSharing === 'hadith'}
                 className="p-1.5 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors disabled:opacity-50"
-                title="مشاركة صورة"
             >
                 {isSharing === 'hadith' ? <Loader2 size={18} className="animate-spin" /> : <ImageIcon size={18} />}
             </button>
             <button 
                 onClick={() => handleShareText(content.hadith.text, `${content.hadith.source} (${content.hadith.grade})`)}
                 className="p-1.5 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-                title="مشاركة نص"
             >
                 <Share2 size={18} />
             </button>
@@ -311,7 +300,6 @@ const DailyWisdom: React.FC = () => {
             </div>
           </div>
 
-          {/* Enhanced Collapsible Explanation Section */}
           {content.hadith.explanation && (
             <div className="mt-6 border-t border-amber-50 dark:border-amber-900/20 pt-4">
                 <button
