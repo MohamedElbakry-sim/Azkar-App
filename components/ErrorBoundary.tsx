@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 import ErrorState from './ErrorState';
 
 interface Props {
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 interface State {
@@ -13,13 +13,16 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in the component tree.
  */
-// Fix: Using React.Component explicitly ensures that TypeScript correctly identifies inherited properties like setState, props, and state, avoiding potential name collisions with other 'Component' declarations.
+// Fix: Use React.Component explicitly to resolve property access issues with setState, state, and props
 class ErrorBoundary extends React.Component<Props, State> {
-  // Fix: Explicitly typing the state property ensures the class-level field is correctly merged into the component's state type.
-  public state: State = {
-    hasError: false,
-    error: null
-  };
+  // Fix: Explicitly define constructor and call super(props) to ensure base class initialization
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null
+    };
+  }
 
   // Update state so the next render will show the fallback UI.
   public static getDerivedStateFromError(error: Error): State {
@@ -27,21 +30,21 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   // Lifecycle method for logging errors
-  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
   }
 
   // Handle retry logic to reset state and attempt reload
+  // Fix: Explicitly inherited setState from React.Component is now correctly recognized
   private handleRetry = () => {
-    // Fix: setState is a built-in method of React.Component and is now correctly identified through explicit inheritance.
     this.setState({ hasError: false, error: null });
     window.location.reload();
   };
 
   // Render method to display fallback UI or children
-  public render(): React.ReactNode {
-    // Fix: state property is correctly inherited from the React.Component base class.
+  public render(): ReactNode {
+    // Fix: Explicitly inherited state from React.Component is now correctly recognized
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg p-4">
@@ -55,7 +58,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // Fix: props property is correctly inherited from the React.Component base class.
+    // Fix: Explicitly inherited props from React.Component is now correctly recognized
     return this.props.children;
   }
 }

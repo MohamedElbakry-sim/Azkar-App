@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { Plus, ArrowRight, ArrowDownUp, Check, CheckCircle, BarChart3, Home, BookOpen, Pin, Type } from 'lucide-react';
@@ -202,8 +201,6 @@ const CustomCategoryView: React.FC = () => {
             </div>
 
             <div className="relative z-10">
-                <h2 className="text-3xl md:text-4xl font-bold font-arabicHead mb-2">{category.title}</h2>
-                
                 {items.length > 0 ? (
                     <>
                         <p className="text-primary-50 opacity-80 text-sm mb-6">

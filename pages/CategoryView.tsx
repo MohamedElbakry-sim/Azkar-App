@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { AZKAR_DATA, CATEGORIES } from '../data';
@@ -258,7 +257,6 @@ const CategoryView: React.FC = () => {
         </div>
 
         <div className="text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-3 opacity-90 font-arabicHead">{category.title}</h2>
             <div className="flex justify-center items-center gap-2 text-base font-medium opacity-80 mb-6">
                {remainingCount === 0 ? <span className="flex items-center gap-2 font-bold animate-slideUp text-emerald-600 dark:text-emerald-400"><CheckCircle size={20} />تم إكمال جميع الأذكار!</span> : <span>متبقي {remainingCount} من {totalCount}</span>}
             </div>
@@ -312,7 +310,7 @@ const CategoryView: React.FC = () => {
             <div className="flex flex-col items-center justify-center py-10 md:py-16 text-center animate-slideUp">
                 <div className="w-24 h-24 bg-gradient-to-br from-[#2ECC71] to-[#16A085] rounded-full flex items-center justify-center mb-6 text-white shadow-lg animate-popIn"><CheckCircle size={48} /></div>
                 <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2 font-serif">فتح الله عليك</h3>
-                <p className="text-gray-500 dark:text-gray-400 text-lg mb-8">لقد أنهيت {category.title} لهذا اليوم</p>
+                <p className="text-gray-500 dark:text-gray-400 text-lg mb-8">لقد أنهيت هذه الأذكار لهذا اليوم</p>
                 <div className="bg-white dark:bg-dark-surface rounded-2xl p-6 w-full max-w-sm mb-8 border border-gray-100 dark:border-dark-border shadow-sm"><h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 flex items-center justify-center gap-2"><BarChart3 size={16} />ملخص الإنجاز</h4><div className="flex items-center justify-around divide-x divide-x-reverse divide-gray-200 dark:divide-gray-700"><div className="flex flex-col items-center p-2"><span className="text-3xl font-bold text-primary-600 dark:text-primary-400">{items.length}</span><span className="text-xs text-gray-400 mt-1">عدد الأذكار</span></div><div className="flex flex-col items-center p-2"><span className="text-3xl font-bold text-blue-600 dark:text-blue-400">{totalRepetitions}</span><span className="text-xs text-gray-400 mt-1">مجموع التكرار</span></div></div></div>
                 <button onClick={() => navigate('/')} className="mt-4 flex items-center justify-center gap-2 w-full max-w-sm px-6 py-3 bg-gradient-to-r from-[#2ECC71] to-[#16A085] text-white rounded-xl hover:shadow-lg transition-all shadow-md font-bold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"><Home size={18} /><span>العودة للرئيسية</span></button>
             </div>
