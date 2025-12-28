@@ -1,5 +1,4 @@
 
-
 import { ProgressState, Dhikr, CategoryId, CustomCategory } from '../types';
 
 const FAVORITES_KEY = 'nour_favorites_v1';
@@ -94,7 +93,7 @@ export interface NotificationSettings {
   vibrationType: VibrationType;
 }
 
-export type HeatmapTheme = 'emerald' | 'blue' | 'flame';
+export type HeatmapTheme = 'emerald' | 'lime' | 'olive' | 'ice' | 'magenta' | 'flame';
 
 // --- Recent Views ---
 
@@ -594,6 +593,7 @@ export const getHeatmapTheme = (): HeatmapTheme => {
 
 export const saveHeatmapTheme = (theme: HeatmapTheme) => {
   localStorage.setItem(HEATMAP_THEME_KEY, theme);
+  window.dispatchEvent(new Event('heatmap-theme-changed'));
 };
 
 export interface StatsData {
