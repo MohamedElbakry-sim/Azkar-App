@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { Plus, ArrowRight, ArrowDownUp, Check, CheckCircle, Home, BookOpen, Pin, Type } from 'lucide-react';
+import { Plus, ArrowRight, ArrowDownUp, Check, CheckCircle, Home, BookOpen, Pin, Type, Flame, Award, Folder } from 'lucide-react';
 import * as storage from '../services/storage';
 import { Dhikr, CustomCategory } from '../types';
 import DhikrCard from '../components/DhikrCard';
@@ -17,7 +16,6 @@ const CustomCategoryView: React.FC = () => {
   const [favorites, setFavorites] = useState<number[]>([]);
   const [progress, setProgress] = useState<{[key: number]: number}>({});
   
-  // FIX: Added customTargets state to fix "Cannot find name 'customTargets'" error during render
   const [customTargets, setCustomTargets] = useState<{[key: number]: number}>({});
   
   const [visibleIds, setVisibleIds] = useState<number[]>([]);
@@ -26,6 +24,10 @@ const CustomCategoryView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isReordering, setIsReordering] = useState(false);
   const [pinnedState, setPinnedState] = useState(false);
+
+  // Stats for completion screen
+  const [stats, setStats] = useState<storage.StatsData | null>(null);
+  const [categoryHistoryTotal, setCategoryHistoryTotal] = useState(0);
 
   // Font Size Control State
   const [fontSize, setFontSize] = useState<storage.FontSize>('medium');
@@ -67,7 +69,6 @@ const CustomCategoryView: React.FC = () => {
     const todayProgress = storage.getProgress()[today] || {};
     setProgress(todayProgress);
     
-    // FIX: Updating customTargets state from storage
     const currentTargets = storage.getCustomTargets();
     setCustomTargets(currentTargets);
 
@@ -80,6 +81,20 @@ const CustomCategoryView: React.FC = () => {
         .map(i => i.id);
     
     setVisibleIds(incompleteIds);
+
+    // Calculate historical total for this specific custom category
+    const history = storage.getHistory();
+    const itemIds = catDhikrs.map(i => i.id);
+    let catTotal = 0;
+    Object.values(history).forEach(dayData => {
+        itemIds.forEach(dhikrId => {
+            const count = dayData[dhikrId];
+            if (count && count > 0) catTotal += count;
+        });
+    });
+    setCategoryHistoryTotal(catTotal);
+    setStats(storage.getStats());
+
     setIsLoading(false);
   };
 
@@ -156,7 +171,6 @@ const CustomCategoryView: React.FC = () => {
         {/* Category Header Card */}
         <div className="bg-gradient-to-br from-primary-600 to-emerald-800 rounded-[2.5rem] text-white relative shadow-xl border border-white/10">
             
-            {/* Background Layers (Pattern and Progress) */}
             <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden pointer-events-none">
                 <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')]" />
                 <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/20">
@@ -164,9 +178,7 @@ const CustomCategoryView: React.FC = () => {
                 </div>
             </div>
 
-            {/* Content (Overflow Visible for Dropdown) */}
             <div className="relative z-10 p-6 md:p-10 overflow-visible">
-                {/* Toolbar */}
                 <div className="flex items-center justify-between gap-4 mb-8 overflow-visible">
                     <div className="flex gap-2 overflow-visible">
                         <button 
@@ -227,7 +239,6 @@ const CustomCategoryView: React.FC = () => {
                         <p className="text-white/70 text-xs font-arabic">أذكار مخصصة</p>
                     </div>
                     
-                    {/* Centered Remaining Label */}
                     <div className="absolute bottom-[-16px] left-0 right-0 flex justify-center items-center pointer-events-none">
                         <span className="text-[11px] font-bold font-arabic opacity-95 tracking-wide bg-black/10 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/10 shadow-sm">
                             {visibleIds.length === 0 ? 'مكتمل' : `متبقي ${toArabicNumerals(visibleIds.length)} من ${toArabicNumerals(items.length)}`}
@@ -247,7 +258,6 @@ const CustomCategoryView: React.FC = () => {
                             item={item}
                             isFavorite={favorites.includes(item.id)}
                             initialCount={progress[item.id] || 0}
-                            // FIX: Successfully using customTargets from state
                             targetCount={customTargets[item.id] || item.count}
                             onToggleFavorite={handleToggleFavorite}
                             onComplete={handleComplete}
@@ -263,13 +273,35 @@ const CustomCategoryView: React.FC = () => {
             }
 
             {items.length > 0 && !isReordering && visibleIds.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-10 text-center animate-slideUp bg-white dark:bg-dark-surface rounded-[2.5rem] border border-gray-100 dark:border-dark-border shadow-sm">
+                <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-slideUp bg-white dark:bg-dark-surface rounded-[2.5rem] border border-gray-100 dark:border-dark-border shadow-sm">
                     <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
                         <CheckCircle size={40} />
                     </div>
                     <h3 className="text-2xl font-bold font-arabicHead mb-2 text-gray-800 dark:text-white">تقبل الله طاعتك</h3>
                     <p className="text-gray-500 dark:text-gray-400 mb-8 font-arabic px-10">لقد أكملت جميع الأذكار في هذا القسم بنجاح.</p>
-                    <button onClick={() => navigate('/')} className="px-10 py-3.5 bg-primary-600 text-white rounded-2xl font-bold text-sm shadow-xl shadow-primary-500/20 hover:bg-primary-700 transition-all active:scale-95 flex items-center gap-2"><Home size={18} />العودة للرئيسية</button>
+                    
+                    {/* Achievement Badges */}
+                    {stats && (
+                        <div className="grid grid-cols-3 gap-3 mb-10 w-full">
+                            <div className="bg-orange-50 dark:bg-orange-900/10 p-4 rounded-2xl border border-orange-100 dark:border-orange-900/20 animate-slideUp" style={{ animationDelay: '100ms' }}>
+                                <Flame size={20} className="text-orange-500 mx-auto mb-2" />
+                                <div className="text-xl font-black text-orange-600 dark:text-orange-400 font-arabic">{toArabicNumerals(stats.currentStreak)}</div>
+                                <div className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase font-arabicHead">أيام متتالية</div>
+                            </div>
+                            <div className="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/20 animate-slideUp" style={{ animationDelay: '200ms' }}>
+                                <Award size={20} className="text-emerald-500 mx-auto mb-2" />
+                                <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-arabic">{toArabicNumerals(stats.totalDhikrCompleted)}</div>
+                                <div className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase font-arabicHead">إجمالي الأذكار</div>
+                            </div>
+                            <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/20 animate-slideUp" style={{ animationDelay: '300ms' }}>
+                                <Folder size={20} className="text-blue-500 mx-auto mb-2" />
+                                <div className="text-xl font-black text-blue-600 dark:text-blue-400 font-arabic">{toArabicNumerals(categoryHistoryTotal)}</div>
+                                <div className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase font-arabicHead">في هذا القسم</div>
+                            </div>
+                        </div>
+                    )}
+
+                    <button onClick={() => navigate('/')} className="px-10 py-4 bg-primary-600 text-white rounded-2xl font-bold text-sm shadow-xl shadow-primary-500/20 hover:bg-primary-700 transition-all active:scale-95 flex items-center gap-2"><Home size={18} />العودة للرئيسية</button>
                 </div>
             )}
 

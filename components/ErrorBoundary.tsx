@@ -19,10 +19,6 @@ class ErrorBoundary extends Component<Props, State> {
     error: null
   };
 
-  constructor(props: Props) {
-    super(props);
-  }
-
   // Update state so the next render will show the fallback UI.
   public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
@@ -36,7 +32,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   // Handle retry logic to reset state and attempt reload
   private handleRetry = () => {
-    // FIX: setState is inherited from Component base class
+    // Use setState which is inherited from the Component base class
     this.setState({ hasError: false, error: null });
     window.location.reload();
   };
@@ -56,7 +52,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // FIX: props.children is inherited from Component base class with the defined Props interface
+    // Access children through this.props inherited from Component base class
     return this.props.children;
   }
 }

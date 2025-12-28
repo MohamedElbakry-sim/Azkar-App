@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { AZKAR_DATA, CATEGORIES } from '../data';
 import DhikrCard from '../components/DhikrCard';
@@ -6,7 +6,8 @@ import DhikrFormModal from '../components/DhikrFormModal';
 import * as storage from '../services/storage';
 import { 
   CheckCircle, Home, Type, Plus, 
-  ArrowDownUp, Check, Pin, ArrowRight, Loader2
+  ArrowDownUp, Check, Pin, ArrowRight, Loader2,
+  Flame, Award, Folder
 } from 'lucide-react';
 import { Dhikr, CategoryId } from '../types';
 import { toArabicNumerals } from '../utils';
@@ -28,6 +29,10 @@ const CategoryView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Dhikr | undefined>(undefined);
 
+  // Stats for completion screen
+  const [stats, setStats] = useState<storage.StatsData | null>(null);
+  const [categoryHistoryTotal, setCategoryHistoryTotal] = useState(0);
+
   const loadData = () => {
     if (!id) return;
     const defaults = AZKAR_DATA.filter(item => item.category === id);
@@ -47,6 +52,20 @@ const CategoryView: React.FC = () => {
         });
     }
     setItems(allItems);
+
+    // Calculate historical total for this specific category
+    const history = storage.getHistory();
+    const itemIds = allItems.map(i => i.id);
+    let catTotal = 0;
+    Object.values(history).forEach(dayData => {
+        itemIds.forEach(dhikrId => {
+            const count = dayData[dhikrId];
+            if (count && count > 0) catTotal += count;
+        });
+    });
+    setCategoryHistoryTotal(catTotal);
+    setStats(storage.getStats());
+
     return allItems;
   };
 
@@ -112,10 +131,8 @@ const CategoryView: React.FC = () => {
   return (
     <div className="space-y-6 max-w-3xl mx-auto px-2 sm:px-4 pb-20">
       
-      {/* --- Modern Header Wrapper with Overflow Visible --- */}
+      {/* --- Modern Header Wrapper --- */}
       <div className={`relative rounded-[2.5rem] text-white shadow-xl bg-gradient-to-br ${getThemeGradient(category.theme)}`}>
-        
-        {/* Background Clipping Layer (For pattern and progress line) */}
         <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden pointer-events-none">
             <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')]" />
             <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/10">
@@ -126,9 +143,7 @@ const CategoryView: React.FC = () => {
             </div>
         </div>
 
-        {/* Content Layer (Overflow Visible) */}
         <div className="relative z-10 p-5 md:p-6 pb-12 overflow-visible">
-            {/* Top Toolbar */}
             <div className="flex items-center justify-between mb-8 overflow-visible">
                 <button 
                   onClick={() => navigate('/athkar')} 
@@ -138,7 +153,6 @@ const CategoryView: React.FC = () => {
                 </button>
                 
                 <div className="flex gap-2 overflow-visible">
-                    {/* Font Resize Dropdown */}
                     <div className="relative overflow-visible">
                         <button 
                           onClick={(e) => { e.stopPropagation(); setShowFontControls(!showFontControls); }}
@@ -183,13 +197,11 @@ const CategoryView: React.FC = () => {
                 </div>
             </div>
 
-            {/* Title Section */}
             <div className="text-center md:text-right">
                 <h1 className="text-2xl md:text-3xl font-black font-arabicHead mb-1 tracking-tight">{category.title}</h1>
                 <p className="text-white/70 text-xs font-arabic line-clamp-1">{category.description}</p>
             </div>
 
-            {/* Centered Remaining Progress Label */}
             <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center pointer-events-none">
                 <span className="text-[11px] font-bold font-arabic opacity-95 tracking-wide bg-black/10 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/10 shadow-sm">
                     {visibleIds.length === 0 ? 'تم الانتهاء بنجاح' : `متبقي ${toArabicNumerals(visibleIds.length)} من ${toArabicNumerals(items.length)}`}
@@ -198,7 +210,7 @@ const CategoryView: React.FC = () => {
         </div>
       </div>
 
-      {/* --- Compact Items List --- */}
+      {/* --- Items List / Completion View --- */}
       <div className="space-y-3 min-h-[40vh] pb-10">
         {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 opacity-20"><Loader2 className="animate-spin" size={32} /></div>
@@ -243,15 +255,37 @@ const CategoryView: React.FC = () => {
             ))}
 
             {!isLoading && !isReordering && visibleIds.length === 0 && (
-                <div className="text-center py-16 animate-fadeIn bg-white dark:bg-dark-surface rounded-[2.5rem] border border-gray-100 dark:border-dark-border shadow-sm">
+                <div className="text-center py-12 px-6 animate-fadeIn bg-white dark:bg-dark-surface rounded-[2.5rem] border border-gray-100 dark:border-dark-border shadow-sm">
                     <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
                         <CheckCircle size={48} />
                     </div>
                     <h3 className="text-2xl font-bold font-arabicHead mb-2 text-gray-800 dark:text-white">تقبل الله منك</h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 font-arabic px-10 leading-relaxed">أتممت وردك لهذا القسم بنجاح، جعلها الله في ميزان حسناتك.</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 font-arabic leading-relaxed">أتممت وردك لهذا القسم بنجاح، جعلها الله في ميزان حسناتك.</p>
+                    
+                    {/* Completion Stats Badges */}
+                    {stats && (
+                        <div className="grid grid-cols-3 gap-3 mb-10">
+                            <div className="bg-orange-50 dark:bg-orange-900/10 p-4 rounded-2xl border border-orange-100 dark:border-orange-900/20 animate-slideUp" style={{ animationDelay: '100ms' }}>
+                                <Flame size={20} className="text-orange-500 mx-auto mb-2" />
+                                <div className="text-xl font-black text-orange-600 dark:text-orange-400 font-arabic">{toArabicNumerals(stats.currentStreak)}</div>
+                                <div className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase font-arabicHead">أيام متتالية</div>
+                            </div>
+                            <div className="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/20 animate-slideUp" style={{ animationDelay: '200ms' }}>
+                                <Award size={20} className="text-emerald-500 mx-auto mb-2" />
+                                <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-arabic">{toArabicNumerals(stats.totalDhikrCompleted)}</div>
+                                <div className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase font-arabicHead">إجمالي الأذكار</div>
+                            </div>
+                            <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/20 animate-slideUp" style={{ animationDelay: '300ms' }}>
+                                <Folder size={20} className="text-blue-500 mx-auto mb-2" />
+                                <div className="text-xl font-black text-blue-600 dark:text-blue-400 font-arabic">{toArabicNumerals(categoryHistoryTotal)}</div>
+                                <div className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase font-arabicHead">في هذا القسم</div>
+                            </div>
+                        </div>
+                    )}
+
                     <button 
                       onClick={() => navigate('/')} 
-                      className="px-10 py-3.5 bg-primary-600 text-white rounded-2xl font-bold text-sm shadow-xl shadow-primary-500/20 hover:bg-primary-700 transition-all active:scale-95 flex items-center gap-2 mx-auto"
+                      className="px-10 py-4 bg-primary-600 text-white rounded-2xl font-bold text-sm shadow-xl shadow-primary-500/20 hover:bg-primary-700 transition-all active:scale-95 flex items-center gap-2 mx-auto"
                     >
                       <Home size={18} />
                       <span>العودة للرئيسية</span>

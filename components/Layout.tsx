@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate, Link } from 'react-router-dom';
 import { Home, Menu, Sun, Moon, ArrowRight, Maximize2, Square, Play, Pause, Radio, Calendar, BookOpen, Search } from 'lucide-react';
 import Logo from './Logo';
 import { useRadio } from '../contexts/RadioContext';
@@ -139,7 +139,9 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
       {showNav && (
         <aside className="hidden md:flex flex-col w-72 h-screen sticky top-0 bg-white/70 dark:bg-[#1E1E1E]/70 backdrop-blur-2xl border-l border-gray-100 dark:border-[#2A2A2A] z-50 shadow-[inset_0_1px_1px_rgba(255,255,255,0.5)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
             <div className="p-8 flex items-center justify-between">
-                <Logo size={36} className="text-primary-600 dark:text-primary-500 transition-transform hover:scale-105" />
+                <Link to="/" className="transition-transform hover:scale-105 active:scale-95" aria-label="الذهاب للرئيسية">
+                    <Logo size={36} className="text-primary-600 dark:text-primary-500" />
+                </Link>
                 <button 
                     onClick={() => setIsSpotlightOpen(true)}
                     className="p-2 rounded-xl bg-white/50 dark:bg-dark-bg/50 text-gray-400 hover:text-primary-500 transition-all border border-gray-100/50 dark:border-dark-border"
@@ -196,7 +198,9 @@ const Layout: React.FC<LayoutProps> = ({ children, darkMode, toggleTheme }) => {
                         <ArrowRight size={24} className="rtl:rotate-0" />
                     </button>
                 ) : (
-                    <div className="font-bold text-xl text-primary-600 dark:text-primary-500 font-arabicHead">ريان</div>
+                    <Link to="/" className="font-bold text-xl text-primary-600 dark:text-primary-500 font-arabicHead active:opacity-70 transition-opacity">
+                      ريان
+                    </Link>
                 )}
                 
                 <div className="flex items-center gap-1">
