@@ -13,7 +13,6 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in the component tree.
  */
-// Explicitly extending Component from named import to fix property resolution errors
 class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
@@ -37,7 +36,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   // Handle retry logic to reset state and attempt reload
   private handleRetry = () => {
-    // Accessing setState from the inherited Component class
+    // FIX: setState is inherited from Component base class
     this.setState({ hasError: false, error: null });
     window.location.reload();
   };
@@ -57,7 +56,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Accessing children from props inherited from Component class
+    // FIX: props.children is inherited from Component base class with the defined Props interface
     return this.props.children;
   }
 }

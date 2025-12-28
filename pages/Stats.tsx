@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Flame, CheckCircle, BarChart3, Calendar, RefreshCw, X, Award, ChevronLeft, ChevronRight, Circle, Palette, Check } from 'lucide-react';
 import * as storage from '../services/storage';
 import { AZKAR_DATA, CATEGORIES } from '../data';
@@ -22,6 +21,7 @@ const Stats: React.FC = () => {
   const [themeColor, setThemeColor] = useState<storage.HeatmapTheme>(() => storage.getHeatmapTheme());
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0);
+  const heatmapScrollRef = useRef<HTMLDivElement>(null);
 
   // Navigation Limit: End of next year
   const maxMonthOffset = useMemo(() => {
@@ -56,6 +56,14 @@ const Stats: React.FC = () => {
       setShowThemePicker(false);
   };
 
+  const goToToday = () => {
+    setMonthOffset(0);
+    if (heatmapScrollRef.current) {
+        // In RTL, 0 is the rightmost scroll position
+        heatmapScrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+  };
+
   if (!stats) return <div className="p-10 text-center flex justify-center"><RefreshCw className="animate-spin text-gray-400" /></div>;
 
   return (
@@ -71,7 +79,7 @@ const Stats: React.FC = () => {
             <div className="bg-orange-100 dark:bg-orange-900/30 p-3 md:p-4 rounded-full text-orange-600 dark:text-orange-400 mb-3">
                 <Flame size={24} className="md:w-8 md:h-8" />
             </div>
-            <span className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 font-english">{toArabicNumerals(stats.currentStreak)}</span>
+            <span className="text-2xl md:text-4xl font-black text-gray-800 dark:text-gray-100 font-arabic">{toArabicNumerals(stats.currentStreak)}</span>
             <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold font-arabic">أيام متتالية</span>
         </div>
 
@@ -79,7 +87,7 @@ const Stats: React.FC = () => {
             <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 md:p-4 rounded-full text-emerald-600 dark:text-emerald-400 mb-3">
                 <Award size={24} className="md:w-8 md:h-8" />
             </div>
-            <span className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 font-english">{toArabicNumerals(stats.totalDhikrCompleted)}</span>
+            <span className="text-2xl md:text-4xl font-black text-gray-800 dark:text-gray-100 font-arabic">{toArabicNumerals(stats.totalDhikrCompleted)}</span>
             <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold font-arabic">إجمالي الأذكار</span>
         </div>
 
@@ -87,7 +95,7 @@ const Stats: React.FC = () => {
              <div className="bg-blue-100 dark:bg-blue-900/30 p-3 md:p-4 rounded-full text-blue-600 dark:text-blue-400 mb-3">
                 <BarChart3 size={24} className="md:w-8 md:h-8" />
             </div>
-            <span className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 font-english">{toArabicNumerals(stats.weeklyCount)}</span>
+            <span className="text-2xl md:text-4xl font-black text-gray-800 dark:text-gray-100 font-arabic">{toArabicNumerals(stats.weeklyCount)}</span>
             <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold font-arabic">ذكر هذا الأسبوع</span>
         </div>
 
@@ -95,7 +103,7 @@ const Stats: React.FC = () => {
              <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 md:p-4 rounded-full text-emerald-600 dark:text-emerald-400 mb-3">
                 <CheckCircle size={24} className="md:w-8 md:h-8" />
             </div>
-            <span className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 font-english">{toArabicNumerals(stats.todayCount)}</span>
+            <span className="text-2xl md:text-4xl font-black text-gray-800 dark:text-gray-100 font-arabic">{toArabicNumerals(stats.todayCount)}</span>
             <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold font-arabic">ذكر اليوم</span>
         </div>
       </div>
@@ -120,7 +128,7 @@ const Stats: React.FC = () => {
                         <ChevronLeft size={18} />
                     </button>
                     <button 
-                        onClick={() => setMonthOffset(0)}
+                        onClick={goToToday}
                         className={`p-2 transition-colors ${monthOffset === 0 ? 'text-primary-500' : 'text-gray-500 hover:text-primary-500'}`}
                         title="العودة لليوم"
                     >
@@ -169,9 +177,12 @@ const Stats: React.FC = () => {
             </div>
         </div>
 
-        <div className="flex items-start gap-4 overflow-x-auto no-scrollbar pb-6">
-            {/* Weekday Labels (Arabic, Aligned slighly up) */}
-            <div className="flex flex-col gap-[4px] -mt-1 text-[8px] md:text-[9px] font-bold text-gray-400 dark:text-gray-500 pl-2 select-none border-l border-gray-100 dark:border-gray-800 w-12 md:w-14 shrink-0">
+        <div 
+          ref={heatmapScrollRef}
+          className="flex items-start gap-4 overflow-x-auto no-scrollbar pb-6 scroll-smooth"
+        >
+            {/* Weekday Labels (Arabic, Adjusted slighly lower with -mt-[2px]) */}
+            <div className="flex flex-col gap-[4px] -mt-[2px] text-[8px] md:text-[9px] font-bold text-gray-400 dark:text-gray-500 pl-2 select-none border-l border-gray-100 dark:border-gray-800 w-12 md:w-14 shrink-0">
                 <span className="h-[14px] md:h-[16px] flex items-center justify-start">الإثنين</span>
                 <span className="h-[14px] md:h-[16px] flex items-center justify-start">الثلاثاء</span>
                 <span className="h-[14px] md:h-[16px] flex items-center justify-start">الأربعاء</span>
@@ -185,7 +196,7 @@ const Stats: React.FC = () => {
             <AnkiStyleGrid history={history} theme={themeColor} monthOffset={monthOffset} />
         </div>
         
-        {/* Legend */}
+        {/* Legend (RTL Order) */}
         <div className="mt-4 flex justify-start items-center gap-2">
             <span className="text-[10px] text-gray-400 font-arabic">أكثر</span>
             <div className="flex gap-1" dir="ltr">
@@ -381,7 +392,7 @@ const AnkiStyleGrid: React.FC<AnkiGridProps> = ({ history, theme, monthOffset })
                                 {selectedDay.categories.map((cat: any, idx: number) => (
                                     <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-dark-bg border border-gray-100 dark:border-dark-border">
                                         <span className="font-medium text-gray-700 dark:text-gray-200 font-arabic">{cat.title}</span>
-                                        <span className={`font-english font-bold text-lg ${getTextColor(theme)}`}>{toArabicNumerals(cat.count)}</span>
+                                        <span className={`font-arabic font-bold text-lg ${getTextColor(theme)}`}>{toArabicNumerals(cat.count)}</span>
                                     </div>
                                 ))}
                             </div>
