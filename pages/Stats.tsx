@@ -187,13 +187,13 @@ const Stats: React.FC = () => {
         
         {/* Legend */}
         <div className="mt-4 flex justify-start items-center gap-2">
-            <span className="text-[10px] text-gray-400 font-arabic">أقل</span>
+            <span className="text-[10px] text-gray-400 font-arabic">أكثر</span>
             <div className="flex gap-1" dir="ltr">
                 {[0, 5, 15, 30, 50].map((v) => (
                     <div key={v} className={`w-3 h-3 rounded-[2px] ${getLegendColor(v, themeColor)}`} />
                 ))}
             </div>
-            <span className="text-[10px] text-gray-400 font-arabic">أكثر</span>
+            <span className="text-[10px] text-gray-400 font-arabic">أقل</span>
         </div>
       </div>
     </div>
