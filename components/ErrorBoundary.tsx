@@ -1,4 +1,5 @@
-import React, { ErrorInfo, ReactNode } from 'react';
+
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import ErrorState from './ErrorState';
 
 interface Props {
@@ -13,16 +14,13 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in the component tree.
  */
-// Fix: Use React.Component explicitly to resolve property access issues with setState, state, and props
-class ErrorBoundary extends React.Component<Props, State> {
-  // Fix: Explicitly define constructor and call super(props) to ensure base class initialization
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null
-    };
-  }
+// FIX: Using Component from 'react' directly to ensure correct inheritance recognition for 'setState' and 'props'
+class ErrorBoundary extends Component<Props, State> {
+  // Initialize state using the property initializer syntax
+  public state: State = {
+    hasError: false,
+    error: null
+  };
 
   // Update state so the next render will show the fallback UI.
   public static getDerivedStateFromError(error: Error): State {
@@ -36,15 +34,15 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   // Handle retry logic to reset state and attempt reload
-  // Fix: Explicitly inherited setState from React.Component is now correctly recognized
   private handleRetry = () => {
+    // FIX: Using this.setState which is now properly inherited from Component
     this.setState({ hasError: false, error: null });
     window.location.reload();
   };
 
   // Render method to display fallback UI or children
   public render(): ReactNode {
-    // Fix: Explicitly inherited state from React.Component is now correctly recognized
+    // FIX: Accessing this.state inherited from Component
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg p-4">
@@ -58,7 +56,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // Fix: Explicitly inherited props from React.Component is now correctly recognized
+    // FIX: Accessing this.props inherited from Component
     return this.props.children;
   }
 }
