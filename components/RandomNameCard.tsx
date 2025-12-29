@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NAMES_OF_ALLAH } from '../data';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, ChevronLeft } from 'lucide-react';
 import { NameOfAllah } from '../types';
 
 const RandomNameCard: React.FC = () => {
@@ -10,7 +10,7 @@ const RandomNameCard: React.FC = () => {
   const [randomName, setRandomName] = useState<NameOfAllah | null>(null);
 
   useEffect(() => {
-    // Select a random name on component mount (refresh)
+    // Select a random name on component mount
     const randomIndex = Math.floor(Math.random() * NAMES_OF_ALLAH.length);
     setRandomName(NAMES_OF_ALLAH[randomIndex]);
   }, []);
@@ -20,33 +20,54 @@ const RandomNameCard: React.FC = () => {
   return (
     <div 
       onClick={() => navigate('/names')}
-      className="bg-white dark:bg-dark-surface rounded-3xl p-6 shadow-sm border border-amber-100 dark:border-amber-900/30 cursor-pointer group hover:shadow-md transition-all duration-300 relative overflow-hidden"
+      className="group relative overflow-hidden rounded-[2.5rem] bg-white dark:bg-dark-surface border border-amber-100/50 dark:border-amber-900/20 shadow-soft hover:shadow-xl hover:border-amber-200 dark:hover:border-amber-800 transition-all duration-500 cursor-pointer isolate"
     >
-      {/* Background Decoration */}
-      <div className="absolute top-0 right-0 w-24 h-24 bg-amber-50 dark:bg-amber-900/10 rounded-bl-full -mr-6 -mt-6 transition-transform group-hover:scale-110"></div>
-      <div className="absolute bottom-0 left-0 w-16 h-16 bg-amber-50 dark:bg-amber-900/10 rounded-tr-full -ml-4 -mb-4 transition-transform group-hover:scale-110"></div>
+      {/* 1. Background Layers */}
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-900/5 dark:to-orange-900/5 z-0" />
+      
+      {/* 2. Geometric Motif - Removed AllahIcon as requested */}
 
-      <div className="relative z-10 flex flex-col items-center text-center">
-        <div className="flex items-center gap-2 mb-4 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-4 py-1.5 rounded-full">
-            <Sparkles size={18} />
-            <span className="text-sm font-bold">أسماء الله الحسنى</span>
+      {/* 3. Decorative Top Right Corner */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-100/40 dark:from-amber-900/20 to-transparent rounded-bl-[100px] -mr-8 -mt-8 z-0" />
+
+      {/* 4. Content Container */}
+      <div className="relative z-10 p-8 flex flex-col items-center text-center">
+        
+        {/* Modern Badge */}
+        <div className="flex items-center gap-2 mb-8 px-4 py-1.5 bg-amber-100/50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full border border-amber-200/50 dark:border-amber-800/30 backdrop-blur-sm shadow-sm transition-transform group-hover:scale-105">
+            <Sparkles size={14} className="animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-[0.15em] font-arabicHead">أسماء الله الحسنى</span>
         </div>
 
-        <h3 className="text-4xl md:text-5xl font-serif text-amber-600 dark:text-amber-400 mb-2 drop-shadow-sm">
-            {randomName.arabic}
-        </h3>
+        {/* Main Name Display */}
+        <div className="relative mb-6">
+            {/* Soft Glow behind name */}
+            <div className="absolute inset-0 bg-amber-400/10 blur-2xl rounded-full scale-150 animate-pulse" />
+            
+            <h3 className="text-5xl md:text-6xl font-arabicHead font-black text-amber-600 dark:text-amber-400 drop-shadow-[0_2px_10px_rgba(217,119,6,0.1)] transition-transform group-hover:scale-110 duration-500">
+                {randomName.arabic}
+            </h3>
+        </div>
         
-        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">
-            {randomName.transliteration}
-        </p>
+        {/* Transliteration with refined style */}
+        <div className="space-y-1 mb-6">
+            <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] font-english">
+                {randomName.transliteration}
+            </p>
+            <div className="h-0.5 w-8 bg-amber-200 dark:bg-amber-800 mx-auto rounded-full opacity-50" />
+        </div>
 
-        <p className="text-gray-600 dark:text-gray-300 max-w-md leading-relaxed">
+        {/* Meaning with better readability */}
+        <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed font-arabic max-w-[280px]">
             {randomName.meaning}
         </p>
         
-        <div className="mt-4 text-xs text-gray-400 group-hover:text-amber-500 transition-colors flex items-center gap-1">
-            <span>عرض الكل</span>
-            <Sparkles size={12} />
+        {/* Interactive Footer Hint */}
+        <div className="mt-8 flex items-center gap-2 text-[10px] font-bold text-amber-500/60 dark:text-amber-400/40 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors uppercase tracking-widest">
+            <span>تصفح جميع الأسماء</span>
+            <div className="bg-amber-50 dark:bg-amber-900/20 p-1.5 rounded-full transition-all group-hover:translate-x-[-4px] group-hover:bg-amber-100 dark:group-hover:bg-amber-800/40">
+                <ChevronLeft size={12} className="rtl:rotate-0" />
+            </div>
         </div>
       </div>
     </div>

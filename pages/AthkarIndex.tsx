@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CATEGORIES } from '../data';
@@ -14,6 +15,17 @@ const AthkarIndex: React.FC = () => {
         case 'sleep': return <CloudMoon size={size} />;
         case 'waking': return <Sunrise size={size} />;
         default: return <Sun size={size} />; // Default/Prayer
+    }
+  };
+
+  const getThemeGradient = (theme: string) => {
+    switch (theme) {
+      case 'orange': return 'from-orange-500 to-amber-600';
+      case 'indigo': return 'from-indigo-600 to-slate-800';
+      case 'slate': return 'from-slate-600 to-gray-800';
+      case 'yellow': return 'from-yellow-500 to-orange-600';
+      case 'emerald': return 'from-emerald-600 to-teal-800';
+      default: return 'from-primary-600 to-emerald-800';
     }
   };
 
@@ -40,21 +52,10 @@ const AthkarIndex: React.FC = () => {
                 <div 
                     key={cat.id}
                     onClick={() => navigate(`/category/${cat.id}`)}
-                    className="group relative overflow-hidden rounded-3xl p-6 cursor-pointer shadow-card hover:shadow-xl transition-all duration-500 min-h-[140px] flex items-center"
+                    className={`group relative overflow-hidden rounded-3xl p-6 cursor-pointer shadow-card hover:shadow-xl transition-all duration-500 min-h-[140px] flex items-center bg-gradient-to-br ${getThemeGradient(cat.theme)}`}
                 >
-                    {/* Background Image */}
-                    <div className="absolute inset-0 z-0">
-                        {cat.imageUrl && (
-                            <img 
-                                src={cat.imageUrl} 
-                                alt={cat.title}
-                                loading="lazy"
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                            />
-                        )}
-                        {/* Overlay Gradient for readability */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent dark:from-black/90 dark:via-black/60"></div>
-                    </div>
+                    {/* Pattern Overlay instead of Image */}
+                    <div className="absolute inset-0 z-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')]"></div>
                     
                     <div className="flex items-center justify-between relative z-10 w-full">
                         <div className="flex items-center gap-5">
@@ -62,10 +63,10 @@ const AthkarIndex: React.FC = () => {
                                 {getIcon(cat.id, 28)}
                             </div>
                             <div>
-                                <h3 className="text-h2 font-bold text-white font-arabicHead mb-1 shadow-black/10 drop-shadow-sm">
+                                <h3 className="text-h2 font-bold text-white font-arabicHead mb-1 drop-shadow-sm">
                                     {cat.title}
                                 </h3>
-                                <p className="text-small text-gray-200 font-arabic leading-relaxed max-w-[200px] opacity-90">
+                                <p className="text-small text-white/80 font-arabic leading-relaxed max-w-[200px]">
                                     {cat.description}
                                 </p>
                             </div>

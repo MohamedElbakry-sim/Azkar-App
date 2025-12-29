@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+
+import React, { ErrorInfo, ReactNode } from 'react';
 import ErrorState from './ErrorState';
 
 interface Props {
@@ -13,11 +14,15 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in the component tree.
  */
-class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null
-  };
+/* FIX: Explicitly extend React.Component and use constructor to ensure proper inheritance of setState and props */
+class ErrorBoundary extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null
+    };
+  }
 
   // Update state so the next render will show the fallback UI.
   public static getDerivedStateFromError(error: Error): State {
@@ -32,13 +37,15 @@ class ErrorBoundary extends Component<Props, State> {
 
   // Handle retry logic to reset state and attempt reload
   private handleRetry = () => {
-    // Use setState which is inherited from the Component base class
+    // Use inherited setState from React Component
+    /* FIX: Accessing setState through properly recognized inheritance */
     this.setState({ hasError: false, error: null });
     window.location.reload();
   };
 
   // Render method to display fallback UI or children
   public render(): ReactNode {
+    /* FIX: Accessing state through inherited property */
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg p-4">
@@ -52,7 +59,8 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Access children through this.props inherited from Component base class
+    // Use inherited props from React Component
+    /* FIX: Accessing props through inherited property */
     return this.props.children;
   }
 }
