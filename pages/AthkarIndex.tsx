@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CATEGORIES } from '../data';
 import { Heart, Plus, Sun, Moon, CloudMoon, Sunrise, ArrowLeft, Sparkles } from 'lucide-react';
+import { PrayerIcon } from '../components/Layout';
 
 const AthkarIndex: React.FC = () => {
   const navigate = useNavigate();
@@ -14,7 +15,8 @@ const AthkarIndex: React.FC = () => {
         case 'masaa': return <Moon size={size} />;
         case 'sleep': return <CloudMoon size={size} />;
         case 'waking': return <Sunrise size={size} />;
-        default: return <Sun size={size} />; // Default/Prayer
+        case 'prayer': return <PrayerIcon size={size} />;
+        default: return <Sun size={size} />;
     }
   };
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, Link } from 'react-router-dom';
 import { Home, Menu, Sun, Moon, ArrowRight, Maximize2, Square, Play, Pause, Radio, Calendar, BookOpen, Search } from 'lucide-react';
@@ -8,9 +9,12 @@ import SpiritualSpotlight from './SpiritualSpotlight';
 
 // Custom Icons Exported for Reuse in Settings
 export const PrayerIcon = ({ size = 24 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 2L4 7V17L12 22L20 17V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 20h18" />
+    <path d="M4 20v-7a8 8 0 0 1 16 0v7" />
+    <path d="M12 5V2" />
+    <circle cx="12" cy="2" r="1" />
+    <path d="M9 20v-4a3 3 0 0 1 6 0v4" />
   </svg>
 );
 

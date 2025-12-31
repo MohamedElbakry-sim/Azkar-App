@@ -1,4 +1,3 @@
-
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import ErrorState from './ErrorState';
 
@@ -14,11 +13,11 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in the component tree.
  */
-// Fix: Correctly extend Component and provide Props and State types to enable state/props access
+// Fix: Extending Component directly from the imported react module to ensure setState and props are inherited correctly
 class ErrorBoundary extends Component<Props, State> {
+  // Fix: Initializing state via constructor to help TypeScript resolve the inherited Component properties
   constructor(props: Props) {
     super(props);
-    // Fix: Initialize state within the constructor to ensure property existence
     this.state = {
       hasError: false,
       error: null
@@ -38,14 +37,14 @@ class ErrorBoundary extends Component<Props, State> {
 
   // Handle retry logic to reset state and attempt reload
   private handleRetry = () => {
-    // Fix: Use setState inherited from React Component base class
+    // Fix: setState is available on the class instance inherited from Component
     this.setState({ hasError: false, error: null });
     window.location.reload();
   };
 
   // Render method to display fallback UI or children
   public render(): ReactNode {
-    // Fix: Access state inherited from React Component base class
+    // Access state through the instance to resolve inheritance type issues
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg p-4">
@@ -59,7 +58,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Fix: Access props inherited from React Component base class
+    // Fix: Accessing props directly as it is inherited from the base Component class
     return this.props.children;
   }
 }
