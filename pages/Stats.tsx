@@ -3,7 +3,6 @@ import { Flame, CheckCircle, BarChart3, Calendar, RefreshCw, X, Award, ChevronLe
 import * as storage from '../services/storage';
 import { AZKAR_DATA, CATEGORIES } from '../data';
 import { ProgressState } from '../types';
-import { toArabicNumerals } from '../utils';
 
 /**
  * Generates a consistent date key YYYY-MM-DD in local time to avoid UTC offset issues.
@@ -79,7 +78,7 @@ const Stats: React.FC = () => {
             <div className="bg-orange-100 dark:bg-orange-900/30 p-3 md:p-4 rounded-full text-orange-600 dark:text-orange-400 mb-3">
                 <Flame size={24} className="md:w-8 md:h-8" />
             </div>
-            <span className="text-2xl md:text-4xl font-black text-gray-800 dark:text-gray-100 font-arabic">{toArabicNumerals(stats.currentStreak)}</span>
+            <span className="text-3xl md:text-5xl font-black text-gray-900 dark:text-gray-100 font-arabicHead">{stats.currentStreak}</span>
             <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold font-arabic">أيام متتالية</span>
         </div>
 
@@ -87,7 +86,7 @@ const Stats: React.FC = () => {
             <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 md:p-4 rounded-full text-emerald-600 dark:text-emerald-400 mb-3">
                 <Award size={24} className="md:w-8 md:h-8" />
             </div>
-            <span className="text-2xl md:text-4xl font-black text-gray-800 dark:text-gray-100 font-arabic">{toArabicNumerals(stats.totalDhikrCompleted)}</span>
+            <span className="text-3xl md:text-5xl font-black text-gray-900 dark:text-gray-100 font-arabicHead">{stats.totalDhikrCompleted}</span>
             <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold font-arabic">إجمالي الأذكار</span>
         </div>
 
@@ -95,7 +94,7 @@ const Stats: React.FC = () => {
              <div className="bg-blue-100 dark:bg-blue-900/30 p-3 md:p-4 rounded-full text-blue-600 dark:text-blue-400 mb-3">
                 <BarChart3 size={24} className="md:w-8 md:h-8" />
             </div>
-            <span className="text-2xl md:text-4xl font-black text-gray-800 dark:text-gray-100 font-arabic">{toArabicNumerals(stats.weeklyCount)}</span>
+            <span className="text-3xl md:text-5xl font-black text-gray-900 dark:text-gray-100 font-arabicHead">{stats.weeklyCount}</span>
             <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold font-arabic">ذكر هذا الأسبوع</span>
         </div>
 
@@ -103,7 +102,7 @@ const Stats: React.FC = () => {
              <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 md:p-4 rounded-full text-emerald-600 dark:text-emerald-400 mb-3">
                 <CheckCircle size={24} className="md:w-8 md:h-8" />
             </div>
-            <span className="text-2xl md:text-4xl font-black text-gray-800 dark:text-gray-100 font-arabic">{toArabicNumerals(stats.todayCount)}</span>
+            <span className="text-3xl md:text-5xl font-black text-gray-900 dark:text-gray-100 font-arabicHead">{stats.todayCount}</span>
             <span className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 font-bold font-arabic">ذكر اليوم</span>
         </div>
       </div>
@@ -181,7 +180,7 @@ const Stats: React.FC = () => {
           ref={heatmapScrollRef}
           className="flex items-start gap-4 overflow-x-auto no-scrollbar pb-6 scroll-smooth"
         >
-            {/* Weekday Labels (Arabic, Adjusted slighly lower with -mt-[2px]) */}
+            {/* Weekday Labels (Arabic) */}
             <div className="flex flex-col gap-[4px] -mt-[2px] text-[8px] md:text-[9px] font-bold text-gray-400 dark:text-gray-500 pl-2 select-none border-l border-gray-100 dark:border-gray-800 w-12 md:w-14 shrink-0">
                 <span className="h-[14px] md:h-[16px] flex items-center justify-start">الإثنين</span>
                 <span className="h-[14px] md:h-[16px] flex items-center justify-start">الثلاثاء</span>
@@ -192,7 +191,7 @@ const Stats: React.FC = () => {
                 <span className="h-[14px] md:h-[16px] flex items-center justify-start">الأحد</span>
             </div>
 
-            {/* Monthly Grid Blocks (Newest on the right) */}
+            {/* Monthly Grid Blocks */}
             <AnkiStyleGrid history={history} theme={themeColor} monthOffset={monthOffset} />
         </div>
         
@@ -267,8 +266,6 @@ const AnkiStyleGrid: React.FC<AnkiGridProps> = ({ history, theme, monthOffset })
     const [tooltip, setTooltip] = useState<any>(null);
     const [selectedDay, setSelectedDay] = useState<any>(null);
 
-    // Show 9-month window based on current offset
-    // RTL logic: Today's month is index 0 (appears rightmost)
     const months = useMemo(() => {
         const result = [];
         const baseDate = new Date();
@@ -318,22 +315,18 @@ const AnkiStyleGrid: React.FC<AnkiGridProps> = ({ history, theme, monthOffset })
         <div className="flex gap-6">
             {months.map((monthStart, mIdx) => {
                 const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
-                const startDayOffset = (monthStart.getDay() + 6) % 7; // Monday as first row
+                const startDayOffset = (monthStart.getDay() + 6) % 7; 
                 
-                // Localization: Full Arabic month and year (e.g. أغسطس ٢٠٢٥)
                 const monthName = monthStart.toLocaleString('ar-SA', { month: 'long' });
-                const yearFull = toArabicNumerals(monthStart.getFullYear());
+                const yearFull = monthStart.getFullYear();
                 const monthLabel = `${monthName} ${yearFull}`;
 
                 return (
                     <div key={mIdx} className="flex flex-col gap-3">
-                        {/* Monthly Grid (grid-flow-col starts from right in RTL) */}
                         <div className="grid grid-rows-7 grid-flow-col gap-[4px]">
-                            {/* Fill empty grid spots for the start of month */}
                             {Array.from({ length: startDayOffset }).map((_, i) => (
                                 <div key={`pad-${i}`} className="w-[14px] h-[14px] md:w-[16px] md:h-[16px]" />
                             ))}
-                            {/* Actual days of month */}
                             {Array.from({ length: daysInMonth }).map((_, i) => {
                                 const date = new Date(monthStart.getFullYear(), monthStart.getMonth(), i + 1);
                                 const count = getCountForDate(date);
@@ -354,29 +347,26 @@ const AnkiStyleGrid: React.FC<AnkiGridProps> = ({ history, theme, monthOffset })
                                 );
                             })}
                         </div>
-                        {/* Month Label below the grid */}
-                        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 text-center tracking-tight font-arabic whitespace-nowrap">
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 text-center tracking-tight font-arabicHead whitespace-nowrap">
                             {monthLabel}
                         </span>
                     </div>
                 );
             })}
 
-            {/* Tooltip Overlay */}
             {tooltip && (
                 <div 
-                    className="fixed z-50 px-3 py-1.5 bg-gray-900/95 backdrop-blur text-white text-[10px] rounded-lg shadow-xl pointer-events-none transform -translate-x-1/2 -translate-y-full border border-gray-700 whitespace-nowrap mb-2 font-arabic"
+                    className="fixed z-50 px-3 py-1.5 bg-gray-900/95 backdrop-blur text-white text-[10px] rounded-lg shadow-xl pointer-events-none transform -translate-x-1/2 -translate-y-full border border-gray-700 whitespace-nowrap mb-2 font-arabicHead"
                     style={{ left: tooltip.x, top: tooltip.y - 4 }}
                 >
                      <div className="text-center">
-                        <span className="font-bold ml-1">{toArabicNumerals(tooltip.count)}</span>
+                        <span className="font-black ml-1">{tooltip.count}</span>
                         <span>ذكر - {tooltip.date}</span>
                      </div>
                      <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-gray-900/95"></div>
                 </div>
             )}
 
-            {/* Day Detail Modal */}
             {selectedDay && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedDay(null)}>
                     <div className="bg-white dark:bg-dark-surface w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden animate-popIn border border-gray-100 dark:border-dark-border" onClick={e => e.stopPropagation()}>
@@ -384,7 +374,7 @@ const AnkiStyleGrid: React.FC<AnkiGridProps> = ({ history, theme, monthOffset })
                             <button onClick={() => setSelectedDay(null)} className="absolute top-4 left-4 p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"><X size={18} /></button>
                             <Calendar size={32} className="mx-auto mb-2 opacity-80" />
                             <h3 className="text-xl font-bold font-arabicHead">{selectedDay.date}</h3>
-                            <div className="mt-2 inline-block bg-white/20 px-4 py-1 rounded-full text-sm font-medium backdrop-blur-md font-arabic">إجمالي {toArabicNumerals(selectedDay.count)} ذكر</div>
+                            <div className="mt-2 inline-block bg-white/20 px-4 py-1 rounded-full text-sm font-bold backdrop-blur-md font-arabicHead">إجمالي {selectedDay.count} ذكر</div>
                         </div>
                         <div className="p-6 max-h-[60vh] overflow-y-auto no-scrollbar">
                             <h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 border-b border-gray-100 dark:border-dark-border pb-2 font-arabicHead">تفاصيل اليوم</h4>
@@ -392,7 +382,7 @@ const AnkiStyleGrid: React.FC<AnkiGridProps> = ({ history, theme, monthOffset })
                                 {selectedDay.categories.map((cat: any, idx: number) => (
                                     <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-dark-bg border border-gray-100 dark:border-dark-border">
                                         <span className="font-medium text-gray-700 dark:text-gray-200 font-arabic">{cat.title}</span>
-                                        <span className={`font-arabic font-bold text-lg ${getTextColor(theme)}`}>{toArabicNumerals(cat.count)}</span>
+                                        <span className={`font-arabicHead font-black text-xl ${getTextColor(theme)}`}>{cat.count}</span>
                                     </div>
                                 ))}
                             </div>
@@ -404,7 +394,6 @@ const AnkiStyleGrid: React.FC<AnkiGridProps> = ({ history, theme, monthOffset })
     );
 };
 
-// UI Color Helpers
 const getModalGradient = (theme: storage.HeatmapTheme) => {
     switch(theme) {
         case 'lime': return 'from-lime-600 to-lime-700';
